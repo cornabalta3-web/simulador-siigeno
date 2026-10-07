@@ -246,7 +246,7 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 .modal .mb{padding:16px;overflow:auto}
 .modal iframe{width:100%;height:68vh;border:1px solid var(--line);border-radius:8px;background:#fff}
 .modal img{display:block;margin:0 auto;border:1px solid var(--line);border-radius:6px}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:70;background:#0B1118;color:#fff;padding:10px 16px;border-radius:8px;font-size:13.5px;font-weight:600;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));z-index:70;background:#0B1118;color:#fff;padding:10px 16px;border-radius:8px;font-size:13.5px;font-weight:600;max-width:calc(100% - 32px)}
 .docrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface-2);border-radius:8px;padding:11px 13px}
 .docrow.pend{background:var(--warn-bg)}
 .docrow .dn{flex:1 1 220px;min-width:0}
@@ -265,6 +265,27 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 .acc .in{padding:4px 16px 16px 44px;display:flex;flex-direction:column;gap:10px}
 .login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.login.l3{grid-template-columns:1fr}}
+.navbar{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px;margin-top:6px}
+.navbar .izq,.navbar .der{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.navbar .der{margin-left:auto;flex-direction:column;align-items:flex-end;gap:6px}
+.navbar .der .legend{margin:0;text-align:right;max-width:340px}
+.btn.lg{font-size:16px;padding:13px 26px;min-height:50px;border-radius:9px}
+.btn.lg.go-next::after{content:"→";font-size:18px;margin-left:2px}
+.fin{display:flex;flex-direction:column;gap:8px;border:2px solid var(--req-acc);border-radius:10px;padding:14px 16px;background:var(--surface)}
+.fin .t{font-weight:700;font-size:15px}
+.fin ol{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.fin li{display:flex;gap:9px;align-items:center;font-size:14px}
+.fin li .ico{width:20px;height:20px}
+tr.g-nuevo td{background:var(--warn-bg)} tr.g-nuevo td:first-child{box-shadow:inset 4px 0 0 var(--req-acc)}
+tr.g-curso td:first-child{box-shadow:inset 4px 0 0 var(--info)}
+tr.g-req td:first-child{box-shadow:inset 4px 0 0 #8E6BBF}
+tr.g-cerrado td{background:var(--ok-bg)} tr.g-cerrado td:first-child{box-shadow:inset 4px 0 0 var(--ok)}
+.leyenda{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.leyenda span{display:inline-flex;align-items:center;gap:6px}
+.leyenda i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.pendientes{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.pendientes button{border:1px solid var(--warn);background:var(--surface);color:var(--fg);border-radius:7px;padding:6px 10px;font-size:13px;cursor:pointer}
+.pendientes button:hover{background:var(--warn-bg)}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media(max-width:760px){.login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.login.l3{grid-template-columns:1fr}}
@@ -644,14 +665,18 @@ function queSigue(t){
     default: return "Nada por ahora";
   }
 }
+const grupoReq = t => CERRADOS.includes(t.etapa)?"cerrado":(["borrador","encontrada","falta_algo","listo"].includes(t.etapa)||t.etapa==="a_pagar"&&!t.tasa?.pagada)?"nuevo":"curso";
 function vMis(){
-  const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>(b.actualizado||b.creado)-(a.actualizado||a.creado));
+  const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>({nuevo:0,curso:1,cerrado:2}[grupoReq(a)]-{nuevo:0,curso:1,cerrado:2}[grupoReq(b)])||(b.actualizado||b.creado)-(a.actualizado||a.creado));
+  const pend=l.filter(t=>grupoReq(t)==="nuevo").length;
   $("#app").innerHTML=`<div class="stack">
     <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer vos. Si no tenés que hacer nada, lo dice también. Acá están solo los trámites que inició ${esc(u.nombre)}.</p></div>
       <button class="btn pri" type="button" data-act="nuevo">Nuevo trámite</button></div>
     ${S.aviso?`<div class="box b-ok">✓ <b>${esc(S.aviso)}</b></div>`:""}
+    ${l.length?`<div class="spread" style="align-items:center"><b>${pend?`Tenés ${pend} trámite${pend===1?"":"s"} que espera${pend===1?"":"n"} algo de vos`:"No tenés nada pendiente"}</b>
+      <div class="leyenda"><span><i style="background:var(--req-acc)"></i>Tenés que hacer algo</span><span><i style="background:var(--info)"></i>En curso, nada por ahora</span><span><i style="background:var(--ok)"></i>Terminado</span></div></div>`:""}
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>Trámite</th><th>Escritura</th><th>Estado</th><th>Qué sigue</th></tr></thead><tbody>
-      ${l.map(t=>`<tr class="click" data-act="${["borrador","encontrada"].includes(t.etapa)?"seguir":"abrirReq"}" data-arg="${t.id}"><td><b>${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(t.w))}</b>${t.tipo==="busqueda"?`<div class="sub">para ${esc(nombreW(t.w).toLowerCase())}</div>`:""}</td>
+      ${l.map(t=>`<tr class="click g-${grupoReq(t)}" data-act="${["borrador","encontrada"].includes(t.etapa)?"seguir":"abrirReq"}" data-arg="${t.id}"><td><b>${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(t.w))}</b>${t.tipo==="busqueda"?`<div class="sub">para ${esc(nombreW(t.w).toLowerCase())}</div>`:""}</td>
         <td class="num">${esc(escTxt(t.w))}</td><td>${chipReq(t)}</td><td>${queSigue(t)}</td></tr>`).join("")}
       </tbody></table><div class="tfoot"><span>${l.length} trámite${l.length===1?"":"s"}</span><span>Simulador SIIGENO · EGG</span></div></div>`
       :`<div class="card empty">Todavía no iniciaste ningún trámite. Con <b>Nuevo trámite</b> armás el primero.</div>`}</div>`;
@@ -750,19 +775,31 @@ function vArmador(){
         <div class="tile"><div class="l">Ejemplares</div><div class="v">${esc(p.ejemplares)}</div></div>
         <div class="tile"><div class="l">Costo</div><div class="v">${ant?"Sin costo":c?.exento?"Exento":carrilDirecto(w)?pesos(c.total)+" · se paga ahora":"Se calcula al dar el alta"}</div></div></div>
       ${falta.length?`<div class="box b-warn">Falta completar: ${falta.map(i=>`<button class="link" type="button" data-act="paso" data-arg="${i}">paso ${i} (${PASOS[i-1]})</button>`).join(", ")}.</div>`:""}
-      <label class="box b-mute row" style="cursor:pointer"><input type="checkbox" id="dj" ${w.dj?"checked":""}> <span>Declaro que los datos y documentos son verdaderos${w.caracter==="sucesor_u"?" y que soy heredero/a declarado/a de la parte interviniente":""}.</span></label>
+      <div class="fin" id="fin">${finHTML()}</div>
       <div class="box b-info">Después de enviar no podés editarlo. Si falta algo, la Escribanía te lo observa y vuelve a tu bandeja apuntando al paso que hay que corregir.</div>`;
     W._directo=directo;
   }
   const listo=[1,2,3,4].every(okPaso)&&w.dj&&!w.enviando;
-  const navBtns = w.paso<4
-    ? `<button class="btn pri" type="button" data-act="cont" ${okPaso(w.paso)?"":"disabled"}>Continuar</button>${w.paso>1?`<button class="btn" type="button" data-act="volverW">Volver</button>`:""}${!W.para&&w.tipo?`<button class="btn" type="button" data-act="guardarW">Guardar borrador</button>`:""}`
-    : `<button class="btn hot" type="button" data-act="enviar" ${listo?"":"disabled"}>${W._directo?`Pagar ${pesos(cotizar(w).total)} y enviar`:"Enviar a la Escribanía"}</button><button class="btn" type="button" data-act="volverW">Volver</button>${!W.para?`<button class="btn" type="button" data-act="guardarW">Guardar borrador</button>`:""}`;
+  const izq=`${w.paso>1?`<button class="btn lg" type="button" data-act="volverW">← Volver</button>`:""}${!W.para&&w.tipo?`<button class="btn lg" type="button" data-act="guardarW">Guardar borrador</button>`:""}`;
+  const der = w.paso<4
+    ? `<button class="btn pri lg go-next" type="button" data-act="cont" ${okPaso(w.paso)?"":"disabled"}>Continuar</button><p class="legend" id="porque">${okPaso(w.paso)?"":esc(porqueNo(w.paso))}</p>`
+    : `<button class="btn hot lg" type="button" data-act="enviar" ${listo?"":"disabled"}>${W._directo?`Pagar ${pesos(cotizar(w).total)} y enviar`:"Enviar a la Escribanía"}</button><p class="legend" id="porque">${listo?"Listo para enviar.":"Completá lo que falta en el recuadro de arriba."}</p>`;
   $("#app").innerHTML=`<div class="stack"><div class="steps">${steps}</div>
-    <div class="cols"><div class="card stack">${body}<div class="acts" style="margin-top:8px">${navBtns}</div>${w.paso<4&&!okPaso(w.paso)?`<p class="legend" id="porque">${esc(porqueNo(w.paso))}</p>`:`<p class="legend" id="porque"></p>`}</div>
+    <div class="cols"><div class="card stack">${body}<div class="navbar"><div class="izq">${izq}</div><div class="der">${der}</div></div></div>
     <aside class="card stack" id="carpeta"></aside></div></div>`;
   carpeta();
 }
+/* Recuadro final: lo que falta para poder enviar, con la declaración jurada al lado del botón */
+function finHTML(){ const w=W, ds=docsDe(w), p=w.pedido;
+  const datos = w.tipo==="testimonio" ? (!!p.motivo && !!p.para.trim()) : w.tipo==="copia" ? (!!p.objeto && (w.modo!=="cert"||!!p.destino)) : !!p.para.trim();
+  const it=(ok,txt)=>`<li><span class="ico ${ok?"ok":""}" style="${ok?"":"background:transparent;border:2px solid var(--req-acc)"}">${ok?"✓":""}</span>${txt}</li>`;
+  const pasos=[1,2,3].filter(i=>!okPaso(i));
+  return `<div class="t">Para terminar el trámite</div><ol>
+    ${pasos.length?it(false,`Completá ${pasos.map(i=>`<button class="link" type="button" data-act="paso" data-arg="${i}">el paso ${i} (${PASOS[i-1]})</button>`).join(" y ")}`):it(true,"Pasos anteriores completos")}
+    ${it(datos,w.tipo==="testimonio"?"Motivo y para qué lo necesitás":w.tipo==="copia"?"Para qué la necesitás"+(w.modo==="cert"?" y dónde la vas a presentar":""):"Motivo de la consulta")}
+    ${ds.some(d=>d.nota)?it(!!w.adj.nota,"Subir la nota firmada y certificada"):""}
+    <li><label class="row" style="cursor:pointer;gap:9px"><input type="checkbox" id="dj" ${w.dj?"checked":""} style="width:20px;height:20px"> <span>Declaro que los datos y documentos son verdaderos${w.caracter==="sucesor_u"?" y que soy heredero/a declarado/a de la parte interviniente":""}.</span></label></li></ol>
+    <div class="legend" style="margin:0">Cuando esté todo, tocá <b>${carrilDirecto(w)&&cotizar(w)?.total>0?"«Pagar y enviar»":"«Enviar a la Escribanía»"}</b>, abajo a la derecha.</div>`; }
 function porqueNo(n){ const w=W;
   if(n===1) return !w.tipo?"Elegí qué necesitás.":"Cargá año (cuatro cifras), número y fecha de la escritura, o buscala con lo que tengas.";
   if(n===2){ if(!w.caracter) return "Elegí el carácter."; if(!okPaso(2)) return w.tipo==="testimonio"?"Adjuntá lo que pide el carácter, cargá la denuncia y contestá si hay obligaciones pendientes.":"Adjuntá lo que pide el carácter."; }
@@ -956,9 +993,14 @@ function tasaCol(t){
 }
 const nArchivos = t => (t.ordenes||[]).length;
 const sinDueno = t => !t.responsable && !CERRADOS.includes(t.etapa) && t.etapa!=="encontrada";
+const grupoEgg = t => sinDueno(t)?"nuevo":CERRADOS.includes(t.etapa)?"cerrado":(ETAPAS[t.etapa].req[0]&&["falta_algo","encontrada"].includes(t.etapa)||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo")?"req":"curso";
+const GRUPOS=[["todos","Todos",null],["nuevo","Sin asignar","var(--req-acc)"],["curso","En curso","var(--info)"],["req","Esperan al requirente","#8E6BBF"],["cerrado","Terminados","var(--ok)"]];
 function vBandeja(){
   const u=yo(), ext=activos().sort((a,b)=>b.ingreso-a.ingreso), mios=ext.filter(t=>t.responsable===u.id);
-  const l=S.tabB==="mios"?mios:ext, nuevo=ext.find(sinDueno);
+  const base=S.tabB==="mios"?mios:ext; if(!S.fB) S.fB="todos";
+  const orden={nuevo:0,curso:1,req:2,cerrado:3};
+  const l=base.filter(t=>S.fB==="todos"||grupoEgg(t)===S.fB).sort((a,b)=>orden[grupoEgg(a)]-orden[grupoEgg(b)]||b.ingreso-a.ingreso);
+  const nuevos=ext.filter(sinDueno), nuevo=null;
   $("#app").innerHTML=`<div class="stack">
     <div class="spread"><h1 class="t">Bandeja de trámites</h1><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
     ${S.conf==="mesa"?`<div class="card row"><label class="f" for="mesaReq" style="margin:0">¿Para qué requirente?</label><select id="mesaReq" style="max-width:320px">${S.usuarios.filter(x=>lado(x)==="req"&&x.activo!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.nombre)} · ${esc(x.doc||"")}</option>`).join("")}</select>
@@ -966,17 +1008,19 @@ function vBandeja(){
     <div class="tabsline" role="tablist"><button type="button" role="tab" disabled title="No se simula en esta prueba">Internos · reparticiones y expediente<span class="n">0</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="ext" aria-selected="${S.tabB==="ext"}">Externos · ciudadanos y escribanos<span class="n">${ext.length}</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="mios" aria-selected="${S.tabB==="mios"}">Míos<span class="n">${mios.length}</span></button></div>
-    ${nuevo&&S.tabB==="ext"?`<div class="box b-warn spread" style="align-items:center"><span><b>Llegó ${nuevo.tipo==="busqueda"?"un pedido de búsqueda":"un trámite nuevo"} ${hace(nuevo.ingreso)} y nadie lo tiene.</b> ${nuevo.tipo==="busqueda"?"El requirente no sabe los datos de la escritura: hay que ubicarla en el protocolo.":nuevo.carril==="directo"?"Fue parte: vino por el carril directo, ya pago y en preparación.":"Como el carácter no es «parte», no fue por el carril directo: hay que controlarlo."}</span>
-      <span class="row">${esEsc()?`<button class="btn" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Asignar</button>`:""}<button class="btn pri" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Abrir</button></span></div>`:""}
+    ${nuevos.length&&S.tabB==="ext"?`<div class="box b-warn"><b>${nuevos.length===1?"Hay 1 pendiente sin asignar":`Hay ${nuevos.length} pendientes sin asignar`}.</b> ${esEsc()?"Abrí cada uno y elegí quién lo hace.":"Los asigna el escribano."}
+      <div class="pendientes">${nuevos.map(t=>`<button type="button" data-act="abrirFicha" data-arg="${t.id}"><b>${esc(t.nro)}</b> · ${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(t.w))} · ${esc(t.solicitanteNombre)} · ${esc(t.carril==="directo"?"carril directo, ya pago":t.tipo==="busqueda"?"hay que ubicarla":"hay que controlarlo")} · ${hace(t.ingreso)}</button>`).join("")}</div></div>`:""}
+    <div class="spread" style="align-items:center"><div class="pills">${GRUPOS.map(g=>`<button type="button" class="${S.fB===g[0]?"on":""}" data-act="fB" data-arg="${g[0]}">${g[1]} · ${base.filter(t=>g[0]==="todos"||grupoEgg(t)===g[0]).length}</button>`).join("")}</div>
+      <div class="leyenda">${GRUPOS.slice(1).map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join("")}</div></div>
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Carácter</th><th>Ingreso</th><th>Tasa</th><th>Estado</th><th>A cargo</th><th>Archivos</th></tr></thead><tbody>
-      ${l.map(t=>`<tr class="click ${t===nuevo&&S.tabB==="ext"?"nuevo":""}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
+      ${l.map(t=>`<tr class="click g-${grupoEgg(t)}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
         <td><b>${esc(nombreT(t))}</b><div class="sub">${t.tipo==="busqueda"?"para "+esc(nombreW(t.w).toLowerCase()):"Esc. "+esc(escTxt(t.w).replace("N.º ",""))}</div></td>
         <td><b>${esc(t.solicitanteNombre)}</b><div class="sub">${esc(t.solicitanteDoc)}</div></td><td>${esc(CARACTERES[t.w.caracter]?.corto||"—")}</td>
         <td class="num">${fFecha(t.ingreso)}<div class="sub">${fHora(t.ingreso)}</div></td><td>${tasaCol(t)}</td><td>${chipEgg(t)}</td>
         <td>${t.responsable?esc(nombreDe(t.responsable)):`<span style="color:var(--bad)">—</span>`}</td>
         <td><button class="btn sm" type="button" data-act="abrirDocs" data-arg="${t.id}">📄 ${nArchivos(t)}</button></td></tr>`).join("")}
       </tbody></table><div class="tfoot"><span>Mostrando ${l.length} · se abre la fila y se trabaja desde la ficha</span><span>Simulador SIIGENO · EGG</span></div></div>`
-      :`<div class="card empty">${S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como ciudadana (Cambiar de usuario) y enviá uno."}</div>`}
+      :`<div class="card empty">${base.length?"No hay trámites en este filtro.":S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como ciudadana (Cambiar de usuario) y enviá uno."}</div>`}
     ${esEsc()&&S.tramites.length?`<div class="card spread"><div><h3 class="t">Empezar la prueba de cero</h3><p class="hint">Borra todos los trámites. Los usuarios y los problemas anotados quedan.</p></div>
       ${S.conf==="reset"?`<span class="row"><span class="box b-bad">¿Borrar ${S.tramites.length} trámites?</span><button class="btn sm" type="button" data-act="resetOk">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
         :`<button class="btn" type="button" data-act="reset">Borrar trámites de prueba</button>`}</div>`:""}
@@ -1354,6 +1398,7 @@ document.addEventListener("click", async e=>{
     case "verOrdenNom": return verOrden(t,ordenDe(t,b.dataset.n));
     /* escribanía */
     case "tabB": S.tabB=arg; return vBandeja();
+    case "fB": S.fB=arg; return vBandeja();
     case "verComoReq": { const x=usuario(t.solicitante); if(!x) return; S.me=x.id; lsSet("simsig_me",x.id); S.aviso=null; toast("Ahora estás como "+x.nombre); return ir("det",t.id); }
     case "abrirFicha": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
     case "abrirDocs": e.stopPropagation(); S.vista="ficha"; S.sel=arg; S.tabF="docs"; S.filtroDoc="todos"; return render();
@@ -1427,7 +1472,7 @@ document.addEventListener("change", async e=>{
   const el=e.target;
   if(el.dataset.w && W && (el.tagName==="SELECT"||el.dataset.redraw)){ setPath(W,el.dataset.w,el.value); if(el.dataset.redraw) vArmador(); else actualizarArmador(); return; }
   if(el.dataset.b && B){ B[el.dataset.b]=el.value; return; }
-  if(el.id==="dj"&&W){ W.dj=el.checked; return vArmador(); }
+  if(el.id==="dj"&&W){ W.dj=el.checked; return actualizarArmador(); }
   if(el.dataset.adj){ const f=el.files[0]; if(f) subirAdj(el.dataset.adj, el.dataset.k, f); return; }
   if(el.id==="subirOrden"){ const f=el.files[0], t=tramite(el.dataset.arg); if(!f) return;
     try{ toast("Subiendo…"); const r=await Store.subir(f); await mover(t.id,"Incorporó: "+f.name,null,{},{orden:{nombre:f.name.replace(/\.[a-z0-9]+$/i,""),origen:"egg",por:yo().nombre,archivos:[{...r,n:f.name}]}}); }catch(err){ toast(err.message||"No se pudo subir."); } return; }
@@ -1441,7 +1486,9 @@ document.addEventListener("change", async e=>{
 document.addEventListener("submit", async e=>{
   if(e.target.id!=="fnota") return; e.preventDefault(); const inp=$("#notaTxt"), txt=inp.value.trim(); if(!txt) return;
   inp.value=""; inp.blur(); await agregarNota(e.target.dataset.arg,txt); render(); });
-function actualizarArmador(){ carpeta(); const c=document.querySelector('[data-act="cont"]'); if(c&&W.paso<4){ const ok=okPaso(W.paso); c.disabled=!ok; const p=$("#porque"); if(p) p.textContent=ok?"":porqueNo(W.paso); } }
+function actualizarArmador(){ carpeta(); const c=document.querySelector('[data-act="cont"]'); if(c&&W.paso<4){ const ok=okPaso(W.paso); c.disabled=!ok; const p=$("#porque"); if(p) p.textContent=ok?"":porqueNo(W.paso); }
+  if(W.paso===4){ const f=$("#fin"); if(f&&!f.contains(document.activeElement)) f.innerHTML=finHTML(); const e=document.querySelector('[data-act="enviar"]'); const ok=[1,2,3,4].every(okPaso)&&W.dj&&!W.enviando;
+    if(e) e.disabled=!ok; const p=$("#porque"); if(p) p.textContent=ok?"Listo para enviar.":"Completá lo que falta en el recuadro de arriba."; } }
 
 async function subirAdj(ctx,k,file){
   try{ toast("Subiendo "+file.name+"…"); const r=await Store.subir(file);
