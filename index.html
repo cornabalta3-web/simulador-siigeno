@@ -1030,12 +1030,13 @@ function vBandeja(){
       <button class="btn pri" type="button" data-act="mesaOk">Empezar la carga</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div>`:""}
     <div class="seg">${GRUPOS.map(g=>`<button type="button" class="${S.fB===g[0]?"on":""}" data-act="fB" data-arg="${g[0]}">${g[2]?`<i style="background:${g[2]}"></i>`:""}${g[1]} <span class="n">${base.filter(t=>g[0]==="todos"||grupoEgg(t)===g[0]).length}</span></button>`).join("")}
       <span class="sep"></span><button type="button" class="${S.tabB==="mios"?"on":""}" data-act="tabB" data-arg="${S.tabB==="mios"?"ext":"mios"}">Solo los míos</button></div>
-    ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Estado</th><th>Ingreso</th></tr></thead><tbody>
+    ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Estado</th><th>Ingreso</th><th style="text-align:right">Archivos</th></tr></thead><tbody>
       ${l.map(t=>`<tr class="click g-${grupoEgg(t)}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
         <td><b>${esc(nombreT(t))}</b><div class="sub">${t.tipo==="busqueda"?"para "+esc(nombreW(t.w).toLowerCase()):"Esc. "+esc(escTxt(t.w).replace("N.º ",""))}</div></td>
         <td>${esc(t.solicitanteNombre)}<div class="sub">${esc(CARACTERES[t.w.caracter]?.corto||"—")}</div></td>
         <td>${chipEgg(t)}<div class="sub" style="margin-top:3px">${estadoSub(t)}</div></td>
-        <td class="num">${fFecha(t.ingreso)}<div class="sub">${hace(t.ingreso)}</div></td></tr>`).join("")}
+        <td class="num">${fFecha(t.ingreso)}<div class="sub">${hace(t.ingreso)}</div></td>
+        <td style="text-align:right"><button class="btn sm" type="button" data-act="abrirDocs" data-arg="${t.id}" title="Ver la hoja de ruta" aria-label="Archivos del trámite ${esc(t.nro)}: ${nArchivos(t)}">📄 ${nArchivos(t)}</button></td></tr>`).join("")}
       </tbody></table></div>`
       :`<div class="card empty">${base.length?"No hay trámites en este filtro.":S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como ciudadana (Cambiar de usuario) y enviá uno."}</div>`}
   </div>`;
