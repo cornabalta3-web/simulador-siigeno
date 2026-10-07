@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador SIIGENO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: barra de portal arriba (azul para Requirentes, grafito y oro para la gestión interna),
+   contenido en una columna con panel lateral fijo; botón "Anotar problema" abajo a la derecha.
+   Tomado del recorrido final del armador y la bandeja. */
+:root{
+  --req-head:#0F4468; --req-acc:#C2571A; --egg-head:#18222F; --egg-acc:#D9A93A;
+  --bg:#F3F2EE; --surface:#FFFFFF; --surface-2:#F7F6F2; --fg:#1D2530; --muted:#69717E; --line:#DEDCD5;
+  --link:#0F4468; --acc:var(--req-acc); --head:var(--req-head);
+  --ok:#1D6B3F; --ok-bg:#E3F0E7; --warn:#8A6410; --warn-bg:#FBF1DA; --bad:#9E2A1E; --bad-bg:#FBE9E6;
+  --info:#24527A; --info-bg:#E6EEF6; --orange:#A84A12; --orange-bg:#FBE8DA; --mute-bg:#ECEAE4;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+body.egg{ --bg:#ECEEF1; --surface-2:#F4F5F7; --line:#D9DDE3; --acc:var(--egg-acc); --head:var(--egg-head); --link:#0F4468; }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161D; --surface:#19212B; --surface-2:#1E2733; --fg:#E3E7EC; --muted:#9AA4B1; --line:#2C3644; --link:#8DB8DE;
+    --ok:#7FCB9C; --ok-bg:#16301F; --warn:#E3C26A; --warn-bg:#33290F; --bad:#F0928A; --bad-bg:#3A1A18;
+    --info:#9DC0E2; --info-bg:#1B2C40; --orange:#F0A577; --orange-bg:#3A2416; --mute-bg:#26303C; color-scheme:dark;
+  }
+  :root:not([data-theme="light"]) body.egg{ --bg:#0F1319; --surface-2:#1C242F; --line:#2B3441; --link:#8DB8DE; }
+}
+:root[data-theme="dark"]{
+  --bg:#11161D; --surface:#19212B; --surface-2:#1E2733; --fg:#E3E7EC; --muted:#9AA4B1; --line:#2C3644; --link:#8DB8DE;
+  --ok:#7FCB9C; --ok-bg:#16301F; --warn:#E3C26A; --warn-bg:#33290F; --bad:#F0928A; --bad-bg:#3A1A18;
+  --info:#9DC0E2; --info-bg:#1B2C40; --orange:#F0A577; --orange-bg:#3A2416; --mute-bg:#26303C; color-scheme:dark;
+}
+:root[data-theme="dark"] body.egg{ --bg:#0F1319; --surface-2:#1C242F; --line:#2B3441; --link:#8DB8DE; }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--fg);font-size:14.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;text-wrap:balance}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+.flag{background:#0B1118;color:#B9C6D6;font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;text-align:center;padding:6px 16px;font-weight:600}
+.flag b{color:#E7C26A}
+header.top{background:var(--head);color:#fff;border-bottom:3px solid var(--acc)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px}
+.topin{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:12px}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand .n{font-weight:700;letter-spacing:.22em;font-size:17px}
+.brand .k{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#C7D3E0;font-weight:600}
+body.egg .brand .k{color:var(--egg-acc)}
+nav.tabs{display:flex;gap:2px;flex-wrap:wrap}
+nav.tabs button{background:none;border:0;color:#C7D3E0;font-weight:600;font-size:13px;padding:7px 12px;border-radius:6px;cursor:pointer}
+nav.tabs button:hover{background:rgba(255,255,255,.08);color:#fff}
+nav.tabs button[aria-current=true]{background:rgba(255,255,255,.14);color:#fff}
+.badge{display:inline-block;min-width:18px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
+body.egg .badge{color:#18222F}
+.me{margin-left:auto;display:flex;align-items:center;gap:10px}
+.me .who{text-align:right;line-height:1.25;font-size:13px}
+.me .who span{display:block;font-size:11.5px;color:#AFC0D2}
+.av{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;font-weight:700;font-size:12px;background:#2E6A99;color:#fff}
+body.egg .av.top{background:var(--egg-acc);color:#18222F}
+.ghost{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.3);color:#fff;font-weight:600;font-size:12px;padding:6px 11px;border-radius:999px;cursor:pointer}
+.ghost:hover{background:rgba(255,255,255,.16)}
+
+main.page{padding-block:20px 110px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;min-width:0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+@media(max-width:960px){.cols{grid-template-columns:1fr}}
+.cols > *{min-width:0}
+h1.t{font-family:var(--serif);font-weight:600;font-size:26px;letter-spacing:-.01em}
+h2.t{font-family:var(--serif);font-weight:600;font-size:22px}
+h3.t{font-family:var(--serif);font-weight:600;font-size:17px}
+.hint{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.eyebrow.acc{color:var(--acc)}
+.legend{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.link{background:none;border:0;padding:0;color:var(--link);font-weight:600;cursor:pointer;text-decoration:none}
+.link:hover{text-decoration:underline}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);
+  font-weight:500;font-size:14px;padding:9px 16px;border-radius:7px;cursor:pointer;white-space:nowrap}
+.btn:hover:not(:disabled){border-color:var(--fg)}
+.btn.pri{background:var(--req-head);border-color:var(--req-head);color:#fff;font-weight:600}
+.btn.hot{background:var(--req-acc);border-color:var(--req-acc);color:#fff;font-weight:600}
+.btn.go{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:600}
+.btn.sm{font-size:12.5px;padding:5px 10px}
+.btn:disabled{background:var(--surface-2);color:var(--muted);border-color:var(--line);cursor:not-allowed}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start}
+.acts .a{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.acts .why{font-size:11.5px;color:var(--muted);max-width:200px}
+
+label.f{display:block;font-size:12.5px;color:var(--fg);font-weight:600;margin-bottom:5px}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg)}
+textarea{resize:vertical;min-height:64px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--link)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 14px}
+.g4{display:grid;grid-template-columns:1fr 1.4fr 2fr 1.2fr;gap:12px 14px}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.field{min-width:0}
+
+.opts{display:grid;gap:10px}
+.opts.two{grid-template-columns:1fr 1fr}
+@media(max-width:600px){.opts.two{grid-template-columns:1fr}}
+.opt{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1.5px solid var(--line);border-radius:8px;padding:13px 15px;cursor:pointer;background:var(--surface)}
+.opt::before{content:"";flex:0 0 auto;width:16px;height:16px;margin-top:2px;border-radius:50%;border:1.5px solid var(--muted);box-sizing:border-box}
+.opt[aria-pressed=true]{border-color:var(--req-head);box-shadow:0 0 0 1px var(--req-head) inset}
+.opt[aria-pressed=true]::before{border:5px solid var(--req-head)}
+.opt .ot{font-weight:600;display:block}
+.opt .od{color:var(--muted);font-size:13px;display:block;margin-top:1px}
+.opt:disabled{background:var(--surface-2);color:var(--muted);cursor:not-allowed}
+.opt:disabled .ot{color:var(--muted)}
+
+.box{border-radius:8px;padding:12px 15px;font-size:13.5px}
+.box b{font-weight:600}
+.b-info{background:var(--info-bg);color:var(--info)}
+.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-ok{background:var(--ok-bg);color:var(--ok)}
+.b-bad{background:var(--bad-bg);color:var(--bad)}
+.b-orange{background:var(--orange-bg);color:var(--orange)}
+.b-mute{background:var(--surface-2);color:var(--fg);border:1px solid var(--line)}
+.dash{border:1.5px dashed var(--warn);border-radius:8px;padding:14px 15px;background:var(--surface)}
+.big{border-radius:10px;padding:20px 22px;border:1px solid var(--line)}
+.big h3{font-family:var(--sans);font-size:18px;font-weight:700;margin-bottom:6px}
+
+.chip{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.c-info{background:var(--info-bg);color:var(--info)}
+.c-warn{background:var(--warn-bg);color:var(--warn)}
+.c-ok{background:var(--ok-bg);color:var(--ok)}
+.c-bad{background:var(--bad-bg);color:var(--bad)}
+.c-orange{background:var(--orange-bg);color:var(--orange)}
+.c-mute{background:var(--mute-bg);color:var(--muted)}
+.tag{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:2px 6px;border-radius:4px}
+
+/* pasos del armador */
+.steps{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 16px;overflow-x:auto}
+.steps .s{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--muted);white-space:nowrap}
+.steps .s i{font-style:normal;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-size:11px;border:1.5px solid var(--line);color:var(--muted)}
+.steps .s.done{color:var(--fg)}.steps .s.done i{background:var(--req-head);border-color:var(--req-head);color:#fff}
+.steps .s.cur{color:var(--req-acc)}.steps .s.cur i{background:var(--req-acc);border-color:var(--req-acc);color:#fff}
+.steps .ln{flex:1 1 30px;min-width:20px;height:1px;background:var(--line)}
+
+.tabsline{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabsline button{background:none;border:0;border-bottom:3px solid transparent;padding:9px 13px;font-weight:500;font-size:14px;color:var(--muted);cursor:pointer}
+.tabsline button[aria-selected=true]{color:var(--fg);font-weight:600;border-bottom-color:var(--acc)}
+.tabsline button:disabled{opacity:.55;cursor:not-allowed}
+.tabsline .n{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;background:var(--mute-bg);color:var(--muted);border-radius:99px;padding:1px 7px}
+
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:11px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface-2)}
+tr.nuevo td{background:var(--warn-bg)}
+tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
+.sub{font-size:12px;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.nro{font-weight:700;color:var(--link);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:30px 14px;font-size:13.5px}
+.tfoot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--surface-2)}
+
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px}
+.kv .l{font-size:12px;color:var(--muted)}
+.kv .v{font-weight:600;overflow-wrap:anywhere}
+.kv .s2{font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media(max-width:680px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--surface-2);border-radius:8px;padding:10px 12px}
+.tile .l{font-size:12px;color:var(--muted)}
+.tile .v{font-weight:700;font-size:13.5px;overflow-wrap:anywhere}
+
+.checks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 18px}
+@media(max-width:820px){.checks{grid-template-columns:1fr}}
+.ck{display:flex;gap:9px;align-items:flex-start;min-width:0}
+.ico{flex:0 0 auto;width:19px;height:19px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:#fff;background:var(--line);margin-top:1px}
+.ico.ok{background:var(--ok)}.ico.bad{background:var(--bad)}.ico.warn{background:#C79A2E}.ico.pend{background:var(--muted)}
+.ck b{font-size:13.5px;font-weight:600;display:block}
+.ck span{font-size:12px;color:var(--muted)}
+.ckctl{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.ckctl button{border:1px solid var(--line);background:var(--surface);border-radius:5px;font-size:11.5px;padding:3px 7px;cursor:pointer;color:var(--muted)}
+.ckctl button[aria-pressed=true].o{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.ckctl button[aria-pressed=true].c{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.ckctl button[aria-pressed=true].i{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.ck input{margin-top:5px;padding:5px 8px;font-size:12.5px}
+
+.miss{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.miss li{display:flex;gap:9px;align-items:center;font-size:13.5px}
+.miss li .ico{width:17px;height:17px;font-size:10px}
+.miss li.p .ico{background:transparent;border:2px solid var(--req-acc)}
+.miss li.p{font-weight:600}
+
+.hist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hist li{position:relative;padding-left:18px}
+.hist li::before{content:"";position:absolute;left:2px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--fg)}
+.hist li.w::before{background:#C79A2E}
+.hist b{font-size:13px;font-weight:600;display:block}
+.hist span{font-size:12px;color:var(--muted)}
+.notes{display:flex;flex-direction:column;gap:12px}
+.note{display:flex;gap:9px}
+.note .av{width:24px;height:24px;font-size:9.5px;background:#5D4B8C}
+.note .t{font-size:12px;color:var(--muted)}
+.note .t b{color:var(--fg)}
+.note p{margin:2px 0 0;font-size:13px}
+.side{display:flex;flex-direction:column;gap:14px}
+.side hr{border:0;border-top:1px solid var(--line);margin:0}
+
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pills button{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 11px;font-size:13px;cursor:pointer}
+.pills button:hover{border-color:var(--fg)}
+.pills .on{background:var(--fg);color:var(--surface);border-color:var(--fg);font-weight:600}
+
+.who-opt{display:flex;gap:10px;align-items:center;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;cursor:pointer}
+.who-opt[aria-pressed=true]{border-color:var(--req-head);box-shadow:0 0 0 1px var(--req-head) inset}
+.who-opt b{display:block;font-size:13.5px}
+.who-opt span{font-size:12px;color:var(--muted)}
+.asign{border:1.5px solid var(--egg-acc);border-radius:9px;padding:14px;display:flex;flex-direction:column;gap:8px}
+
+.login{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media(max-width:820px){.login{grid-template-columns:1fr}}
+.portal{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.portal .ph{color:#fff;padding:14px 18px;border-bottom:3px solid}
+.portal .ph.r{background:var(--req-head);border-color:var(--req-acc)}
+.portal .ph.e{background:var(--egg-head);border-color:var(--egg-acc)}
+.portal .ph .k{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;opacity:.8;font-weight:600}
+.portal .ph .n{font-weight:700;font-size:16px;letter-spacing:.04em}
+.portal .pb{padding:14px 18px;display:flex;flex-direction:column;gap:8px}
+
+.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;background:#E7C26A;color:#1D2530;border:0;border-radius:999px;
+  padding:12px 18px;font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 6px 22px rgba(15,28,58,.3)}
+.drawer{position:fixed;inset:0;z-index:50;display:flex;justify-content:flex-end;background:rgba(10,16,24,.45)}
+.drawer .in{width:min(520px,100%);height:100%;background:var(--surface);overflow-y:auto;padding:20px 22px calc(24px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:13px}
+.ctx{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:12.5px;display:grid;grid-template-columns:auto 1fr;gap:3px 12px}
+.ctx b{color:var(--muted);font-weight:600}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(10,16,24,.55);display:grid;place-items:center;padding:16px}
+.modal .in{background:var(--surface);border-radius:12px;width:min(900px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden}
+.modal .mh{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.modal .mh b{flex:1 1 200px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal .mb{padding:16px;overflow:auto}
+.modal iframe{width:100%;height:68vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+.modal img{display:block;margin:0 auto;border:1px solid var(--line);border-radius:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:70;background:#0B1118;color:#fff;padding:10px 16px;border-radius:8px;font-size:13.5px;font-weight:600;max-width:calc(100% - 32px)}
+.docrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface-2);border-radius:8px;padding:11px 13px}
+.docrow.pend{background:var(--warn-bg)}
+.docrow .dn{flex:1 1 220px;min-width:0}
+.docrow .dn b{display:block;font-size:14px;font-weight:600}
+.docrow .dn span{font-size:12px;color:var(--muted)}
+.foot{font-size:11.5px;color:var(--muted);text-align:right;margin-top:6px}
+@media (prefers-reduced-motion:no-preference){.drawer .in{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
+</style>
+</head>
+<body>
+<script src="config.js"></script>
+<div class="flag">Simulador de prueba · datos inventados · <b id="modoTxt">conectando…</b></div>
+<header class="top"><div class="wrap topin" id="top"></div></header>
+<main class="page wrap" id="app"><div class="empty">Cargando el simulador…</div></main>
+<button class="fab" id="fab" type="button">Anotar problema</button>
+<div id="layer"></div>
+
+<script>
+"use strict";
+/* ==================================================================
+   CATÁLOGO — sale del recorrido final del armador y la bandeja.
+   Trámites, caracteres, documentos y etapas son datos: se cambian acá.
+   ================================================================== */
+const TRAMITES = {
+  copia:{n:"Copia de escritura", d:"Simple o certificada, en papel o digital. Para acreditar lo que dice una escritura.",
+    form:"SOLICITUD DE COPIAS Y COPIAS CERTIFICADAS", caracteres:["parte","sucesor_u","sucesor_s","apoderado","profesional","organismo","interes"],
+    precios:{simple_papel:2000,simple_digital:1000,cert_papel:3220,cert_digital:2000}, producto:"Copia emitida"},
+  testimonio:{n:"Segundo o ulterior testimonio", d:"Para reemplazar un testimonio perdido, robado o extraviado. Se vuelve a inscribir.",
+    form:"SOLICITUD DE SEGUNDOS O ULTERIORES TESTIMONIOS", caracteres:["parte","sucesor_u","interes"],
+    precios:{papel:70950,digital:40000}, producto:"Testimonio emitido", reinscribe:true},
+  antecedentes:{n:"Consulta de antecedentes", d:"Solo para escribanos en ejercicio.",
+    form:"SOLICITUD DE CONSULTA DE ANTECEDENTES", caracteres:["escribano"], precios:{}, producto:"Habilitación de la consulta", soloEscribanos:true, sinCosto:true}
+};
+const CARACTERES = {
+  parte:{t:"Fui parte de la escritura", d:"Tu CiDi ya te acredita. No adjuntás nada.", corto:"Parte", docs:[], campos:[]},
+  sucesor_u:{t:"Soy heredera o sucesora universal", d:"De alguien que sí fue parte. Hay que acreditar que falleció, el vínculo, y la declaratoria.", corto:"Heredera",
+    titulo:"Datos de la declaratoria", campos:[["autos","Autos caratulados","GÓMEZ, Roberto — Declaratoria de herederos"],["juzgado","Juzgado y secretaría","Civ. y Com. 14.ª Nom. · Sec. 2"],["fecha","Fecha","dd/mm/aaaa"]],
+    docs:[["defuncion","Partida de defunción","De la parte que figura en la escritura"],["nacimiento","Partida de nacimiento o libreta de familia","Acredita el vínculo"],["declaratoria","Declaratoria de herederos","Te declara heredera"]],
+    aviso:"Tienen que pedirlo todos los herederos declarados. Si son más de uno, todos firman la nota."},
+  sucesor_s:{t:"Soy sucesor singular", d:"Adquirí el derecho por instrumento público.", corto:"Sucesor singular",
+    titulo:"Dónde consta el instrumento", campos:[["esc","Escritura N° del instrumento",""],["reg","Escribano/a y registro",""],["fecha","Fecha","dd/mm/aaaa"]],
+    docs:[["instrumento","Constancias del instrumento público","Del que surge tu carácter"]]},
+  apoderado:{t:"Actúo como apoderado", d:"En representación de otra persona.", corto:"Apoderado",
+    titulo:"Datos del poder", campos:[["esc","Escritura N° del poder",""],["reg","Escribano/a y registro",""],["quien","A quién representás",""]],
+    docs:[["poder","Poder o autorización con firmas certificadas","Con facultades expresas para este trámite"]]},
+  profesional:{t:"Soy profesional interviniente", d:"Abogado, escribano, contador, agrimensor, martillero, perito.", corto:"Profesional",
+    titulo:"Tu intervención", campos:[["mat","Profesión y matrícula",""],["quien","A quién representás",""],["autos","Carátula del expediente, si hay",""]],
+    docs:[["autorizacion","Autorización de tu representado",""],["interes","Acreditación del interés legítimo","Para qué la necesitás"]]},
+  organismo:{t:"Soy juez u organismo público", d:"Lo requiero en ejercicio de mis funciones.", corto:"Organismo",
+    titulo:"Datos del requerimiento", campos:[["org","Organismo o juzgado",""],["oficio","N° de oficio o expediente",""]],
+    docs:[["oficio","Oficio o requerimiento","Firmado en ejercicio de funciones"]]},
+  interes:{t:"Acredito interés legítimo", d:"Tenés que fundamentarlo por escrito.", corto:"Interés legítimo",
+    titulo:"El interés que invocás", campos:[["tipo","Tipo de instrumento","Medida cautelar, orden judicial, mutuo…"],["donde","Dónde consta","Juzgado, registro o entidad, y número"]],
+    docs:[["instrumento","Instrumento que acredita el interés","Medida cautelar, orden judicial, financiación u otro"]]},
+  escribano:{t:"Soy escribano en ejercicio", d:"Único carácter habilitado para la consulta.", corto:"Escribano/a",
+    titulo:"Tu registro", campos:[["mat","Matrícula profesional",""],["reg","Registro notarial a cargo",""]], docs:[]}
+};
+const MOTIVOS = ["Extravío del testimonio original","Sustracción (robo o hurto)","Destrucción o deterioro","Nunca se retiró de la notaría"];
+const OBJETOS = ["Archivo personal","Trámite bancario o crediticio","Trámite sucesorio","Trámite judicial","Gestión ante organismo público","Otro"];
+const DESTINOS = ["Municipalidad","Registro General de la Provincia","Juzgado","Banco o entidad financiera","Dirección General de Rentas","Otro organismo"];
+const PROTOCOLOS = ["Sección A — inscribibles","Sección B — no inscribibles"];
+
+/* Estados. "egg" es lo que ve la escribanía; "req" lo que ve el requirente. */
+const ETAPAS = {
+  borrador:      {egg:["Borrador","c-mute"],        req:["Borrador","c-mute"]},
+  sin_asignar:   {egg:["Sin asignar","c-mute"],     req:["En revisión","c-info"]},
+  asignado:      {egg:["Asignado","c-info"],        req:["En revisión","c-info"]},
+  en_revision:   {egg:["En revisión","c-info"],     req:["En revisión","c-info"]},
+  falta_algo:    {egg:["Falta algo","c-warn"],      req:["Falta algo","c-warn"]},
+  a_pagar:       {egg:["A pagar","c-orange"],       req:["A pagar","c-orange"]},
+  en_preparacion:{egg:["En preparación","c-mute"],  req:["En preparación","c-mute"]},
+  listo:         {egg:["Listo","c-ok"],             req:["Listo","c-ok"]},
+  entregado:     {egg:["Entregado","c-mute"],       req:["Entregado","c-mute"]},
+  no_corresponde:{egg:["No corresponde","c-bad"],   req:["No corresponde","c-bad"]}
+};
+const CERRADOS = ["entregado","no_corresponde"];
+const ROLES = {
+  particular:{n:"Requirente", lado:"req"}, escribano_ext:{n:"Escribano/a de registro", lado:"req"},
+  escribano_egg:{n:"Escribano/a", lado:"egg"}, auxiliar:{n:"Auxiliar", lado:"egg"}
+};
+const USUARIOS_PRUEBA = [
+  {id:"u-ana", usuario:"ana", nombre:"Ana Gómez", rol:"particular", doc:"27-28445901-4", domicilio:"Deán Funes 1180, Córdoba"},
+  {id:"u-bustos", usuario:"bustos", nombre:"Esc. Estela Bustos", rol:"escribano_ext", doc:"Registro 412", mat:"1-0412", domicilio:"Córdoba Capital"},
+  {id:"u-suarez", usuario:"suarez", nombre:"G. Suárez", rol:"escribano_egg"},
+  {id:"u-molina", usuario:"molina", nombre:"A. Molina", rol:"auxiliar"},
+  {id:"u-peralta", usuario:"peralta", nombre:"L. Peralta", rol:"auxiliar"}
+];
+const CLAVE = "1234";
+const TIPOS_PROB = ["Error","Falta función","Lento / se cuelga","Confuso","Formato o texto","Datos incorrectos","Otro"];
+const GRAVEDAD = ["Bloquea","Molesta","Menor"];
+const ESTADOS_PROB = ["Nuevo","Reportado","Resuelto","No se arregla"];
+
+/* ==================================================================
+   UTILIDADES
+   ================================================================== */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pesos = n => "$ " + Number(n||0).toLocaleString("es-AR");
+const pad = n => String(n).padStart(2,"0");
+const fFecha = ts => { if(!ts) return "—"; const d=new Date(ts); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`; };
+const fCorta = ts => { const d=new Date(ts); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+const fHora = ts => { const d=new Date(ts); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const hace = ts => { const m=Math.round((Date.now()-ts)/60000); if(m<1) return "recién"; if(m<60) return `hace ${m} minuto${m===1?"":"s"}`;
+  const h=Math.round(m/60); if(h<24) return `hace ${h} hora${h===1?"":"s"}`; const d=Math.round(h/24); return `hace ${d} día${d===1?"":"s"}`; };
+const dias = ts => Math.floor((Date.now()-ts)/86400000);
+const nuevoId = p => p + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const iniciales = n => String(n||"?").replace(/^Esc\.\s*/,"").replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ ]/g," ").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
+const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
+const lsSet = (k,v) => { try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v); }catch(e){} };
+const clon = o => JSON.parse(JSON.stringify(o));
+function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
+function setPath(o,p,v){ const ks=p.split("."); let a=o; ks.slice(0,-1).forEach(k=>{ if(a[k]==null||typeof a[k]!=="object") a[k]={}; a=a[k]; }); a[ks.at(-1)]=v; }
+/* máscara dd/mm/aaaa: solo reescribe si cambió, y deja el cursor al final de lo tipeado */
+function mascaraFecha(inp){ const dig=inp.value.replace(/\D/g,"").slice(0,8); let v=dig;
+  if(dig.length>4) v=dig.slice(0,2)+"/"+dig.slice(2,4)+"/"+dig.slice(4); else if(dig.length>2) v=dig.slice(0,2)+"/"+dig.slice(2);
+  if(v!==inp.value){ inp.value=v; try{ inp.setSelectionRange(v.length,v.length); }catch(e){} } return v; }
+const fechaOk = v => /^\d{2}\/\d{2}\/\d{4}$/.test(v||"");
+let toastT;
+function toast(msg){ clearTimeout(toastT); let el=$("#toast"); if(!el){ el=document.createElement("div"); el.id="toast"; el.className="toast"; el.setAttribute("role","status"); document.body.appendChild(el); }
+  el.textContent=msg; el.hidden=false; toastT=setTimeout(()=>{el.hidden=true;},3400); }
+
+/* PDF de ejemplo, armado en el momento */
+function pdfBlob(titulo, lineas){
+  const enc = s => String(s).replace(/[^\x20-\xFF]/g,"-").replace(/([\\()])/g,"\\$1");
+  let y=780; const ops=["BT","/F1 15 Tf",`50 ${y} Td`,`(${enc(titulo)}) Tj`,"ET"]; y-=12; ops.push("0.6 w",`50 ${y} m 545 ${y} l S`); y-=26;
+  lineas.forEach(l=>{ (String(l).match(/.{1,88}(\s|$)|.{1,88}/g)||[""]).forEach(p=>{ ops.push("BT","/F1 11 Tf",`50 ${y} Td`,`(${enc(p.trim())}) Tj`,"ET"); y-=17; }); });
+  ops.push("BT","/F1 8.5 Tf","50 50 Td",`(${enc("DOCUMENTO DE EJEMPLO - Simulador SIIGENO - Escribanía General de Gobierno de Córdoba - sin valor legal")}) Tj`,"ET");
+  const st=ops.join("\n");
+  const objs=["<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>",
+    `<< /Length ${st.length} >>\nstream\n${st}\nendstream`,"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"];
+  let out="%PDF-1.4\n"; const offs=[];
+  objs.forEach((o,i)=>{ offs.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+  const x=out.length; out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+offs.map(o=>String(o).padStart(10,"0")+" 00000 n \n").join("")+`trailer\n<< /Size ${objs.length+1} /Root 1 0 R >>\nstartxref\n${x}\n%%EOF`;
+  const b=new Uint8Array(out.length); for(let i=0;i<out.length;i++) b[i]=out.charCodeAt(i)&255;
+  return new Blob([b],{type:"application/pdf"});
+}
+const nombreArchivo = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)+".pdf";
+const pdfFile = (titulo, lineas) => new File([pdfBlob(titulo,lineas)], nombreArchivo(titulo), {type:"application/pdf"});
+const blobADataUrl = b => new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=no; r.readAsDataURL(b); });
+
+/* ==================================================================
+   ALMACÉN — base compartida de claude.ai o, si no hay, este navegador
+   ================================================================== */
+const COLS=["usuarios","tramites","problemas"];
+/* Firebase con la misma forma que la base del artifact: collection().onSnapshot, doc().get/set/update/delete.
+   Se carga solo si hay config.js con los datos del proyecto. */
+async function firebaseDb(cfg){
+  const V="12.7.0";
+  const A=await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
+  const F=await import(`https://www.gstatic.com/firebasejs/${V}/firebase-firestore.js`);
+  const app=A.initializeApp(cfg);
+  const fs=F.initializeFirestore(app,{ignoreUndefinedProperties:true});
+  const snap=d=>({id:d.id, exists:d.exists(), data:()=>d.data()});
+  return {
+    collection:c=>({ onSnapshot:(next,err)=>F.onSnapshot(F.collection(fs,c),s=>next({docs:s.docs.map(snap)}),err) }),
+    doc:p=>{ const [c,id]=p.split("/"); const r=F.doc(fs,c,id);
+      return { get:async()=>snap(await F.getDoc(r)), set:d=>F.setDoc(r,d), update:d=>F.updateDoc(r,d), delete:()=>F.deleteDoc(r) }; }
+  };
+}
+const Store = {
+  modo:null, db:null, assets:null, downloads:null, subs:{}, fuente:"", limite:170*1024,
+  async init(){
+    let db=null;
+    /* 1) Firebase, si config.js trae los datos del proyecto (página pública en GitHub Pages) */
+    const cfg=window.FIREBASE_CONFIG;
+    if(cfg&&cfg.projectId){
+      try{ db=await firebaseDb(cfg); this.modo="compartido"; this.db=db; this.fuente="Firebase"; this.limite=700*1024; return; }
+      catch(e){ console.error(e); toast("No se pudo conectar con Firebase: se guarda solo en este navegador."); }
+    }
+    /* 2) La base del artifact, si se abre desde claude.ai */
+    if(window.claude && typeof window.claude.use==="function"){ try{ db=await window.claude.use("db"); }catch(e){} }
+    if(db){ this.modo="compartido"; this.db=db; this.fuente="claude.ai";
+      try{ this.assets=await window.claude.use("assets"); }catch(e){}
+      try{ this.downloads=await window.claude.use("downloads"); }catch(e){} }
+    else { this.modo="local"; window.addEventListener("storage",e=>COLS.forEach(c=>{ if(e.key==="simsig_"+c) this._emit(c); })); }
+  },
+  _read(c){ try{ return JSON.parse(lsGet("simsig_"+c)||"{}"); }catch(e){ return {}; } },
+  _emit(c){ const m=this._read(c); (this.subs[c]||[]).forEach(fn=>fn(Object.entries(m).map(([id,d])=>({...d,id})))); },
+  subscribe(c,fn,onErr){
+    if(this.modo==="compartido") return this.db.collection(c).onSnapshot(s=>fn(s.docs.map(d=>({...d.data(),id:d.id}))),e=>onErr&&onErr(e));
+    (this.subs[c]=this.subs[c]||[]).push(fn); this._emit(c); return ()=>{};
+  },
+  async set(c,id,data){ if(this.modo==="compartido") return this.db.doc(c+"/"+id).set(data);
+    const m=this._read(c); m[id]=data; lsSet("simsig_"+c,JSON.stringify(m)); this._emit(c); },
+  async update(c,id,patch){ if(this.modo==="compartido") return this.db.doc(c+"/"+id).update(patch);
+    const m=this._read(c); m[id]={...(m[id]||{}),...patch}; lsSet("simsig_"+c,JSON.stringify(m)); this._emit(c); },
+  async del(c,id){ if(this.modo==="compartido") return this.db.doc(c+"/"+id).delete();
+    const m=this._read(c); delete m[id]; lsSet("simsig_"+c,JSON.stringify(m)); this._emit(c); },
+  /* Archivos: primero el almacén de archivos del artifact; si no se puede, el archivo chico va dentro de la base. */
+  async subir(file){
+    if(this.modo==="compartido" && this.assets){
+      try{ const r=await this.assets.upload(file,{type:file.type||"application/pdf"}); return {ref:"a:"+r.id,nombre:file.name}; }
+      catch(e){ if(!["not_granted","capability_disabled","capability_removed","quota_or_state"].includes(e&&e.code)) throw e; }
+    }
+    if(file.size>this.limite) throw {message:`El archivo pesa más de ${Math.round(this.limite/1024)} KB. Para la prueba usá «PDF de ejemplo» o un archivo más chico.`};
+    const id=nuevoId("f"), data=await blobADataUrl(file);
+    if(this.modo==="compartido") await this.db.doc("archivos/"+id).set({nombre:file.name,tipo:file.type,data});
+    else { try{ localStorage.setItem("simsig_f_"+id,JSON.stringify({nombre:file.name,tipo:file.type,data})); }
+           catch(e){ throw {message:"El navegador no tiene más lugar para archivos. Usá «PDF de ejemplo»."}; } }
+    return {ref:"d:"+id,nombre:file.name};
+  },
+  async blobDe(ref){
+    if(ref.startsWith("a:")){ const r=await fetch("/_blob/"+ref.slice(2)); return r.ok?r.blob():null; }
+    const id=ref.slice(2); let d=null;
+    if(this.modo==="compartido"){ const s=await this.db.doc("archivos/"+id).get(); d=s.exists?s.data():null; }
+    else { try{ d=JSON.parse(lsGet("simsig_f_"+id)||"null"); }catch(e){} }
+    return d ? (await fetch(d.data)).blob() : null;
+  }
+};
+
+/* ==================================================================
+   ESTADO
+   ================================================================== */
+const S = { usuarios:[], tramites:[], problemas:[], me:null, listo:{}, vista:"login", sel:null,
+  tabB:"ext", tabF:"datos", filtroDoc:"todos", conf:null, loginSel:null, loginErr:"", aviso:null, verDocs:false, pf:"todos", asignarA:null };
+let W=null;   // solicitud en armado
+let P=null;   // problema en armado
+
+const yo = () => S.usuarios.find(u=>u.id===S.me)||null;
+const lado = u => u?ROLES[u.rol]?.lado:null;
+const esEsc = () => yo()?.rol==="escribano_egg";
+const usuario = id => S.usuarios.find(u=>u.id===id);
+const nombreDe = id => usuario(id)?.nombre||"—";
+const tramite = id => S.tramites.find(t=>t.id===id);
+const activos = () => S.tramites.filter(t=>t.etapa!=="borrador");
+
+/* documentos que pide cada caso */
+function docsDe(w){
+  if(!w||!w.tipo||!w.caracter) return [];
+  const l=(CARACTERES[w.caracter].docs||[]).map(d=>({k:d[0],n:d[1],d:d[2]}));
+  if(w.tipo==="testimonio"){
+    if(/Extrav|Sustrac/.test(w.pedido?.motivo||"")) l.push({k:"denuncia",n:"Denuncia por extravío o robo",d:"La exposición policial o judicial"});
+    l.push({k:"nota",n:"Nota de solicitud con firma certificada ante escribano",d:"La genera el sistema en el paso 6. La imprimís, la firman ante escribano y la subís acá.",nota:true});
+  }
+  return l;
+}
+function itemsControl(t){
+  const l=docsDe(t.w).map(d=>({k:d.k,n:d.k==="nota"?"Nota con firma certificada":d.n}));
+  if(t.tipo==="testimonio") l.push({k:"obligaciones",n:"Obligaciones pendientes"});
+  if(!l.length) l.push({k:"parte",n:t.w.caracter==="escribano"?"Matrícula y registro vigentes":"Coincide con la parte del protocolo"});
+  return l;
+}
+function protocolo(t){ const n=parseInt(t.w.esc.n||"0",10)||7;
+  return {acto:["Compraventa","Donación","Adjudicación — Ley 9811","Cesión de derechos"][n%4], comprador:["Roberto Gómez","Ana Gómez","Luis Ferreyra","Marta Ríos"][n%4],
+    vendedor:["Inmobiliaria del Centro S.A.","Provincia de Córdoba","Héctor Ledesma","Juan Pérez"][n%4], matricula:(1204156+n).toLocaleString("es-AR"),
+    domicilio:"Deán Funes "+(1000+n%400), fojas:(n*7)%12+4, obligaciones:"No consta"}; }
+function tasaDe(t){ const T=TRAMITES[t.tipo], w=t.w;
+  if(T.sinCosto) return 0;
+  if(t.tipo==="copia") return (T.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte]||0)*protocolo(t).fojas*(+w.pedido.ejemplares||1);
+  return (T.precios[w.soporte]||0)*(+w.pedido.ejemplares||1); }
+const escTxt = w => w.esc.busqueda ? "a ubicar" : `N.º ${w.esc.n} · ${w.esc.protocolo?.startsWith("Sección B")?"B":"A"} · ${w.esc.anio}`;
+
+/* ==================================================================
+   ENCABEZADO
+   ================================================================== */
+function pantalla(){ const n={login:"Ingreso",mis:"Mis trámites",armador:"Armador de solicitud",det:"Trámite (requirente)",bandeja:"Bandeja de trámites",ficha:"Ficha del trámite",usuarios:"Usuarios y roles",problemas:"Problemas anotados"}[S.vista]||S.vista;
+  const u=yo(); return (u?(lado(u)==="egg"?"Escribanía · ":"Requirentes · "):"")+n+(S.vista==="armador"&&W?` · paso ${W.paso}`:"")+(S.vista==="ficha"?` · pestaña ${S.tabF}`:""); }
+function renderTop(){
+  const u=yo(), egg=lado(u)==="egg";
+  document.body.classList.toggle("egg", egg);
+  $("#modoTxt").textContent = Store.modo==="compartido"?"base compartida entre colegas"+(Store.fuente==="Firebase"?" (Firebase)":""):Store.modo==="local"?"datos guardados solo en este navegador":"conectando…";
+  const nb=(k,n,b)=>`<button type="button" data-go="${k}" ${S.vista===k||(k==="bandeja"&&S.vista==="ficha")||(k==="mis"&&["det","armador"].includes(S.vista))?'aria-current="true"':""}>${n}${b?`<span class="badge">${b}</span>`:""}</button>`;
+  if(!u){ $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">Ingreso de prueba</span></div><nav class="tabs">${nb("problemas","Problemas anotados")}</nav>`; return; }
+  const sinAsig=activos().filter(t=>t.etapa==="sin_asignar").length;
+  const misReq=S.tramites.filter(t=>t.solicitante===u.id&&(t.etapa==="falta_algo"||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo")).length;
+  $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">${egg?"Gestión interna · Escribanía":"Requirentes"}</span></div>
+    <nav class="tabs">${egg?nb("bandeja","Bandeja",esEsc()?sinAsig:0)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados")}</nav>
+    <div class="me"><div class="who">${esc(u.nombre)}<span>${esc(ROLES[u.rol].n)}</span></div><span class="av top">${esc(iniciales(u.nombre))}</span>
+    <button class="ghost" type="button" data-act="salir">Cambiar de usuario</button></div>`;
+}
+function ir(v,sel){ S.vista=v; if(sel!==undefined) S.sel=sel; S.conf=null; if(v!=="ficha") S.tabF="datos"; S.verDocs=false; render(); window.scrollTo({top:0}); }
+function render(){
+  if(!yo() && S.vista!=="problemas") S.vista="login";
+  renderTop();
+  ({login:vLogin,mis:vMis,armador:vArmador,det:vDetReq,bandeja:vBandeja,ficha:vFicha,usuarios:vUsuarios,problemas:vProblemas}[S.vista]||vLogin)();
+}
+
+/* ==================================================================
+   INGRESO SIMULADO
+   ================================================================== */
+function vLogin(){
+  const app=$("#app");
+  if(!S.listo.usuarios){ app.innerHTML=`<div class="empty">Conectando con la base…</div>`; return; }
+  if(!S.usuarios.length){
+    app.innerHTML=`<div class="card stack" style="max-width:640px;margin:0 auto"><h2 class="t">Todavía no hay usuarios de prueba</h2>
+      <p class="hint">Se crean cinco, los del recorrido: Ana Gómez (requirente), la Esc. Estela Bustos (escribana de registro), G. Suárez (escribano de la EGG) y A. Molina y L. Peralta (auxiliares). Todos entran con la clave <b>${CLAVE}</b>.</p>
+      <div><button class="btn pri" type="button" data-act="seed">Crear usuarios de prueba</button></div></div>`; return;
+  }
+  const lista=l=>S.usuarios.filter(u=>u.activo!==false&&ROLES[u.rol]?.lado===l).sort((a,b)=>a.rol.localeCompare(b.rol)||a.nombre.localeCompare(b.nombre)).map(u=>`
+    <button class="who-opt" type="button" data-act="loginSel" data-arg="${esc(u.id)}" aria-pressed="${S.loginSel===u.id}"><span class="av">${esc(iniciales(u.nombre))}</span>
+    <span><b>${esc(u.nombre)}</b><span>${esc(ROLES[u.rol].n)} · usuario <b style="display:inline">${esc(u.usuario)}</b></span></span></button>`).join("")||`<div class="empty">Sin usuarios activos.</div>`;
+  app.innerHTML=`<div class="stack"><div><h1 class="t">Ingresar</h1><p class="hint">Elegí con quién probar y escribí la clave (${CLAVE}). En el sistema real se entra con CiDi; acá es simulado. Para probar los dos lados, entrá con uno, hacé tu parte y usá «Cambiar de usuario».</p></div>
+    <div class="login"><section class="portal"><div class="ph r"><div class="k">Portal externo</div><div class="n">SIIGENO · Requirentes</div></div><div class="pb">${lista("req")}</div></section>
+      <section class="portal"><div class="ph e"><div class="k">Gestión interna</div><div class="n">SIIGENO · Escribanía</div></div><div class="pb">${lista("egg")}</div></section></div>
+    <form class="card" id="flogin" style="max-width:520px"><div class="g2">
+      <div class="field"><label class="f" for="lu">Usuario</label><input type="text" id="lu" autocomplete="username" value="${esc(usuario(S.loginSel)?.usuario||"")}"></div>
+      <div class="field"><label class="f" for="lc">Clave</label><input type="password" id="lc" autocomplete="current-password"></div></div>
+      ${S.loginErr?`<div class="box b-bad" style="margin-top:12px">${esc(S.loginErr)}</div>`:""}
+      <div class="row" style="margin-top:14px"><button class="btn pri" type="submit">Ingresar</button></div></form></div>`;
+  $("#flogin").onsubmit=e=>{ e.preventDefault();
+    const un=$("#lu").value.trim().toLowerCase(), u=S.usuarios.find(x=>(x.usuario||"").toLowerCase()===un);
+    S.loginErr = !u?"No existe ese usuario. Elegilo de la lista.":u.activo===false?"Ese usuario está dado de baja. Lo reactiva el escribano en Usuarios y roles.":(u.clave||CLAVE)!==$("#lc").value?`La clave no coincide. La de prueba es ${CLAVE}.`:"";
+    if(S.loginErr) return vLogin();
+    S.me=u.id; lsSet("simsig_me",u.id); ir(lado(u)==="egg"?"bandeja":"mis"); };
+}
+
+/* ==================================================================
+   REQUIRENTE — MIS TRÁMITES
+   ================================================================== */
+function chipReq(t){ const e=ETAPAS[t.etapa].req; if(t.etapa==="a_pagar"&&t.tasa?.pagada) return `<span class="chip c-info">Pago acreditado</span>`; return `<span class="chip ${e[1]}">${e[0]}</span>`; }
+function chipEgg(t){ const e=ETAPAS[t.etapa].egg; return `<span class="chip ${e[1]}">${e[0]}</span>`; }
+function queSigue(t){
+  switch(t.etapa){
+    case "borrador": return `<button class="link" type="button" data-act="seguir" data-arg="${t.id}">Seguí completando</button>`;
+    case "falta_algo": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Corregir y reenviar</button>`;
+    case "a_pagar": return t.tasa?.pagada?"Nada por ahora":`<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Pagar ${pesos(t.tasa?.monto)}</button>`;
+    case "listo": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">${t.w.soporte==="papel"?(t.turno?`Turno ${t.turno.fecha} ${t.turno.hora}`:"Sacar turno"):"Descargar"}</button>`;
+    case "entregado": return `Retirado el ${fFecha(t.entregado)}`;
+    case "no_corresponde": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Ver la resolución</button>`;
+    default: return "Nada por ahora";
+  }
+}
+function vMis(){
+  const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>(b.ingreso||b.creado)-(a.ingreso||a.creado));
+  $("#app").innerHTML=`<div class="stack">
+    <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer. Si no tenés que hacer nada, lo dice también.</p></div>
+      <button class="btn pri" type="button" data-act="nuevo">Nuevo trámite</button></div>
+    ${S.aviso?`<div class="box b-ok">✓ <b>Enviamos tu solicitud.</b> Número ${esc(S.aviso)}. Te avisamos acá cuando haya novedades.</div>`:""}
+    ${l.length?`<div class="tablewrap"><table><thead><tr><th>Trámite</th><th>Escritura</th><th>Estado</th><th>Qué sigue</th></tr></thead><tbody>
+      ${l.map(t=>`<tr class="click" data-act="${t.etapa==="borrador"?"seguir":"abrirReq"}" data-arg="${t.id}"><td><b>${esc(TRAMITES[t.tipo].n)}</b>${t.nro?`<div class="sub">Solicitud ${esc(t.nro)}</div>`:""}</td>
+        <td class="num">${t.w.esc?.n||t.w.esc?.busqueda?esc(escTxt(t.w)):"—"}</td><td>${chipReq(t)}</td><td>${queSigue(t)}</td></tr>`).join("")}
+      </tbody></table><div class="tfoot"><span>${l.length} trámite${l.length===1?"":"s"}</span><span>Simulador SIIGENO · EGG</span></div></div>`
+      :`<div class="card empty">Todavía no iniciaste ningún trámite. Con <b>Nuevo trámite</b> armás el primero.</div>`}</div>`;
+}
+
+/* ==================================================================
+   REQUIRENTE — ARMADOR DE SOLICITUD (6 pasos)
+   ================================================================== */
+const PASOS=["Qué necesitás","Carácter","Escritura","Datos del pedido","Documentación","Enviar"];
+function nuevoW(para){ return {paso:1, id:null, para:para||null, tipo:null, caracter:null, acred:{}, esc:{anio:"",n:"",protocolo:PROTOCOLOS[0],fecha:"",busqueda:""},
+  soporte:null, modo:null, pedido:{ejemplares:"1",motivo:"",para:"",denuncia:{fecha:"",lugar:"",nro:""},obligaciones:null,objeto:"",destino:""}, adj:{}, dj:false, tabC:"falta", enviando:false}; }
+const titular = () => W&&W.para ? usuario(W.para) : yo();
+function okPaso(n){
+  const w=W;
+  if(n===1) return !!w.tipo;
+  if(n===2) return !!w.caracter && (CARACTERES[w.caracter].campos||[]).every(c=>(w.acred[c[0]]||"").trim() && (c[0]!=="fecha"||fechaOk(w.acred.fecha)));
+  if(n===3) return (w.esc.busqueda.trim() || (w.esc.anio.length===4 && w.esc.n && fechaOk(w.esc.fecha))) && !!w.soporte && (w.tipo!=="copia"||!!w.modo);
+  if(n===4){ const p=w.pedido;
+    if(w.tipo==="testimonio") return !!p.motivo && +p.ejemplares>0 && p.para.trim() && p.obligaciones && (!/Extrav|Sustrac/.test(p.motivo) || (fechaOk(p.denuncia.fecha)&&p.denuncia.lugar.trim()&&p.denuncia.nro.trim()));
+    if(w.tipo==="copia") return !!p.objeto && +p.ejemplares>0 && (w.modo!=="cert"||!!p.destino);
+    return !!p.para.trim(); }
+  if(n===5) return docsDe(w).every(d=>w.adj[d.k]);
+  return false;
+}
+function costoW(){ const w=W, T=w.tipo&&TRAMITES[w.tipo]; if(!T) return null; if(T.sinCosto) return {txt:"Sin costo", det:"La consulta de antecedentes es gratuita, digital o presencial."};
+  if(w.tipo==="testimonio"){ if(!w.soporte) return null; const m=T.precios[w.soporte]*(+w.pedido.ejemplares||1);
+    return {monto:m, txt:pesos(m), det:`Segundo testimonio ${w.soporte==="papel"?"en papel":"digital firmado"}. Monto fijo por ejemplar. Se paga cuando la Escribanía dé el alta.`}; }
+  if(!w.modo||!w.soporte) return null; const u=T.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte];
+  return {txt:pesos(u)+" por hoja", det:`Copia ${w.modo==="cert"?"certificada":"simple"} ${w.soporte==="papel"?"en papel":"digital"}. La cantidad de hojas la sabe la Escribanía: el total lo calcula al dar el alta.`}; }
+
+function vArmador(){
+  if(!W) W=nuevoW();
+  const w=W, u=titular(), T=w.tipo&&TRAMITES[w.tipo], esEscr=u.rol==="escribano_ext";
+  const steps=PASOS.map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<w.paso?"done":i+1===w.paso?"cur":""}"><i>${i+1}</i>${p}</span>`).join("");
+  let body="";
+  if(w.paso===1){
+    body=`<span class="eyebrow acc">Paso 1 de 6</span><h2 class="t">¿Qué necesitás?</h2><p class="hint">Elegí el trámite. De esto depende todo lo que sigue.</p>
+      <div class="box b-info spread" style="margin-top:4px"><div><b>${W.para?"Datos del requirente":"Tus datos ya están cargados"}</b><div>${esc(u.nombre)} · ${esc(u.doc||"")} · ${esc(u.domicilio||"")}</div></div>
+        <span class="sub">${W.para?"Carga por mesa de entradas":"Vienen de CiDi. Si hay que corregirlos, es desde tu perfil."}</span></div>
+      <div class="opts">${Object.entries(TRAMITES).map(([k,x])=>`<button class="opt" type="button" data-act="w" data-arg="tipo" data-v="${k}" aria-pressed="${w.tipo===k}" ${x.soloEscribanos&&!esEscr?"disabled":""}><span><span class="ot">${x.n}</span><span class="od">${x.d}</span></span></button>`).join("")}</div>`;
+  } else if(w.paso===2){
+    const C=w.caracter&&CARACTERES[w.caracter];
+    body=`<span class="eyebrow acc">Paso 2 de 6</span><h2 class="t">¿En qué carácter lo pedís?</h2>
+      <p class="hint">${w.tipo==="testimonio"?"Para un segundo testimonio solo pueden pedirlo tres: la parte, sus herederos, o quien acredite interés legítimo.":w.tipo==="antecedentes"?"La consulta está reservada a escribanos en ejercicio.":"Según lo que elijas cambia la documentación que hay que acreditar."}</p>
+      <div class="opts">${T.caracteres.map(c=>`<button class="opt" type="button" data-act="w" data-arg="caracter" data-v="${c}" aria-pressed="${w.caracter===c}"><span><span class="ot">${CARACTERES[c].t}</span><span class="od">${CARACTERES[c].d}</span></span></button>`).join("")}</div>
+      ${C&&C.campos.length?`<div class="dash"><div class="eyebrow" style="color:var(--warn);margin-bottom:10px">${esc(C.titulo)}</div><div class="g3">${C.campos.map(c=>`<div class="field"><label class="f" for="ac_${c[0]}">${esc(c[1])}</label>
+        <input type="text" id="ac_${c[0]}" data-w="acred.${c[0]}" ${c[0]==="fecha"?'data-mask="fecha" inputmode="numeric"':""} placeholder="${esc(c[2])}" value="${esc(w.acred[c[0]]||"")}"></div>`).join("")}</div>
+        ${C.aviso&&w.tipo==="testimonio"?`<p class="legend" style="color:var(--warn)">${esc(C.aviso)}</p>`:""}</div>`:""}`;
+  } else if(w.paso===3){
+    const sop = w.tipo==="testimonio" ? [["papel","Papel",`Se retira con turno. ${pesos(T.precios.papel)}`],["digital","Digital firmado",`Se descarga del portal. ${pesos(T.precios.digital)}`]]
+      : w.tipo==="copia" ? [["papel","Papel","Se retira con turno"],["digital","Digital","Se descarga del portal"]]
+      : [["digital","Digital","Visualización en línea por 3 horas, con marca de agua"],["papel","Presencial","En la Escribanía, con turno"]];
+    body=`<span class="eyebrow acc">Paso 3 de 6</span><h2 class="t">¿Sobre qué escritura?</h2><p class="hint">Los datos están en el testimonio que tenías. Si no los tenés, usá la búsqueda.</p>
+      ${w.esc.busqueda!==null&&w.esc.modoBusqueda?`<div class="field"><label class="f" for="eb">Contá lo que sabés: partes, fecha aproximada, inmueble</label><textarea id="eb" data-w="esc.busqueda" placeholder="Ej.: compró mi papá, Roberto Gómez, una casa en Deán Funes 1180 alrededor de 2011">${esc(w.esc.busqueda)}</textarea>
+        <p class="legend">La Escribanía la ubica con esto. La búsqueda demora más. <button class="link" type="button" data-act="busqueda" data-arg="0">Tengo el número</button></p></div>`
+      :`<div class="g4"><div class="field"><label class="f" for="eanio">Año</label><input type="text" id="eanio" data-w="esc.anio" data-mask="num4" inputmode="numeric" value="${esc(w.esc.anio)}"></div>
+        <div class="field"><label class="f" for="enro">Número de escritura</label><input type="text" id="enro" data-w="esc.n" data-mask="num" inputmode="numeric" value="${esc(w.esc.n)}"></div>
+        <div class="field"><label class="f" for="eprot">Protocolo</label><select id="eprot" data-w="esc.protocolo">${PROTOCOLOS.map(p=>`<option ${w.esc.protocolo===p?"selected":""}>${p}</option>`).join("")}</select></div>
+        <div class="field"><label class="f" for="efecha">Fecha</label><input type="text" id="efecha" data-w="esc.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(w.esc.fecha)}"></div></div>
+        <div class="box b-mute spread"><span>¿No sabés el número de tu escritura?</span><button class="link" type="button" data-act="busqueda" data-arg="1">Buscarla con lo que tengo</button></div>`}
+      ${w.tipo==="copia"?`<div><label class="f">Tipo de copia</label><div class="opts two">${[["simple","Simple","Para archivo o consulta"],["cert","Certificada","Con firma y sello. Para presentar ante un organismo"]].map(o=>`<button class="opt" type="button" data-act="w" data-arg="modo" data-v="${o[0]}" aria-pressed="${w.modo===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>`:""}
+      <div><label class="f">Soporte</label><div class="opts two">${sop.map(o=>`<button class="opt" type="button" data-act="w" data-arg="soporte" data-v="${o[0]}" aria-pressed="${w.soporte===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>
+      ${w.tipo!=="antecedentes"?`<div class="box b-info">No te pedimos cuántas hojas tiene: eso lo sabe la Escribanía.${w.tipo==="testimonio"?" Para el testimonio el monto es fijo igual.":""}</div>`:""}`;
+  } else if(w.paso===4){
+    const p=w.pedido;
+    if(w.tipo==="testimonio") body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Lo que va en la nota de solicitud. Se completa solo con esto.</p>
+      <div class="g2" style="grid-template-columns:3fr 1fr"><div class="field"><label class="f" for="pmot">Motivo</label><select id="pmot" data-w="pedido.motivo" data-redraw="1"><option value="">Elegí</option>${MOTIVOS.map(m=>`<option ${p.motivo===m?"selected":""}>${m}</option>`).join("")}</select></div>
+        <div class="field"><label class="f" for="pej">Ejemplares</label><input type="text" id="pej" data-w="pedido.ejemplares" data-mask="num" inputmode="numeric" value="${esc(p.ejemplares)}"></div></div>
+      <div class="field"><label class="f" for="ppara">Para qué lo necesitás</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Sucesión en trámite. Lo pide el juzgado para inscribir la transferencia." value="${esc(p.para)}"><p class="legend">Lo lee una persona de la Escribanía.</p></div>
+      ${/Extrav|Sustrac/.test(p.motivo)?`<div class="card" style="background:var(--surface-2)"><div class="eyebrow" style="margin-bottom:10px">Denuncia por ${/Sustrac/.test(p.motivo)?"robo":"extravío"}</div><div class="g3" style="grid-template-columns:1fr 2fr 1fr">
+        <div class="field"><label class="f" for="pdf">Fecha</label><input type="text" id="pdf" data-w="pedido.denuncia.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(p.denuncia.fecha)}"></div>
+        <div class="field"><label class="f" for="pdl">Comisaría o unidad judicial</label><input type="text" id="pdl" data-w="pedido.denuncia.lugar" placeholder="Unidad Judicial 7 — Córdoba" value="${esc(p.denuncia.lugar)}"></div>
+        <div class="field"><label class="f" for="pdn">N.º de exposición</label><input type="text" id="pdn" data-w="pedido.denuncia.nro" placeholder="4471/26" value="${esc(p.denuncia.nro)}"></div></div></div>`:""}
+      <div><label class="f">¿La escritura tiene obligaciones pendientes de dar o hacer a cargo de otra parte?</label><div class="opts two">
+        <button class="opt" type="button" data-act="w" data-arg="pedido.obligaciones" data-v="no" aria-pressed="${p.obligaciones==="no"}"><span><span class="ot">No</span><span class="od">El precio se pagó íntegro en el acto.</span></span></button>
+        <button class="opt" type="button" data-act="w" data-arg="pedido.obligaciones" data-v="si" aria-pressed="${p.obligaciones==="si"}"><span><span class="ot">Sí</span><span class="od">Vas a necesitar conformidad del acreedor o autorización judicial.</span></span></button></div></div>`;
+    else if(w.tipo==="copia") body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Lo que va en la nota de solicitud.</p>
+      <div class="g2" style="grid-template-columns:3fr 1fr"><div class="field"><label class="f" for="pobj">Para qué la necesitás</label><select id="pobj" data-w="pedido.objeto"><option value="">Elegí</option>${OBJETOS.map(o=>`<option ${p.objeto===o?"selected":""}>${o}</option>`).join("")}</select></div>
+        <div class="field"><label class="f" for="pej">Ejemplares</label><input type="text" id="pej" data-w="pedido.ejemplares" data-mask="num" inputmode="numeric" value="${esc(p.ejemplares)}"></div></div>
+      ${w.modo==="cert"?`<div class="field"><label class="f" for="pdst">Dónde la vas a presentar</label><select id="pdst" data-w="pedido.destino"><option value="">Elegí</option>${DESTINOS.map(o=>`<option ${p.destino===o?"selected":""}>${o}</option>`).join("")}</select></div>`:""}`;
+    else body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Para qué hacés el estudio de títulos.</p>
+      <div class="field"><label class="f" for="ppara">Motivo de la consulta</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Estudio de títulos para una compraventa en trámite" value="${esc(p.para)}"></div>`;
+  } else if(w.paso===5){
+    const ds=docsDe(w);
+    body=`<span class="eyebrow acc">Paso 5 de 6</span><h2 class="t">Adjuntá la documentación</h2><p class="hint">Solo lo que corresponde a tu caso. Sin todo esto la solicitud no se puede enviar. Si no tenés el archivo a mano, usá «PDF de ejemplo».</p>
+      ${ds.length?ds.map(d=>filaAdj(d,w.adj[d.k],"w")).join(""):`<div class="box b-ok">No tenés que adjuntar nada: tu ingreso ya te acredita.</div>`}
+      ${ds.some(d=>d.nota)&&!w.adj.nota?`<div class="box b-warn">La nota la genera el sistema en el paso siguiente (Descargar la nota para firmar). Después la imprimís, la firman ante un escribano y la subís acá.</div>`:""}`;
+  } else {
+    const c=costoW(), ds=docsDe(w), n=ds.filter(d=>w.adj[d.k]).length, falta=[1,2,3,4,5].filter(i=>!okPaso(i));
+    body=`<span class="eyebrow acc">Paso 6 de 6</span><h2 class="t">Revisá y enviá</h2><p class="hint">Esto es lo que va a recibir la Escribanía. Después de enviar, lo seguís desde Mis trámites.</p>
+      <div class="tiles"><div class="tile"><div class="l">Trámite</div><div class="v">${esc(T.n)} · ${w.soporte==="papel"?"papel":"digital"}</div></div>
+        <div class="tile"><div class="l">Carácter</div><div class="v">${esc(CARACTERES[w.caracter].corto)}</div></div>
+        <div class="tile"><div class="l">Escritura</div><div class="v">${w.esc.busqueda?"A ubicar por la Escribanía":`N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])} · ${esc(w.esc.fecha)}`}</div></div>
+        <div class="tile"><div class="l">${w.tipo==="copia"?"Objeto":"Motivo"}</div><div class="v">${esc(w.tipo==="copia"?w.pedido.objeto:w.tipo==="testimonio"?w.pedido.motivo.split(" ")[0]+(w.pedido.denuncia.nro?" · denuncia "+w.pedido.denuncia.nro:""):w.pedido.para)}</div></div>
+        <div class="tile"><div class="l">Adjuntos</div><div class="v">${ds.length?`${n} de ${ds.length}`:"No hace falta"}</div></div>
+        <div class="tile"><div class="l">Costo</div><div class="v">${esc(c?.txt||"—")}${c?.monto?" · se paga al dar el alta":""}</div></div></div>
+      ${falta.length?`<div class="box b-warn">Falta completar: ${falta.map(i=>`<button class="link" type="button" data-act="paso" data-arg="${i}">paso ${i} (${PASOS[i-1]})</button>`).join(", ")}.</div>`:""}
+      <label class="box b-mute row" style="cursor:pointer"><input type="checkbox" id="dj" ${w.dj?"checked":""}> <span>Declaro que los datos y documentos son verdaderos${w.caracter==="sucesor_u"?" y que soy heredera declarada de la parte interviniente":""}.</span></label>
+      <div class="box b-info">Después de enviar no podés editarlo. Si falta algo, la Escribanía te lo observa y vuelve a tu bandeja para corregir.</div>`;
+  }
+  const navBtns = w.paso<6
+    ? `<button class="btn pri" type="button" data-act="cont" ${w.paso<5&&!okPaso(w.paso)?"disabled":""}>Continuar</button>${w.paso===5&&!W.para?`<button class="btn" type="button" data-act="guardarW">Guardar y seguir después</button>`:""}${w.paso>1?`<button class="btn" type="button" data-act="volverW">Volver</button>`:""}`
+    : `<button class="btn hot" type="button" data-act="enviar" ${[1,2,3,4,5].every(okPaso)&&w.dj&&!w.enviando?"":"disabled"}>Enviar a la Escribanía</button>
+       ${w.tipo==="testimonio"?`<button class="btn" type="button" data-act="notaFirmar">Descargar la nota para firmar</button>`:""}<button class="btn" type="button" data-act="volverW">Volver</button>`;
+  $("#app").innerHTML=`<div class="stack"><div class="steps">${steps}</div>
+    <div class="cols"><div class="card stack">${body}<div class="acts" style="margin-top:8px">${navBtns}</div></div>
+    <aside class="card stack" id="carpeta"></aside></div></div>`;
+  carpeta();
+}
+function filaAdj(d,arch,ctx){ return `<div class="docrow ${arch?"":"pend"}"><span class="ico ${arch?"ok":"pend"}" style="${arch?"":"background:transparent;border:2px solid var(--req-acc)"}">${arch?"✓":""}</span>
+  <div class="dn"><b>${esc(d.n)}</b><span>${arch?`Adjuntado · ${esc(arch.nombre)}`:"Falta"}${d.d&&!arch?" · "+esc(d.d):""}</span></div>
+  <div class="row">${arch?`<button class="btn sm" type="button" data-ver="${esc(arch.ref)}" data-nom="${esc(arch.nombre)}">Ver</button>`:""}
+  <label class="btn sm" for="fa_${ctx}_${d.k}">${arch?"Cambiar":"Adjuntar"}</label><input type="file" id="fa_${ctx}_${d.k}" data-adj="${ctx}" data-k="${d.k}" accept="application/pdf,image/*" hidden>
+  <button class="btn sm" type="button" data-act="ejemplo" data-arg="${ctx}" data-k="${d.k}" data-n="${esc(d.n)}">PDF de ejemplo</button></div></div>`; }
+function carpeta(){
+  const box=$("#carpeta"); if(!box||!W) return; const w=W, T=w.tipo&&TRAMITES[w.tipo], ds=docsDe(w), n=ds.filter(d=>w.adj[d.k]).length;
+  const it=(ok,txt)=>`<li class="${ok?"":"p"}"><span class="ico ${ok?"ok":""}">${ok?"✓":""}</span>${esc(txt)}</li>`;
+  const nota=ds.find(d=>d.nota);
+  const items=[it(okPaso(1),"Trámite elegido"), it(okPaso(2),okPaso(2)?"Carácter: "+CARACTERES[w.caracter].corto.toLowerCase():"Elegir el carácter"),
+    it(okPaso(3),okPaso(3)?(w.esc.busqueda?"Escritura: a ubicar":`Escritura ${w.esc.n} · ${w.esc.protocolo.startsWith("Sección B")?"B":"A"} · ${w.esc.anio}`):"Identificar la escritura"),
+    it(okPaso(4),"Datos del pedido"),
+    ...(nota? [it(ds.filter(d=>!d.nota).every(d=>w.adj[d.k]), ds.length>1?`${n-(w.adj.nota?1:0)} de ${ds.length-1} adjuntos`:"Sin adjuntos del carácter"), it(!!w.adj.nota,"Nota de solicitud con firma certificada")]
+       : [it(okPaso(5), ds.length?`Adjuntar documentación (${n} de ${ds.length})`:"Documentación: no hace falta")])];
+  const c=costoW();
+  const tabs=[["falta","Qué falta"],["costo","Cuánto sale"],["form","Tu formulario"]];
+  box.innerHTML=`<div><div class="eyebrow">Carpeta del trámite</div><h3 class="t" style="margin-top:4px">${T?esc(T.n):"Todavía sin trámite"}</h3></div>
+    <div class="tabsline" role="tablist">${tabs.map(x=>`<button type="button" role="tab" data-act="tabC" data-arg="${x[0]}" aria-selected="${w.tabC===x[0]}">${x[1]}</button>`).join("")}</div>
+    ${w.tabC==="falta"?`<ul class="miss">${items.join("")}</ul>`
+     :w.tabC==="costo"?(c?`<div style="font-family:var(--serif);font-size:30px;font-weight:600">${esc(c.txt)}</div><p class="hint">${esc(c.det)}</p>`:`<p class="hint">El costo aparece cuando elijas el trámite y el soporte.</p>`)
+     :`<div class="box b-mute" style="font-size:12.5px"><div class="eyebrow" style="text-align:center;margin-bottom:8px;color:var(--link)">${T?esc(T.form):"Solicitud"}</div>${esc(textoNota(w))}</div><p class="hint">Se completa solo con lo que cargaste.</p>`}`;
+}
+function textoNota(w,u){ u=u||(w.para?usuario(w.para):yo()); if(!w.tipo) return "Elegí el trámite para ver la nota.";
+  const T=TRAMITES[w.tipo], C=w.caracter&&CARACTERES[w.caracter];
+  return `Sra. Escribana General de Gobierno: ${u.nombre}${u.doc?`, ${u.doc}`:""}, con domicilio en ${u.domicilio||"—"}, en carácter de ${C?C.corto.toLowerCase():"—"}${w.acred.autos?` (autos «${w.acred.autos}»)`:""}, solicita ${T.n.toLowerCase()}${w.soporte?` en soporte ${w.soporte==="papel"?"papel":"digital"}`:""} de la escritura ${w.esc.busqueda?"que se describe: "+w.esc.busqueda:`N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} (${w.esc.protocolo})`}${w.pedido.motivo?`. Motivo: ${w.pedido.motivo.toLowerCase()}`:""}${w.pedido.denuncia.nro?`, denuncia N.º ${w.pedido.denuncia.nro} ante ${w.pedido.denuncia.lugar} del ${w.pedido.denuncia.fecha}`:""}${w.pedido.para?`. Destino: ${w.pedido.para}`:w.pedido.objeto?`. Objeto: ${w.pedido.objeto.toLowerCase()}`:""}.`; }
+
+async function enviarW(){
+  const w=W; if(w.enviando) return; w.enviando=true; vArmador();
+  const u=titular(), quien=yo(), ahora=Date.now(), ds=docsDe(w);
+  const max=S.tramites.map(t=>parseInt(t.nro,10)||0).reduce((a,b)=>Math.max(a,b),4900), nro=String(max+1).padStart(5,"0");
+  const ordenes=[], ad=ds.filter(d=>!d.nota).map(d=>({...w.adj[d.k],n:d.n}));
+  ordenes.push(w.adj.nota? {n:1,t:ahora,nombre:"Nota de solicitud",origen:"req",por:u.nombre,archivos:[{...w.adj.nota,n:"Nota firmada"}]}
+                         : {n:1,t:ahora,nombre:"Nota de solicitud",origen:"req",por:u.nombre,gen:{titulo:TRAMITES[w.tipo].form,lineas:[textoNota(w,u)]}});
+  if(ad.length) ordenes.push({n:2,t:ahora,nombre:`Documentación del carácter${ad.length>1?` (${ad.length} archivos)`:""}`,origen:"req",por:u.nombre,archivos:ad});
+  ordenes.push({n:ordenes.length+1,t:ahora,nombre:"Constancia de inicio",origen:"auto",por:"SIIGENO",gen:{titulo:"Constancia de inicio — Solicitud "+nro,lineas:[`Trámite: ${TRAMITES[w.tipo].n}`,`Requirente: ${u.nombre} (${u.doc||""})`,`Ingreso: ${fFecha(ahora)} ${fHora(ahora)}`]}});
+  const hist=[{t:ahora,nombre:W.para?quien.nombre:u.nombre,accion:W.para?"Cargado por mesa de entradas":"Enviado desde el portal"}];
+  const wSave=clon({...w,enviando:false,paso:1,dj:false});
+  const doc={nro, tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", origen:W.para?"mesa":"portal", w:wSave, adj:clon(w.adj),
+    etapa:"sin_asignar", responsable:null, control:{}, tasa:null, turno:null, ordenes, historial:hist, notas:[], creado:w.creado||ahora, ingreso:ahora, actualizado:ahora};
+  const id=w.id||nuevoId("t");
+  try{ await Store.set("tramites",id,doc); W=null;
+    if(lado(quien)==="egg"){ toast("Trámite "+nro+" cargado"); ir("ficha",id); } else { S.aviso=nro; ir("mis"); } }
+  catch(e){ w.enviando=false; vArmador(); toast("No se pudo enviar: "+(e.message||e.code||"error")); }
+}
+async function guardarBorrador(){
+  const w=W, u=yo(), ahora=Date.now(), id=w.id||nuevoId("t");
+  const doc={nro:"", tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", w:clon({...w,enviando:false}), adj:clon(w.adj),
+    etapa:"borrador", ordenes:[], historial:[], notas:[], creado:w.creado||ahora, actualizado:ahora};
+  try{ await Store.set("tramites",id,doc); W=null; toast("Guardado. Lo seguís desde Mis trámites."); ir("mis"); }catch(e){ toast("No se pudo guardar."); }
+}
+
+/* ==================================================================
+   REQUIRENTE — DETALLE (lo que Ana ve en cada etapa)
+   ================================================================== */
+function vDetReq(){
+  const t=tramite(S.sel), u=yo(), app=$("#app");
+  if(!t||t.solicitante!==u.id){ app.innerHTML=`<div class="card empty">Ese trámite no es tuyo o ya no existe. <button class="link" type="button" data-go="mis">Volver</button></div>`; return; }
+  const T=TRAMITES[t.tipo], w=t.w, pagada=t.tasa?.pagada;
+  const flag=Object.entries(t.control||{}).filter(([k,v])=>t.etapa==="falta_algo"&&v.e&&v.e!=="ok").map(([k])=>k);
+  let cur=5;
+  if(t.etapa==="falta_algo") cur=2; else if(t.etapa==="a_pagar"&&!pagada) cur=3; else if(t.etapa==="no_corresponde") cur=2.5;
+  const track=["Escritura","Carácter","Costo","Envío"].map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<cur?"done":i+1===cur?"cur":""}"><i>${i+1}</i>${p}</span>`).join("");
+  const presento=(t.ordenes||[]).filter(o=>o.origen==="req").flatMap(o=>o.archivos?o.archivos.map(a=>({n:a.n||o.nombre,ref:a.ref,nom:a.nombre})):[{n:o.nombre,gen:o}]);
+  const chips=`<div><div class="eyebrow" style="margin-bottom:8px">Lo que presentaste</div><div class="pills">${presento.map(p=>p.ref?`<button type="button" data-ver="${esc(p.ref)}" data-nom="${esc(p.nom)}">${esc(p.n)}</button>`:`<button type="button" data-act="verOrden" data-arg="${t.id}" data-n="${p.gen.n}">${esc(p.n)}</button>`).join("")}</div></div>`;
+  let main="", btns="";
+  const items=itemsControl(t);
+  switch(t.etapa){
+    case "sin_asignar": case "asignado": case "en_revision":
+      main=`<div class="big b-info"><h3>No tenés que hacer nada</h3>Lo recibimos el ${fCorta(t.ingreso)} a las ${fHora(t.ingreso)}. Te vamos a avisar acá cuando haya novedades.</div>${chips}`; btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`; break;
+    case "falta_algo": {
+      const okL=items.filter(i=>!flag.includes(i.k)&&t.control?.[i.k]?.e==="ok").map(i=>i.n);
+      main=`<div class="big b-warn"><h3>Falta algo</h3>${esc(t.obs||"")}</div>
+        ${okL.length?`<div class="card"><div class="eyebrow" style="margin-bottom:6px">Lo que sí está bien</div>${esc(okL.join(", "))}. Eso no lo tenés que volver a subir.</div>`:""}
+        ${S.conf==="corregir"?`<div class="card stack"><h3 class="t">Corregí lo observado</h3>${flag.filter(k=>docsDe(w).some(d=>d.k===k)).map(k=>{ const d=docsDe(w).find(x=>x.k===k); return filaAdj(d, (t.corr||{})[k], "c"); }).join("")||`<p class="hint">Lo observado no es un archivo. Contá qué hiciste y reenviá.</p>`}
+          <div class="field"><label class="f" for="corrNota">Comentario para la Escribanía (opcional)</label><textarea id="corrNota"></textarea></div>
+          ${w.tipo==="testimonio"&&flag.includes("nota")?`<button class="link" type="button" data-act="notaFirmarT" data-arg="${t.id}">Descargar la nota para firmar</button>`:""}</div>`:""}`;
+      const pend=flag.filter(k=>docsDe(w).some(d=>d.k===k)&&!(t.corr||{})[k]);
+      btns = S.conf==="corregir" ? `<button class="btn hot" type="button" data-act="reenviar" ${pend.length?"disabled":""}>Reenviar a la Escribanía</button><button class="btn" type="button" data-act="cancel">Cancelar</button>`
+        : `<button class="btn hot" type="button" data-act="corregir">Corregir y reenviar</button><button class="btn" type="button" data-act="verDocs">Ver qué mandé</button>`; break; }
+    case "a_pagar":
+      if(pagada){ main=`<div class="big b-info"><h3>Pago acreditado</h3>No tenés que hacer nada. La Escribanía empieza a prepararlo.</div>${chips}`; btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`; }
+      else { main=`<div class="big b-orange"><h3>Tenés que pagar la tasa</h3>Ya está todo controlado. Pagá y el trámite entra a trabajarse.</div>
+        <div class="card spread" style="align-items:center"><div><b>${esc(T.n)}${t.tipo==="testimonio"?(w.soporte==="papel"?" en papel":" digital"):""}</b><div class="sub">${t.tipo==="testimonio"?"Monto fijo: no depende de cuántas fojas tenga la escritura":`${protocolo(t).fojas} hojas según el protocolo`}</div></div><div style="font-family:var(--serif);font-size:28px;font-weight:600">${pesos(t.tasa?.monto)}</div></div>
+        ${S.conf==="pagar"?`<div class="box b-mute row">Pago simulado: no se cobra nada. <button class="btn go sm" type="button" data-act="pagarOk">Confirmar pago de ${pesos(t.tasa?.monto)}</button><button class="btn sm" type="button" data-act="cancel">Cancelar</button></div>`:""}`;
+        btns=`<button class="btn hot" type="button" data-act="pagar">Pagar ahora</button><button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Boleta">Descargar la boleta</button>`; }
+      break;
+    case "en_preparacion":
+      main=`<div class="big b-mute"><h3>Lo estamos haciendo</h3>No tenés que hacer nada.${T.reinscribe?" Este trámite se vuelve a inscribir en el Registro General de la Provincia, así que la demora depende de ellos y no podemos darte fecha exacta.":""}</div>${chips}`;
+      btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`; break;
+    case "listo":
+      if(w.soporte==="papel"){
+        main=`<div class="big b-ok"><h3>Está listo para retirar</h3>Es un documento en papel, así que lo tenés que venir a buscar a Rosario de Santa Fe 650, primer piso. ${t.turno?`<b>Tu turno: ${esc(t.turno.fecha)} a las ${esc(t.turno.hora)}.</b>`:"Elegí día y hora."}</div>
+          <div class="card"><div class="eyebrow" style="margin-bottom:6px">Puede retirarlo otra persona</div>Si no podés venir vos, quien venga tiene que traer autorización tuya con firma certificada.</div>
+          ${S.conf==="turno"?`<div class="card stack"><h3 class="t">Sacar turno</h3><div class="g2"><div class="field"><label class="f" for="tf">Día</label><input type="text" id="tf" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa"></div>
+            <div class="field"><label class="f" for="th">Hora</label><select id="th">${["08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30"].map(h=>`<option>${h}</option>`).join("")}</select></div></div>
+            <div class="acts"><button class="btn go" type="button" data-act="turnoOk">Confirmar turno</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`:""}`;
+        btns=`<button class="btn go" type="button" data-act="turno">${t.turno?"Cambiar el turno":"Sacar turno"}</button><button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`;
+      } else {
+        main=`<div class="big b-ok"><h3>Está listo</h3>Es digital: lo descargás desde acá. Al descargarlo, el trámite queda cerrado.</div>`;
+        btns=`<button class="btn go" type="button" data-act="descargarFinal">Descargar ${esc(T.producto.toLowerCase())}</button><button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`;
+      } break;
+    case "entregado":
+      main=`<div class="big b-mute"><h3>${w.soporte==="papel"?"Lo retiraste":"Lo descargaste"} el ${fCorta(t.entregado)} a las ${fHora(t.entregado)}</h3>El trámite está cerrado. Vas a poder seguir viendo siempre lo que presentaste y lo que se te entregó.</div>${chips}`;
+      btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button><button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Constancia de entrega">Descargar la constancia</button>`; break;
+    case "no_corresponde":
+      main=`<div class="big b-bad"><h3>No pudimos darle curso</h3>${esc(t.resolucion||"")}</div>
+        <div class="card" style="border-color:var(--bad-bg)"><div class="eyebrow" style="color:var(--bad);margin-bottom:6px">Por qué</div>${esc(t.porque||"La documentación no acredita el carácter invocado.")} Si conseguís la documentación, podés iniciarlo de nuevo sin volver a pagar.</div>`;
+      btns=`<button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Resolución">Ver la resolución</button><button class="btn hot" type="button" data-act="reiniciar">Iniciar de nuevo</button>`; break;
+  }
+  const docs=S.verDocs?`<div class="card stack"><h3 class="t">Mis documentos</h3>${hojaRuta(t,false)}</div>`:"";
+  app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="mis">Mis trámites</button></div>
+    <div class="row"><h1 class="t">${esc(T.n)}</h1>${chipReq(t)}</div><div class="sub" style="margin-top:-8px">Escritura ${esc(escTxt(w))} — solicitud ${esc(t.nro)}</div>
+    <div class="steps">${track}</div>${main}<div class="acts">${btns}</div>${docs}</div>`;
+}
+
+/* ==================================================================
+   ESCRIBANÍA — BANDEJA
+   ================================================================== */
+function tasaCol(t){
+  if(TRAMITES[t.tipo].sinCosto) return `<span class="tag c-mute">Sin costo</span><div class="sub">solo escribanos</div>`;
+  if(!t.tasa) return `<span class="tag c-mute">Sin tasar</span><div class="sub">falta el alta</div>`;
+  return t.tasa.pagada?`<span class="tag c-ok">Paga</span><div class="sub">${pesos(t.tasa.monto)}</div>`:`<span class="tag c-orange">A pagar</span><div class="sub">${pesos(t.tasa.monto)}</div>`;
+}
+const nArchivos = t => (t.ordenes||[]).length;
+function vBandeja(){
+  const u=yo(), ext=activos().sort((a,b)=>b.ingreso-a.ingreso), mios=ext.filter(t=>t.responsable===u.id);
+  const l=S.tabB==="mios"?mios:ext;
+  const nuevo=ext.find(t=>t.etapa==="sin_asignar");
+  $("#app").innerHTML=`<div class="stack">
+    <div class="spread"><h1 class="t">Bandeja de trámites</h1><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
+    ${S.conf==="mesa"?`<div class="card row"><label class="f" for="mesaReq" style="margin:0">¿Para qué requirente?</label><select id="mesaReq" style="max-width:320px">${S.usuarios.filter(x=>lado(x)==="req"&&x.activo!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.nombre)} · ${esc(x.doc||"")}</option>`).join("")}</select>
+      <button class="btn pri" type="button" data-act="mesaOk">Empezar la carga</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div>`:""}
+    <div class="tabsline" role="tablist"><button type="button" role="tab" disabled title="No se simula en esta prueba">Internos · reparticiones y expediente<span class="n">0</span></button>
+      <button type="button" role="tab" data-act="tabB" data-arg="ext" aria-selected="${S.tabB==="ext"}">Externos · ciudadanos y escribanos<span class="n">${ext.length}</span></button>
+      <button type="button" role="tab" data-act="tabB" data-arg="mios" aria-selected="${S.tabB==="mios"}">Míos<span class="n">${mios.length}</span></button></div>
+    ${nuevo&&S.tabB==="ext"?`<div class="box b-warn spread" style="align-items:center"><span><b>Llegó un trámite nuevo ${hace(nuevo.ingreso)} y nadie lo tiene.</b> ${nuevo.w.caracter==="parte"?"Es la parte: va por el carril directo.":"Como el carácter no es «parte», no fue por el carril directo: hay que controlarlo."}</span>
+      <span class="row">${esEsc()?`<button class="btn" type="button" data-act="abrirAsignar" data-arg="${nuevo.id}">Asignar</button>`:""}<button class="btn pri" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Abrir</button></span></div>`:""}
+    ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Carácter</th><th>Ingreso</th><th>Tasa</th><th>Estado</th><th>A cargo</th><th>Archivos</th></tr></thead><tbody>
+      ${l.map(t=>`<tr class="click ${t===nuevo&&S.tabB==="ext"?"nuevo":""}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
+        <td><b>${esc(TRAMITES[t.tipo].n.replace("Copia de escritura","Copia "+(t.w.modo==="cert"?"certificada":"simple")+(t.w.soporte==="digital"?" digital":"")))}</b><div class="sub">Esc. ${esc(escTxt(t.w).replace("N.º ",""))}</div></td>
+        <td><b>${esc(t.solicitanteNombre)}</b><div class="sub">${esc(t.solicitanteDoc)}</div></td><td>${esc(CARACTERES[t.w.caracter].corto)}</td>
+        <td class="num">${fFecha(t.ingreso)}<div class="sub">${fHora(t.ingreso)}</div></td><td>${tasaCol(t)}</td><td>${chipEgg(t)}</td>
+        <td>${t.responsable?esc(nombreDe(t.responsable)):`<span style="color:var(--bad)">—</span>`}</td>
+        <td><button class="btn sm" type="button" data-act="abrirDocs" data-arg="${t.id}">📄 ${nArchivos(t)}</button></td></tr>`).join("")}
+      </tbody></table><div class="tfoot"><span>Mostrando ${l.length} · se abre la fila y se trabaja desde la ficha</span><span>Simulador SIIGENO · EGG</span></div></div>`
+      :`<div class="card empty">${S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como Ana Gómez (Cambiar de usuario) y enviá uno."}</div>`}
+    ${esEsc()&&S.tramites.length?`<div class="card spread"><div><h3 class="t">Empezar la prueba de cero</h3><p class="hint">Borra todos los trámites. Los usuarios y los problemas anotados quedan.</p></div>
+      ${S.conf==="reset"?`<span class="row"><span class="box b-bad">¿Borrar ${S.tramites.length} trámites?</span><button class="btn sm" type="button" data-act="resetOk">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
+        :`<button class="btn" type="button" data-act="reset">Borrar trámites de prueba</button>`}</div>`:""}
+  </div>`;
+}
+
+/* ==================================================================
+   ESCRIBANÍA — FICHA DEL TRÁMITE
+   ================================================================== */
+function puede(t,a){
+  const u=yo(); if(!u||lado(u)!=="egg") return false;
+  const e=esEsc(), mio=t.responsable===u.id, trabaja=e||mio, et=t.etapa, cerrado=CERRADOS.includes(et);
+  switch(a){
+    case "asignar": return e && !cerrado;
+    case "tomarYo": return e && et==="sin_asignar";
+    case "tomar": return mio && et==="asignado";
+    case "controlar": return trabaja && et==="en_revision";
+    case "observar": return trabaja && et==="en_revision";
+    case "alta": return trabaja && et==="en_revision";
+    case "noCorresponde": return e && ["sin_asignar","asignado","en_revision","falta_algo"].includes(et);
+    case "reenviarAviso": return trabaja && et==="falta_algo";
+    case "empezar": return trabaja && et==="a_pagar";
+    case "producto": return trabaja && et==="en_preparacion";
+    case "listo": return trabaja && et==="en_preparacion";
+    case "entrega": return trabaja && et==="listo" && t.w.soporte==="papel";
+    case "reabrir": return e && et==="no_corresponde";
+    case "nota": return true;
+  }
+  return false;
+}
+async function mover(id, accion, etapa, extra={}, opts={}){
+  const t=tramite(id), u=yo(), ahora=Date.now();
+  const patch={...extra, actualizado:ahora, historial:[...(t.historial||[]), {t:ahora, nombre:opts.por||u.nombre, accion, w:!!opts.warn}]};
+  if(opts.orden) patch.ordenes=[...(t.ordenes||[]), {...opts.orden, n:(t.ordenes||[]).length+1, t:ahora}];
+  if(etapa) patch.etapa=etapa;
+  try{ await Store.update("tramites",id,patch); if(opts.toast!==false) toast(accion); }
+  catch(e){ toast("No se pudo guardar: "+(e.message||e.code||"error")); }
+}
+function vFicha(){
+  const t=tramite(S.sel), app=$("#app"), u=yo();
+  if(!t){ app.innerHTML=`<div class="card empty">Ese trámite no existe. <button class="link" type="button" data-go="bandeja">Volver</button></div>`; return; }
+  const T=TRAMITES[t.tipo], w=t.w, pr=protocolo(t), items=itemsControl(t), ctl=t.control||{};
+  const st=k=>ctl[k]?.e, nOk=items.filter(i=>st(i.k)==="ok").length, nC=items.filter(i=>st(i.k)==="corregir").length, nI=items.filter(i=>st(i.k)==="impide").length;
+  const mio=t.responsable===u.id, soloVer=!esEsc()&&!mio;
+  /* botones de cabecera, con el porqué cuando están apagados */
+  const B=(txt,act,on,why,cls="")=>`<div class="a"><button class="btn ${cls}" type="button" data-act="${act}" data-arg="${t.id}" ${on?"":"disabled"}>${txt}</button>${!on&&why?`<span class="why">${esc(why)}</span>`:""}</div>`;
+  let head=[];
+  const et=t.etapa;
+  if(et==="sin_asignar"){ head=[esEsc()?B("Tomarlo yo","tomarYo",true):"", B("Observar","x",false,"Primero hay que asignarlo"), B("Dar el alta y tasar","x",false,"Primero hay que asignarlo")]; }
+  else if(et==="asignado"){ head=[B("Tomar para revisión","tomar",puede(t,"tomar"),mio?"":`Lo toma ${nombreDe(t.responsable)}`,"pri"), B("Observar","x",false,"Primero hay que tomarlo"), B("Dar el alta y tasar","x",false,"Primero hay que tomarlo")]; }
+  else if(et==="en_revision"){ const todo=nOk===items.length;
+    head=[B("Observar y devolver","observar",puede(t,"observar")&&(nC+nI)>0,soloVer?"No está a tu cargo":"Marcá qué está mal en el control","hot"),
+      B(T.sinCosto?"Dar el alta":"Dar el alta y tasar","alta",puede(t,"alta")&&todo,soloVer?"No está a tu cargo":nI?"Hay un ítem que lo impide":nC?"Hay un ítem a corregir":"Faltan ítems por controlar"),
+      B("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")]; }
+  else if(et==="falta_algo"){ head=[B("Reenviar aviso","reenviarAviso",puede(t,"reenviarAviso"),"No está a tu cargo"), B("Dar el alta y tasar","x",false,"Falta la documentación observada"), B("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")]; }
+  else if(et==="a_pagar"){ head=[B("Empezar a preparar","empezar",puede(t,"empezar")&&t.tasa?.pagada,!t.tasa?.pagada?"Falta que pague":"No está a tu cargo","pri"), B("Ver la boleta","verBoleta",true)]; }
+  else if(et==="en_preparacion"){ head=[B("Marcar como listo","listo",puede(t,"listo")&&!!t.producto,!t.producto?`Falta subir: ${T.producto.toLowerCase()}`:"No está a tu cargo","pri"), B("Observar","x",false,"Ya está pago y en curso")]; }
+  else if(et==="listo"){ head=[w.soporte==="papel"?B("Registrar la entrega","entrega",puede(t,"entrega")&&!!t.turno,!t.turno?"Todavía no sacó turno":"No está a tu cargo","go"):B("Registrar la entrega","x",false,"Es digital: se cierra cuando lo descarga"), B(`Ver ${T.producto.toLowerCase()}`,"verProducto",true)]; }
+  else if(et==="entregado"){ head=[B("Reimprimir la constancia","verConstancia",true), B("Observar","x",false,"El trámite está cerrado"), B("Reasignar","x",false,"El trámite está cerrado")]; }
+  else if(et==="no_corresponde"){ head=[B("Ver la resolución","verResol",true), B("Reabrir","reabrir",puede(t,"reabrir"),"Lo decide el escribano"), B("Dar el alta y tasar","x",false,"El trámite está cerrado")]; }
+  const sub = et==="sin_asignar"?`llegó ${hace(t.ingreso)}`: et==="asignado"?`asignado a ${nombreDe(t.responsable)}`: et==="en_revision"?`a cargo de ${nombreDe(t.responsable)}`:
+    et==="falta_algo"?`devuelto ${hace(t.observado||t.actualizado)} · aviso automático a los 10 días`: et==="a_pagar"?(t.tasa?.pagada?"pago acreditado":`alta dada el ${fCorta(t.tasa?.t||t.actualizado)} · esperando el pago`):
+    et==="en_preparacion"?`a cargo de ${nombreDe(t.responsable)} · pago ${T.sinCosto?"no corresponde":"acreditado"}`: et==="listo"?(w.soporte==="papel"?(t.turno?`turno ${t.turno.fecha} ${t.turno.hora}`:"esperando que saque turno"):"esperando que lo descargue"):
+    et==="entregado"?`cerrado el ${fCorta(t.entregado)}`:`cerrado sin emisión el ${fCorta(t.actualizado)}`;
+
+  /* confirmaciones en línea */
+  let conf="";
+  if(S.conf==="alta") conf=`<div class="card stack" style="border-color:var(--egg-acc)"><h3 class="t">${T.sinCosto?"Dar el alta":"Dar el alta y tasar"}</h3>
+    ${T.sinCosto?`<p class="hint">Sin costo: pasa directo a preparación.</p>`:`<div class="g2"><div class="field"><label class="f" for="mtasa">Tasa Retributiva ($)</label><input type="text" id="mtasa" data-mask="num" inputmode="numeric" value="${tasaDe(t)}"></div>
+      <p class="hint">${t.tipo==="testimonio"?`Monto fijo por ejemplar (${w.pedido.ejemplares}).`:`${pr.fojas} hojas × ${pesos(TRAMITES.copia.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte])} × ${w.pedido.ejemplares} ejemplar(es).`}</p></div>`}
+    <div class="acts"><button class="btn pri" type="button" data-act="altaOk" data-arg="${t.id}">Confirmar</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`;
+  if(S.conf==="noCorr") conf=`<div class="card stack" style="border-color:var(--bad)"><h3 class="t">No corresponde · resolución fundada</h3>
+    <div class="field"><label class="f" for="rfund">Fundamentos (los ve el requirente)</label><textarea id="rfund" placeholder="No corresponde darle curso: la declaratoria no incluye a quien firma la solicitud."></textarea></div>
+    <div class="field"><label class="f" for="rpq">Por qué, en palabras simples</label><input type="text" id="rpq" placeholder="El segundo testimonio tiene que ser pedido por todos los herederos declarados."></div>
+    <div class="acts"><button class="btn hot" type="button" data-act="noCorrOk" data-arg="${t.id}">Emitir resolución y cerrar</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`;
+
+  /* pestañas */
+  let cuerpo="";
+  if(S.tabF==="datos"){
+    const parte=w.caracter==="parte"||w.caracter==="escribano";
+    const verif=`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Verificaciones automáticas · antes de que nadie lo toque</div><div class="checks" style="grid-template-columns:1fr 1fr">
+      ${ck(w.esc.busqueda?"warn":"ok", w.esc.busqueda?"Hay que ubicar la escritura":"La escritura existe y la fecha coincide", w.esc.busqueda?"El requirente no tenía el número: "+w.esc.busqueda:"")}
+      ${t.tipo==="testimonio"?ck(w.pedido.obligaciones==="si"?"warn":"ok", w.pedido.obligaciones==="si"?"Declaró obligaciones pendientes":"No consta obligación pendiente; coincide con lo declarado", w.pedido.obligaciones==="si"?"Hace falta conformidad del acreedor o autorización judicial":""):""}
+      ${w.caracter==="escribano"?ck("ok","Matrícula vigente", t.solicitanteDoc):ck(parte?"ok":"bad", parte?`${t.solicitanteNombre} figura como parte`:`${t.solicitanteNombre} no figura como parte`, parte?"Va por el carril directo.":`Invoca ser ${CARACTERES[w.caracter].corto.toLowerCase()}. Por eso no fue por el carril directo.`)}
+      ${ck(["sin_asignar","asignado"].includes(et)?"pend":nOk===items.length?"ok":"warn","Control del carácter", ["sin_asignar","asignado"].includes(et)?`${items.length} ítems según la guía. Se completan cuando alguien lo toma.`:`${nOk} de ${items.length} controlados`)}</div></div>`;
+    const control = ["sin_asignar","asignado"].includes(et) ? "" : `<div class="card"><div class="eyebrow" style="margin-bottom:10px">Control del carácter · ${esc(CARACTERES[w.caracter].corto.toLowerCase())} en ${esc(T.n.toLowerCase())}</div>
+      <div class="checks">${items.map(i=>{ const s=st(i.k), n=ctl[i.k]?.nota||"", ed=puede(t,"controlar")&&!soloVer;
+        const arch=(t.adj||{})[i.k];
+        return `<div class="ck"><span class="ico ${s==="ok"?"ok":s==="impide"?"bad":s==="corregir"?"warn":"pend"}">${s==="ok"?"✓":s==="impide"?"×":s==="corregir"?"!":""}</span><div style="min-width:0;flex:1">
+          <b>${esc(i.n)}</b><span>${esc(n|| (i.k==="obligaciones"?(w.pedido.obligaciones==="si"?"Declaró que sí":"No constan y así lo declaró"):arch?arch.nombre:""))}</span>
+          ${arch?` <button class="link" type="button" data-ver="${esc(arch.ref)}" data-nom="${esc(arch.nombre)}" style="font-size:12px">Ver</button>`:""}
+          ${ed?`<div class="ckctl"><button type="button" class="o" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="ok" aria-pressed="${s==="ok"}">Bien</button><button type="button" class="c" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="corregir" aria-pressed="${s==="corregir"}">A corregir</button><button type="button" class="i" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="impide" aria-pressed="${s==="impide"}">Impide el alta</button></div>
+            ${s&&s!=="ok"?`<input type="text" data-cknota="${i.k}" data-arg="${t.id}" placeholder="Qué falta (va a la observación)" value="${esc(n)}">`:""}`:""}</div></div>`; }).join("")}</div>
+      <p class="legend">${nOk} bien · ${nC} a corregir · ${nI} que impide${nI===1?"":"n"} dar el alta.${t.controlCerrado?` Control cerrado el ${fCorta(t.controlCerrado.t)} por ${esc(t.controlCerrado.por)}.`:""}</p></div>`;
+    const obsTxt=armarObs(t);
+    const obs = et==="en_revision"&&(nC+nI)>0 ? `<div class="box b-warn"><div class="eyebrow" style="color:var(--warn);margin-bottom:6px">Observación que se va a enviar</div>${esc(obsTxt)}<div class="legend" style="color:var(--warn)">Se arma sola con los ítems marcados y vuelve al requirente.</div></div>`
+      : et==="falta_algo" ? `<div class="box b-warn"><div class="eyebrow" style="color:var(--warn);margin-bottom:6px">Observación enviada</div>${esc(t.obs)}</div>` : "";
+    const tasa = t.tasa ? `<div class="card"><div class="eyebrow" style="margin-bottom:6px">Tasa</div><span style="font-family:var(--serif);font-size:24px;font-weight:600">${pesos(t.tasa.monto)}</span>
+      <span class="sub"> ${t.tipo==="testimonio"?"monto fijo":"según fojas"} · ${t.tasa.pagada?`<b style="color:var(--ok)">pagado el ${fCorta(t.tasa.pagadaEn)} ${fHora(t.tasa.pagadaEn)}</b>`:`boleta enviada el ${fCorta(t.tasa.t)} · <b style="color:var(--orange)">sin pagar</b>`}</span></div>` : "";
+    const prep = et==="en_preparacion" ? `<div class="card stack"><div class="eyebrow">Preparación</div>
+      ${puede(t,"producto")&&!soloVer?`<div class="field"><label class="f" for="prepTxt">Novedades (las ve el equipo)</label><input type="text" id="prepTxt" data-arg="${t.id}" placeholder="Redactado y firmado el 08/10. Enviado al Registro General para reinscripción." value="${esc(t.prep||"")}"></div>
+        ${filaAdj({k:"producto",n:T.producto,d:"El documento que recibe el requirente"},t.producto,"p")}`:`<p style="margin:0">${esc(t.prep||"Sin novedades cargadas.")}</p>`}</div>`
+      : t.prep&&["listo","entregado"].includes(et) ? "" : "";
+    const fin = et==="listo"?`<div class="box b-ok"><div class="eyebrow" style="color:var(--ok);margin-bottom:6px">Emitido</div>Orden ${ordenDe(t,T.producto)?.n||"—"}: ${esc(T.producto.toLowerCase())}, guardado tal cual salió. ${w.soporte==="papel"?(t.turno?`Turno: ${esc(t.turno.fecha)} a las ${esc(t.turno.hora)}.`:"Esperando que el requirente saque turno y lo retire."):"Esperando que el requirente lo descargue."}</div>`
+      : et==="entregado"?`<div class="box b-ok"><div class="eyebrow" style="color:var(--ok);margin-bottom:6px">Entregado</div>${w.soporte==="papel"?"Retirado en mostrador":"Descargado por el requirente"} el ${fCorta(t.entregado)} a las ${fHora(t.entregado)}. Orden ${ordenDe(t,"Constancia de entrega")?.n||"—"}: constancia de entrega. Trámite cerrado.</div>`
+      : et==="no_corresponde"?`<div class="box b-bad"><div class="eyebrow" style="color:var(--bad);margin-bottom:6px">Resolución</div>${esc(t.resolucion)} Emitida el ${fCorta(t.actualizado)} como orden ${ordenDe(t,"Resolución")?.n||"—"}.</div>`:"";
+    cuerpo=`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Quién lo pide y qué pide</div><div class="kv">
+        <div><div class="l">Requirente</div><div class="v">${esc(t.solicitanteNombre)}</div><div class="s2">${esc(t.solicitanteDoc)}${t.origen==="mesa"?" · mesa de entradas":" · CiDi nivel 2"}</div></div>
+        <div><div class="l">Carácter invocado</div><div class="v">${esc(CARACTERES[w.caracter].corto)}</div><div class="s2">${esc(w.acred.autos?w.acred.autos.split("—")[0]:"")}</div></div>
+        <div><div class="l">Trámite</div><div class="v">${esc(T.n.replace("Segundo o ulterior testimonio","Segundo testimonio"))}</div><div class="s2">${w.soporte==="papel"?"papel":"digital"}${w.tipo!=="antecedentes"?` · ${w.pedido.ejemplares} ejemplar${+w.pedido.ejemplares===1?"":"es"}`:""}${w.modo?` · ${w.modo==="cert"?"certificada":"simple"}`:""}</div></div>
+        <div><div class="l">Escritura</div><div class="v">${w.esc.busqueda?"A ubicar":`N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])}`}</div><div class="s2">${esc(w.esc.fecha||"")}</div></div>
+        <div><div class="l">Ingresó</div><div class="v">${fFecha(t.ingreso)} · ${fHora(t.ingreso)}</div><div class="s2">${t.origen==="mesa"?"por mesa de entradas":"por el portal"}</div></div></div>
+        ${w.pedido.motivo||w.pedido.para||w.pedido.objeto?`<p class="legend" style="margin-top:10px">${esc([w.pedido.motivo,w.pedido.para,w.pedido.objeto,w.pedido.destino].filter(Boolean).join(" · "))}</p>`:""}</div>
+      ${["sin_asignar","asignado","en_revision","falta_algo"].includes(et)?`<div class="card" style="background:var(--info-bg)"><div class="eyebrow" style="margin-bottom:10px;color:var(--info)">Lo que dice el protocolo</div><div class="kv">
+        <div><div class="l">Acto</div><div class="v">${esc(pr.acto)}</div><div class="s2">${pr.fojas} fojas</div></div><div><div class="l">Comprador</div><div class="v">${esc(pr.comprador)}</div></div>
+        <div><div class="l">Vendedora</div><div class="v">${esc(pr.vendedor)}</div></div><div><div class="l">Objeto</div><div class="v">Matrícula ${esc(pr.matricula)}</div><div class="s2">${esc(pr.domicilio)}</div></div>
+        <div><div class="l">Obligaciones pendientes</div><div class="v">${esc(pr.obligaciones)}</div></div></div><p class="legend" style="color:var(--info)">Sale del relevamiento del protocolo (simulado). El requirente no tuvo que cargarlo.</p></div>`:""}
+      ${["sin_asignar","asignado"].includes(et)?verif:""}${control}${obs}${tasa}${prep}${fin}`;
+  } else if(S.tabF==="docs"){
+    cuerpo=`<div class="card stack" style="padding:0"><div class="spread" style="padding:14px 18px 0"><div class="eyebrow">Hoja de ruta del trámite</div>
+      <div class="pills">${[["todos","Todos"],["req","Del requirente"],["egg","De la Escribanía"],["env","Lo que se le envió"]].map(f=>`<button type="button" class="${S.filtroDoc===f[0]?"on":""}" data-act="filtroDoc" data-arg="${f[0]}">${f[1]}</button>`).join("")}</div></div>
+      ${hojaRuta(t,true)}
+      <div class="tfoot" style="align-items:center"><span>${nArchivos(t)} órdenes · se numeran solas y no se borran · lo que el requirente corrija entra como orden nueva</span>
+        ${!CERRADOS.includes(et)&&(esEsc()||mio)?`<span><label class="btn sm" for="subirOrden">Subir un documento</label><input type="file" id="subirOrden" data-arg="${t.id}" accept="application/pdf,image/*" hidden></span>`:""}</div></div>`;
+  } else {
+    cuerpo=`<div class="card"><ul class="hist">${(t.historial||[]).map(h=>`<li class="${h.w?"w":""}"><b>${esc(h.accion)}</b><span>${fCorta(h.t)} ${fHora(h.t)} — ${esc(h.nombre)}</span></li>`).join("")}</ul></div>`;
+  }
+
+  /* columna derecha */
+  const egg=S.usuarios.filter(x=>lado(x)==="egg"&&x.activo!==false);
+  const carga=id=>{ const a=activos().filter(x=>x.responsable===id&&!CERRADOS.includes(x.etapa)); return {n:a.length, v:a.filter(x=>dias(x.ingreso)>10).length}; };
+  const sel=S.asignarA||t.responsable||egg.find(x=>x.rol==="auxiliar")?.id;
+  const asign = (et==="sin_asignar"&&esEsc()) || S.conf==="reasignar" ? `<div class="asign"><div class="eyebrow" style="color:var(--warn)">¿Quién lo hace?</div>
+      ${egg.map(x=>{ const c=carga(x.id); return `<button type="button" class="who-opt" data-act="asigSel" data-arg="${x.id}" aria-pressed="${sel===x.id}"><span><b>${esc(x.nombre)}${x.id===u.id?" · yo":""}</b><span>${esc(ROLES[x.rol].n)} · ${c.n} trámite${c.n===1?"":"s"} · ${c.v} vencido${c.v===1?"":"s"}</span></span></button>`; }).join("")}
+      <button class="btn pri" type="button" data-act="asignar" data-arg="${t.id}" ${sel?"":"disabled"}>Asignar a ${esc(nombreDe(sel))}</button>
+      <span class="sub">Queda en el historial con tu nombre. Quien lo recibe lo ve en «Míos».</span>${S.conf==="reasignar"?`<button class="link" type="button" data-act="cancel">Cancelar</button>`:""}</div>`
+    : et==="sin_asignar" ? `<div class="box b-warn">Lo asigna el escribano. Vos lo vas a ver en «Míos» cuando te lo asigne.</div>` : "";
+  const notas=(t.notas||[]);
+  const side=`<aside class="card side">${asign}
+    ${S.tabF!=="hist"?`<div><div class="eyebrow" style="margin-bottom:8px">Historial</div><ul class="hist">${(t.historial||[]).map(h=>`<li class="${h.w?"w":""}"><b>${esc(h.accion)}</b><span>${fCorta(h.t)} ${fHora(h.t)} — ${esc(h.nombre)}</span></li>`).join("")}</ul></div><hr>`:""}
+    <div><div class="spread"><div class="eyebrow">A cargo</div>${puede(t,"asignar")&&et!=="sin_asignar"&&S.conf!=="reasignar"?`<button class="link" type="button" data-act="reasignar" style="font-size:12px">Reasignar</button>`:""}</div>
+      ${t.responsable?`<div class="row" style="margin-top:6px"><span class="av" style="background:var(--egg-head)">${esc(iniciales(nombreDe(t.responsable)))}</span><span><b>${esc(nombreDe(t.responsable))}</b><div class="sub">${esc(ROLES[usuario(t.responsable)?.rol]?.n||"")}</div></span></div>`:`<div style="color:var(--bad);font-weight:600;margin-top:6px">Sin asignar</div>`}</div><hr>
+    <div class="stack" style="gap:10px"><div class="spread"><div class="eyebrow">Notas internas</div><span class="tag c-mute">Solo la EGG</span></div>
+      ${notas.length?`<div class="notes">${notas.map(n=>`<div class="note"><span class="av">${esc(iniciales(n.nombre))}</span><div><div class="t"><b>${esc(n.nombre)}</b> · ${fCorta(n.t)} ${fHora(n.t)}</div><p>${esc(n.texto)}</p></div></div>`).join("")}</div>`:`<span class="sub">Sin notas todavía.</span>`}
+      <form id="fnota" class="row" data-arg="${t.id}"><input type="text" id="notaTxt" placeholder="Escribí una nota para el equipo" style="flex:1"><button class="btn sm" type="submit">Agregar</button></form></div></aside>`;
+
+  app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">Volver a la bandeja externa</button></div>
+    <div class="spread"><div class="row"><h1 class="t">Trámite ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
+    ${soloVer&&!["sin_asignar"].includes(et)?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
+    ${conf}
+    <div class="tabsline" role="tablist"><button type="button" role="tab" data-act="tabF" data-arg="datos" aria-selected="${S.tabF==="datos"}">Datos del trámite</button>
+      <button type="button" role="tab" data-act="tabF" data-arg="docs" aria-selected="${S.tabF==="docs"}">Documentos<span class="n">${nArchivos(t)}</span></button>
+      <button type="button" role="tab" data-act="tabF" data-arg="hist" aria-selected="${S.tabF==="hist"}">Historial</button></div>
+    <div class="cols"><div class="stack">${cuerpo}</div>${side}</div></div>`;
+}
+const ck=(e,b,s)=>`<div class="ck"><span class="ico ${e}">${e==="ok"?"✓":e==="bad"?"×":e==="warn"?"!":""}</span><div><b>${esc(b)}</b><span>${esc(s||"")}</span></div></div>`;
+const ordenDe=(t,nombre)=>[...(t.ordenes||[])].reverse().find(o=>o.nombre.startsWith(nombre));
+function armarObs(t){ const items=itemsControl(t), c=t.control||{};
+  const l=items.filter(i=>c[i.k]?.e&&c[i.k].e!=="ok").map(i=>`${i.n}: ${c[i.k].nota||(c[i.k].e==="impide"?"impide dar el alta":"hay que corregirlo")}.`);
+  return l.join(" ") + (l.length?" Devuelto al requirente para corregir.":""); }
+function hojaRuta(t,egg){
+  let l=(t.ordenes||[]).filter(o=>egg||o.origen==="req"||o.env);
+  if(egg&&S.filtroDoc!=="todos") l=l.filter(o=>S.filtroDoc==="env"?o.env:S.filtroDoc==="egg"?(o.origen==="egg"||o.origen==="auto"):o.origen==="req");
+  if(!l.length) return `<div class="empty">Sin documentos en este filtro.</div>`;
+  return `<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th>Orden</th><th>Fecha y hora</th><th>Documento</th><th>Formato</th><th>Incorporado por</th><th></th></tr></thead><tbody>
+    ${l.map(o=>`<tr ${o.env&&egg?'style="background:var(--warn-bg)"':""}><td class="nro" style="color:var(--muted)">${pad(o.n)}</td><td class="num">${fCorta(o.t)} ${fHora(o.t)}</td>
+      <td><b>${esc(o.nombre)}</b>${o.archivos&&o.archivos.length>1?`<div class="sub">${o.archivos.map(a=>esc(a.n||a.nombre)).join(" · ")}</div>`:""}</td>
+      <td class="sub">PDF${o.archivos?` · ${o.archivos.length} archivo${o.archivos.length===1?"":"s"}`:" · 1 f."}</td>
+      <td>${esc(o.por)}<div class="sub">${o.origen==="req"?"Requirente":o.origen==="auto"?"Automático":"Escribanía"}</div></td>
+      <td class="row" style="flex-wrap:nowrap">${o.archivos?o.archivos.map((a,i)=>`<button class="link" type="button" data-ver="${esc(a.ref)}" data-nom="${esc(a.nombre)}">Ver${o.archivos.length>1?" "+(i+1):""}</button>`).join(" "):`<button class="link" type="button" data-act="verOrden" data-arg="${t.id}" data-n="${o.n}">Ver</button>`}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+
+/* ==================================================================
+   ESCRIBANÍA — USUARIOS Y ROLES (solo el escribano)
+   ================================================================== */
+function vUsuarios(){
+  const app=$("#app"); if(!esEsc()){ app.innerHTML=`<div class="card empty">Solo el escribano administra usuarios y roles.</div>`; return; }
+  const l=S.usuarios.slice().sort((a,b)=>(ROLES[a.rol].lado+a.rol+a.nombre).localeCompare(ROLES[b.rol].lado+b.rol+b.nombre));
+  const carga=id=>activos().filter(t=>t.responsable===id&&!CERRADOS.includes(t.etapa)).length;
+  app.innerHTML=`<div class="stack"><div><h1 class="t">Usuarios y roles</h1><p class="hint">El escribano asigna trámites, reasigna, dice «No corresponde», reabre y administra esta lista. El auxiliar trabaja solo lo que tiene asignado. Los cambios valen al instante para quien esté conectado.</p></div>
+    <div class="tablewrap"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>A cargo</th><th>Estado</th></tr></thead><tbody>
+    ${l.map(x=>{ const egg=lado(x)==="egg", soy=x.id===S.me; return `<tr><td class="nro">${esc(x.usuario)}</td><td>${esc(x.nombre)}${soy?` <span class="chip c-info">vos</span>`:""}<div class="sub">${esc(x.doc||"")}</div></td>
+      <td>${egg&&!soy?`<select data-rol="${esc(x.id)}" aria-label="Rol de ${esc(x.nombre)}" style="max-width:200px"><option value="auxiliar" ${x.rol==="auxiliar"?"selected":""}>Auxiliar</option><option value="escribano_egg" ${x.rol==="escribano_egg"?"selected":""}>Escribano/a</option></select>`:esc(ROLES[x.rol].n)}</td>
+      <td class="num">${egg?carga(x.id):"—"}</td><td>${soy?`<span class="chip c-ok">Activo</span>`:`<button class="btn sm" type="button" data-act="baja" data-arg="${esc(x.id)}">${x.activo===false?"Reactivar":"Dar de baja"}</button>`}</td></tr>`; }).join("")}
+    </tbody></table></div>
+    <form class="card stack" id="fnu"><h3 class="t">Sumar una persona</h3><div class="g3">
+      <div class="field"><label class="f" for="nuN">Nombre</label><input type="text" id="nuN" placeholder="Ej.: Micucci" required></div>
+      <div class="field"><label class="f" for="nuU">Usuario</label><input type="text" id="nuU" placeholder="Ej.: micucci" required></div>
+      <div class="field"><label class="f" for="nuR">Rol</label><select id="nuR"><option value="auxiliar">Auxiliar (EGG)</option><option value="escribano_egg">Escribano/a (EGG)</option><option value="particular">Requirente (externo)</option><option value="escribano_ext">Escribano/a de registro (externo)</option></select></div></div>
+      <p class="legend" style="margin:0">Entra con la clave de prueba ${CLAVE}.</p><div><button class="btn pri" type="submit">Crear usuario</button></div></form></div>`;
+  $("#fnu").onsubmit=async e=>{ e.preventDefault(); const n=$("#nuN").value.trim(), us=$("#nuU").value.trim().toLowerCase().replace(/\s+/g,""), r=$("#nuR").value;
+    if(!n||!us) return; if(S.usuarios.some(x=>(x.usuario||"").toLowerCase()===us)){ toast("Ese usuario ya existe."); return; }
+    const d={usuario:us,nombre:n,rol:r,activo:true,clave:CLAVE,creado:Date.now()}; if(r==="particular"){ d.doc="20-00000000-0"; d.domicilio="Córdoba"; } if(r==="escribano_ext"){ d.doc="Registro —"; d.domicilio="Córdoba"; }
+    await Store.set("usuarios",nuevoId("u"),d); toast("Usuario creado: "+us); };
+}
+
+/* ==================================================================
+   PROBLEMAS — panel lateral y listado (reemplaza al Excel)
+   ================================================================== */
+function contextoProblema(){
+  const u=yo(); let t=null;
+  if(["ficha","det"].includes(S.vista)) t=tramite(S.sel);
+  return {pantalla:pantalla(), tramite:t?TRAMITES[t.tipo].n:(S.vista==="armador"&&W?.tipo?TRAMITES[W.tipo].n:""), nro:t?.nro||"",
+    etapa:t?(lado(u)==="egg"?ETAPAS[t.etapa].egg[0]:ETAPAS[t.etapa].req[0]):"", quien:u?.nombre||"Sin ingresar", rol:u?ROLES[u.rol].n:""};
+}
+function abrirProblema(){ P = P||{...contextoProblema(), pasos:"",paso:"",esperado:"",tipo:"",gravedad:"",rodeo:"",comoEvita:"",captura:null}; dibujarP(); }
+function dibujarP(){
+  $("#layer").innerHTML=`<div class="drawer" id="dw" role="dialog" aria-modal="true" aria-label="Anotar problema"><form class="in" id="fp">
+    <div class="spread"><div><div class="eyebrow">Relevamiento de SIIGENO</div><h2 class="t" style="margin-top:4px">Anotar problema</h2></div><button class="btn sm" type="button" id="pX">Cerrar</button></div>
+    <div class="ctx"><b>Pantalla</b><span>${esc(P.pantalla)}</span>${P.nro?`<b>Trámite</b><span>${esc(P.nro)} · ${esc(P.tramite)}</span><b>Estado</b><span>${esc(P.etapa)}</span>`:""}<b>Quién</b><span>${esc(P.quien)}${P.rol?" · "+esc(P.rol):""}</span></div>
+    <div class="field"><label class="f" for="pTr">Trámite / funcionalidad</label><input type="text" id="pTr" list="pTrL" value="${esc(P.tramite)}" placeholder="Ej.: Segundo o ulterior testimonio"><datalist id="pTrL">${Object.values(TRAMITES).map(x=>`<option value="${esc(x.n)}">`).join("")}<option value="Ingreso / usuarios"><option value="Bandeja de trámites"><option value="Hoja de ruta"><option value="General"></datalist></div>
+    <div class="field"><label class="f" for="pPasos">Qué hice (pasos)</label><textarea id="pPasos" placeholder="Ej.: Cargué la escritura 402/2011 y toqué Continuar">${esc(P.pasos)}</textarea></div>
+    <div class="field"><label class="f" for="pPaso">Qué pasó</label><textarea id="pPaso" placeholder="Ej.: No me dejó seguir y no dice por qué">${esc(P.paso)}</textarea></div>
+    <div class="field"><label class="f" for="pEsp">Qué debería pasar</label><textarea id="pEsp">${esc(P.esperado)}</textarea></div>
+    <div class="g2"><div class="field"><label class="f" for="pTipo">Tipo</label><select id="pTipo"><option value="">Elegí</option>${TIPOS_PROB.map(x=>`<option ${P.tipo===x?"selected":""}>${x}</option>`).join("")}</select></div>
+      <div class="field"><label class="f" for="pGrav">Gravedad</label><select id="pGrav"><option value="">Elegí</option>${GRAVEDAD.map(x=>`<option ${P.gravedad===x?"selected":""}>${x}</option>`).join("")}</select></div></div>
+    <p class="legend" style="margin-top:-6px">Bloquea: no se puede terminar el trámite. Molesta: se sigue con un rodeo. Menor: detalle o texto.</p>
+    <div class="g2"><div class="field"><label class="f" for="pRod">¿Hay rodeo?</label><select id="pRod"><option value="">Elegí</option><option ${P.rodeo==="Sí"?"selected":""}>Sí</option><option ${P.rodeo==="No"?"selected":""}>No</option></select></div>
+      <div class="field"><label class="f" for="pEv">Cómo se evita</label><input type="text" id="pEv" value="${esc(P.comoEvita)}"></div></div>
+    <div class="field"><label class="f">Captura de pantalla</label><div class="row"><label class="btn sm" for="pCap">${P.captura?"Reemplazar imagen":"Elegir imagen"}</label><input type="file" id="pCap" accept="image/*" hidden>
+      ${P.captura?`<span class="sub" style="color:var(--ok)">✓ ${esc(P.captura.nombre)}</span>`:`<span class="sub">o pegala con Ctrl+V (Win+Shift+S para recortar)</span>`}</div></div>
+    <div class="acts"><button class="btn pri" type="submit">Guardar problema</button><button class="btn" type="button" id="pVer">Ver todos</button><button class="btn" type="button" id="pCtx">Tomar la pantalla actual</button></div></form></div>`;
+  const keep=()=>{ Object.assign(P,{tramite:$("#pTr").value,pasos:$("#pPasos").value,paso:$("#pPaso").value,esperado:$("#pEsp").value,tipo:$("#pTipo").value,gravedad:$("#pGrav").value,rodeo:$("#pRod").value,comoEvita:$("#pEv").value}); };
+  $("#fp").addEventListener("input",keep); $("#fp").addEventListener("change",keep);
+  const cerrar=()=>{ keep(); $("#layer").innerHTML=""; };
+  $("#pX").onclick=cerrar; $("#dw").onclick=e=>{ if(e.target.id==="dw") cerrar(); };
+  $("#pVer").onclick=()=>{ cerrar(); ir("problemas"); };
+  $("#pCtx").onclick=()=>{ keep(); Object.assign(P,contextoProblema()); dibujarP(); };
+  $("#pCap").onchange=()=>{ const f=$("#pCap").files[0]; if(f) captura(f); };
+  $("#fp").onsubmit=async e=>{ e.preventDefault(); keep();
+    if(!P.paso.trim()){ toast("Contá qué pasó antes de guardar."); $("#pPaso").focus(); return; }
+    const num=S.problemas.map(p=>p.num||0).reduce((a,b)=>Math.max(a,b),0)+1, codigo="P-"+String(num).padStart(3,"0");
+    try{ await Store.set("problemas",nuevoId("p"),{...P,num,codigo,uid:S.me,fecha:Date.now(),estado:"Nuevo"}); toast(`Problema ${codigo} guardado`); P=null; $("#layer").innerHTML=""; }
+    catch(err){ toast("No se pudo guardar: "+(err.message||err.code||"error")); } };
+}
+async function captura(f){ try{ toast("Subiendo captura…"); const nombre=f.name&&f.name!=="image.png"?f.name:`captura-${Date.now()}.png`;
+  P.captura=await Store.subir(new File([f],nombre,{type:f.type||"image/png"})); dibujarP(); toast("Captura adjuntada"); }catch(e){ toast(e.message||"No se pudo subir la captura."); } }
+document.addEventListener("paste",e=>{ if(!P||!$("#dw")) return; const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/")); if(!it) return; e.preventDefault(); captura(it.getAsFile()); });
+$("#fab").onclick=abrirProblema;
+
+function vProblemas(){
+  const l=S.problemas.slice().sort((a,b)=>(b.num||0)-(a.num||0));
+  const g=[["todos","Todos",()=>true],...GRAVEDAD.map(x=>[x,x,p=>p.gravedad===x]),["abiertos","Sin resolver",p=>!["Resuelto","No se arregla"].includes(p.estado)]];
+  if(!g.find(x=>x[0]===S.pf)) S.pf="todos";
+  const vis=l.filter(g.find(x=>x[0]===S.pf)[2]);
+  const chipG=x=>`<span class="chip ${x==="Bloquea"?"c-bad":x==="Molesta"?"c-warn":x?"c-info":"c-mute"}">${esc(x||"Sin gravedad")}</span>`;
+  $("#app").innerHTML=`<div class="stack"><div class="spread"><div><h1 class="t">Problemas anotados</h1><p class="hint">Todo lo que se anotó con el botón amarillo, desde cualquier pantalla y usuario. Se exporta a un CSV que abre Excel, con las columnas de la planilla de relevamiento.</p></div>
+      <div class="acts"><button class="btn" type="button" data-act="exportar" ${l.length?"":"disabled"}>Exportar para Excel</button><button class="btn pri" type="button" data-act="anotar">Anotar problema</button></div></div>
+    <div class="pills">${g.map(x=>`<button type="button" class="${S.pf===x[0]?"on":""}" data-act="pf" data-arg="${esc(x[0])}">${x[1]} · ${l.filter(x[2]).length}</button>`).join("")}</div>
+    ${vis.length?`<div class="tablewrap"><table><thead><tr><th>ID</th><th>Dónde</th><th>Qué pasó</th><th>Gravedad</th><th>Quién</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${vis.map(p=>`<tr><td class="nro">${esc(p.codigo)}</td><td>${esc(p.tramite||"—")}<div class="sub">${esc(p.pantalla)}${p.etapa?" · "+esc(p.etapa):""}${p.nro?" · "+esc(p.nro):""}</div></td>
+        <td style="min-width:240px">${esc(p.paso)}${p.esperado?`<div class="sub">Debería: ${esc(p.esperado)}</div>`:""}${p.pasos?`<div class="sub">Pasos: ${esc(p.pasos)}</div>`:""}${p.comoEvita?`<div class="sub">Rodeo: ${esc(p.comoEvita)}</div>`:""}</td>
+        <td>${chipG(p.gravedad)}<div class="sub">${esc(p.tipo||"")}</div></td><td>${esc(p.quien)}<div class="sub num">${fFecha(p.fecha)} ${fHora(p.fecha)}</div></td>
+        <td><select data-est="${esc(p.id)}" aria-label="Estado de ${esc(p.codigo)}">${ESTADOS_PROB.map(x=>`<option ${p.estado===x?"selected":""}>${x}</option>`).join("")}</select></td>
+        <td>${p.captura?`<button class="btn sm" type="button" data-ver="${esc(p.captura.ref)}" data-nom="${esc(p.captura.nombre)}">Captura</button> `:""}
+          ${S.conf==="del:"+p.id?`<span class="row" style="margin-top:6px"><button class="btn sm" type="button" data-act="delP" data-arg="${esc(p.id)}">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
+            :`<button class="btn sm" type="button" data-act="delPask" data-arg="${esc(p.id)}">Borrar</button>`}</td></tr>`).join("")}
+      </tbody></table></div>`
+      :`<div class="card empty">${l.length?"No hay problemas en este filtro.":"Todavía no se anotó ningún problema. Usá el botón amarillo <b>Anotar problema</b> en la pantalla donde aparezca: guarda solo la pantalla, el trámite y el estado."}</div>`}</div>`;
+}
+async function exportarCSV(){
+  const cols=[["codigo","ID"],["tramite","Trámite / funcionalidad"],["etapa","Circuito / estado"],["pantalla","Pantalla / paso"],["pasos","Qué hice (pasos)"],["paso","Qué pasó"],["esperado","Qué debería pasar"],
+    ["tipo","Tipo"],["gravedad","Gravedad"],["rodeo","¿Hay rodeo?"],["comoEvita","Cómo se evita"],["captura","Captura (archivo)"],["quien","Quién"],["fecha","Fecha"],["estado","Estado"],["nro","Observaciones"]];
+  const val=(p,k)=>k==="fecha"?fFecha(p.fecha):k==="captura"?(p.captura?.nombre||""):k==="nro"?(p.nro?"Trámite "+p.nro:""):(p[k]??"");
+  const q=s=>'"'+String(s).replace(/"/g,'""').replace(/\r?\n/g," ")+'"';
+  const txt="﻿"+[cols.map(c=>q(c[1])).join(";"),...S.problemas.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(p=>cols.map(c=>q(val(p,c[0]))).join(";"))].join("\r\n");
+  await guardarArchivo(new Blob([txt],{type:"text/csv"}), `problemas-siigeno-${fFecha(Date.now()).replace(/\//g,"-")}.csv`);
+}
+async function guardarArchivo(blob,nombre){
+  if(Store.downloads){ try{ await Store.downloads.save({filename:nombre,data:blob}); return; }catch(e){ if(e&&/cancel|declin/i.test(e.code||"")) return; } }
+  try{ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); }catch(e){ toast("No se pudo descargar."); }
+}
+
+/* ==================================================================
+   VISOR DE ARCHIVOS
+   ================================================================== */
+async function abrirVisor(blob,nombre){
+  if(!blob){ toast("No se encontró el archivo."); return; }
+  const url=URL.createObjectURL(blob), img=(blob.type||"").startsWith("image/");
+  $("#layer").innerHTML=`<div class="modal" id="visor" role="dialog" aria-modal="true" aria-label="Ver archivo"><div class="in">
+    <div class="mh"><b>${esc(nombre)}</b><button class="btn sm" type="button" id="vDesc">Descargar</button><a class="btn sm" href="${url}" target="_blank" rel="noopener">Abrir en otra pestaña</a><button class="btn sm" type="button" id="vX">Cerrar</button></div>
+    <div class="mb">${img?`<img src="${url}" alt="${esc(nombre)}">`:`<iframe src="${url}" title="${esc(nombre)}"></iframe>`}</div></div></div>`;
+  $("#vX").onclick=()=>{ $("#layer").innerHTML=""; }; $("#visor").onclick=e=>{ if(e.target.id==="visor") $("#layer").innerHTML=""; };
+  $("#vDesc").onclick=()=>guardarArchivo(blob,nombre);
+}
+async function verRef(ref,nombre){ try{ abrirVisor(await Store.blobDe(ref),nombre); }catch(e){ toast("No se pudo abrir el archivo."); } }
+function verOrden(t,o){
+  if(!o){ toast("Ese documento no existe todavía."); return; }
+  if(o.archivos) return verRef(o.archivos[0].ref,o.archivos[0].nombre);
+  abrirVisor(pdfBlob(o.gen.titulo,o.gen.lineas), nombreArchivo(o.gen.titulo));
+}
+
+/* ==================================================================
+   ACCIONES (un solo manejador para todos los botones)
+   ================================================================== */
+document.addEventListener("click", async e=>{
+  const v=e.target.closest("[data-ver]"); if(v){ e.preventDefault(); return verRef(v.dataset.ver, v.dataset.nom||"Archivo"); }
+  const g=e.target.closest("[data-go]"); if(g){ return ir(g.dataset.go); }
+  const b=e.target.closest("[data-act]"); if(!b||b.disabled) return;
+  const a=b.dataset.act, arg=b.dataset.arg, t=arg?tramite(arg):tramite(S.sel), u=yo();
+  switch(a){
+    case "salir": S.me=null; lsSet("simsig_me",null); S.loginSel=null; W=null; S.tabB="ext"; S.aviso=null; return ir("login");
+    case "seed": for(const x of USUARIOS_PRUEBA){ const {id,...d}=x; await Store.set("usuarios",id,{...d,activo:true,clave:CLAVE,creado:Date.now()}); } return toast("Usuarios de prueba creados");
+    case "loginSel": S.loginSel=arg; S.loginErr=""; vLogin(); $("#lc").focus(); return;
+    case "cancel": S.conf=null; return render();
+    /* armador */
+    case "nuevo": W=nuevoW(); S.aviso=null; return ir("armador");
+    case "seguir": { const x=tramite(arg); W={...clon(x.w),id:x.id,creado:x.creado,enviando:false}; S.aviso=null; return ir("armador"); }
+    case "w": { const k=arg, val=b.dataset.v;
+      if(k==="tipo"&&W.tipo!==val){ const keep=W.para; W=nuevoW(keep); W.tipo=val; if(val==="antecedentes"){ W.caracter="escribano"; W.acred={mat:titular().mat||"",reg:titular().doc||""}; } }
+      else if(k==="caracter"&&W.caracter!==val){ W.caracter=val; W.acred={}; }
+      else setPath(W,k,val);
+      return vArmador(); }
+    case "busqueda": W.esc.modoBusqueda=arg==="1"; if(arg!=="1") W.esc.busqueda=""; return vArmador();
+    case "cont": if(W.paso<5&&!okPaso(W.paso)) return; W.paso++; vArmador(); return window.scrollTo({top:0});
+    case "volverW": W.paso=Math.max(1,W.paso-1); return vArmador();
+    case "paso": W.paso=+arg; return vArmador();
+    case "tabC": W.tabC=arg; return carpeta();
+    case "guardarW": return guardarBorrador();
+    case "enviar": return enviarW();
+    case "notaFirmar": return abrirVisor(pdfBlob(TRAMITES[W.tipo].form,[textoNota(W),"","Firma/s: ______________________","Certificación notarial de firma: ______________________"]), "nota-para-firmar.pdf");
+    case "notaFirmarT": return abrirVisor(pdfBlob(TRAMITES[t.tipo].form,[textoNota(t.w,usuario(t.solicitante)),"","Firma/s: ______________________","Certificación notarial de firma: ______________________"]), "nota-para-firmar.pdf");
+    case "ejemplo": return adjuntarEjemplo(arg, b.dataset.k, b.dataset.n);
+    /* requirente */
+    case "abrirReq": S.aviso=null; return ir("det",arg);
+    case "verDocs": S.verDocs=!S.verDocs; return vDetReq();
+    case "corregir": S.conf="corregir"; return vDetReq();
+    case "reenviar": { const flag=Object.entries(t.control||{}).filter(([k,v])=>v.e&&v.e!=="ok").map(([k])=>k), corr=t.corr||{}, nota=($("#corrNota")?.value||"").trim();
+      const control={...t.control}; flag.forEach(k=>delete control[k]);
+      const adj={...t.adj, ...corr}, files=Object.entries(corr).map(([k,f])=>({...f,n:docsDe(t.w).find(d=>d.k===k)?.n||k}));
+      S.conf=null;
+      return mover(t.id,"Corregido por el requirente","en_revision",{control,adj,corr:{},w:{...t.w,adj}},
+        {orden: files.length?{nombre:`Documentación corregida${files.length>1?` (${files.length} archivos)`:""}`,origen:"req",por:t.solicitanteNombre,archivos:files}:null, toast:false}).then(()=>{ if(nota) return agregarNota(t.id,"Comentario del requirente: "+nota,t.solicitanteNombre); }).then(()=>toast("Reenviado a la Escribanía")); }
+    case "pagar": S.conf="pagar"; return vDetReq();
+    case "pagarOk": { S.conf=null; const ahora=Date.now();
+      return mover(t.id,"Pago acreditado",null,{tasa:{...t.tasa,pagada:true,pagadaEn:ahora}},{por:"SIIGENO",
+        orden:{nombre:"Comprobante de pago",origen:"auto",por:"SIIGENO",gen:{titulo:"Comprobante de pago — Trámite "+t.nro,lineas:[`Tasa Retributiva de Servicios: ${pesos(t.tasa.monto)}`,`Pagado el ${fFecha(ahora)} a las ${fHora(ahora)}`,`Operación N.º ${String(ahora).slice(-8)} (simulada)`]}}}); }
+    case "turno": S.conf="turno"; return vDetReq();
+    case "turnoOk": { const f=$("#tf").value, h=$("#th").value; if(!fechaOk(f)){ toast("Escribí el día como dd/mm/aaaa."); return; } S.conf=null;
+      return mover(t.id,`Sacó turno para el ${f} a las ${h}`,null,{turno:{fecha:f,hora:h}}); }
+    case "descargarFinal": { const o=ordenDe(t,TRAMITES[t.tipo].producto); if(o) verOrden(t,o); const ahora=Date.now();
+      return mover(t.id,"Descargado por el requirente","entregado",{entregado:ahora},{orden:{nombre:"Constancia de entrega",origen:"auto",env:true,por:"SIIGENO",gen:{titulo:"Constancia de entrega — Trámite "+t.nro,lineas:[`${TRAMITES[t.tipo].producto} descargado por ${t.solicitanteNombre}`,`el ${fFecha(ahora)} a las ${fHora(ahora)}.`]}}}); }
+    case "reiniciar": W={...clon(t.w),id:null,creado:null,paso:1,enviando:false,dj:false}; return ir("armador");
+    case "verOrden": return verOrden(t,(t.ordenes||[]).find(o=>String(o.n)===b.dataset.n));
+    case "verOrdenNom": return verOrden(t,ordenDe(t,b.dataset.n));
+    /* escribanía */
+    case "tabB": S.tabB=arg; return vBandeja();
+    case "abrirFicha": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
+    case "abrirAsignar": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
+    case "abrirDocs": e.stopPropagation(); S.vista="ficha"; S.sel=arg; S.tabF="docs"; S.filtroDoc="todos"; return render();
+    case "mesa": S.conf="mesa"; return vBandeja();
+    case "mesaOk": { const para=$("#mesaReq").value; if(!para) return; W=nuevoW(para); S.conf=null; return ir("armador"); }
+    case "reset": S.conf="reset"; return vBandeja();
+    case "resetOk": S.conf=null; for(const x of S.tramites.slice()) await Store.del("tramites",x.id); return toast("Trámites borrados");
+    case "tabF": S.tabF=arg; return vFicha();
+    case "filtroDoc": S.filtroDoc=arg; return vFicha();
+    case "asigSel": S.asignarA=arg; return vFicha();
+    case "reasignar": S.conf="reasignar"; S.asignarA=null; return vFicha();
+    case "asignar": { const a2=S.asignarA||t.responsable||S.usuarios.find(x=>x.rol==="auxiliar"&&x.activo!==false)?.id; if(!a2) return; const re=!!t.responsable; S.conf=null; S.asignarA=null;
+      if(re && a2===t.responsable){ return vFicha(); }
+      return mover(t.id,(re?"Reasignado a ":"Asignado a ")+nombreDe(a2), t.etapa==="sin_asignar"?"asignado":null, {responsable:a2}); }
+    case "tomarYo": await mover(t.id,"Asignado a "+u.nombre,"asignado",{responsable:u.id},{toast:false}); return mover(t.id,"Tomado para revisión","en_revision");
+    case "tomar": return mover(t.id,"Tomado para revisión","en_revision");
+    case "ck": { const k=b.dataset.k, ev=b.dataset.e, cur=t.control?.[k]?.e; const c={...(t.control||{})}; c[k]= cur===ev?{}:{...(c[k]||{}),e:ev}; if(ev==="ok") delete c[k].nota;
+      return Store.update("tramites",t.id,{control:c,actualizado:Date.now()}); }
+    case "observar": { const obs=armarObs(t), ahora=Date.now();
+      return mover(t.id,"Observado: "+(itemsControl(t).filter(i=>t.control?.[i.k]?.e&&t.control[i.k].e!=="ok").map(i=>i.n.toLowerCase()).join(", ")),"falta_algo",{obs,observado:ahora},{warn:true,
+        orden:{nombre:"Cédula de observación",origen:"egg",env:true,por:u.nombre,gen:{titulo:"Cédula de observación — Trámite "+t.nro,lineas:[obs,"",`Observado el ${fFecha(ahora)} por ${u.nombre}.`,"Tiene diez días para corregir desde el portal."]}}}); }
+    case "alta": S.conf="alta"; return vFicha();
+    case "altaOk": { const T=TRAMITES[t.tipo], ahora=Date.now(), cerr={t:ahora,por:u.nombre}; S.conf=null;
+      if(T.sinCosto) return mover(t.id,"Alta dada","en_preparacion",{controlCerrado:cerr});
+      const m=parseInt(($("#mtasa").value||"0").replace(/\D/g,""),10)||0;
+      return mover(t.id,"Alta y tasación","a_pagar",{controlCerrado:cerr,tasa:{monto:m,t:ahora,pagada:false}},{orden:{nombre:"Boleta de la Tasa Retributiva",origen:"egg",env:true,por:u.nombre,
+        gen:{titulo:"Boleta — Tasa Retributiva de Servicios",lineas:[`Trámite ${t.nro} · ${T.n}`,`Requirente: ${t.solicitanteNombre} (${t.solicitanteDoc})`,`Importe: ${pesos(m)}`,`Emitida el ${fFecha(ahora)}`]}}}); }
+    case "verBoleta": return verOrden(t,ordenDe(t,"Boleta"));
+    case "noCorr": S.conf="noCorr"; return vFicha();
+    case "noCorrOk": { const f=$("#rfund").value.trim(), pq=$("#rpq").value.trim(); if(!f){ toast("Escribí los fundamentos."); $("#rfund").focus(); return; } S.conf=null; const ahora=Date.now();
+      return mover(t.id,"Cerrado: no corresponde","no_corresponde",{resolucion:f,porque:pq},{warn:true,orden:{nombre:"Resolución fundada · no corresponde",origen:"egg",env:true,por:u.nombre,
+        gen:{titulo:"Resolución — Trámite "+t.nro,lineas:[f,pq,"",`Emitida el ${fFecha(ahora)} por ${u.nombre}.`]}}}); }
+    case "reenviarAviso": return mover(t.id,"Reenvió el aviso al requirente",null,{},{warn:true});
+    case "empezar": return mover(t.id,"Empezó a preparar","en_preparacion");
+    case "listo": { const T=TRAMITES[t.tipo];
+      return mover(t.id,T.reinscribe?"Inscripto y listo":"Listo",'listo',{},{orden:{nombre:T.producto,origen:"egg",env:true,por:u.nombre,archivos:[{...t.producto,n:T.producto}]}}); }
+    case "verProducto": return verOrden(t,ordenDe(t,TRAMITES[t.tipo].producto));
+    case "entrega": { const ahora=Date.now();
+      return mover(t.id,"Entregado en mostrador","entregado",{entregado:ahora},{orden:{nombre:"Constancia de entrega",origen:"egg",env:true,por:u.nombre,
+        gen:{titulo:"Constancia de entrega — Trámite "+t.nro,lineas:[`${TRAMITES[t.tipo].producto} retirado en mostrador por ${t.solicitanteNombre}`,`el ${fFecha(ahora)} a las ${fHora(ahora)}. Atendió: ${u.nombre}.`]}}}); }
+    case "verConstancia": return verOrden(t,ordenDe(t,"Constancia de entrega"));
+    case "verResol": return verOrden(t,ordenDe(t,"Resolución"));
+    case "reabrir": return mover(t.id,"Reabierto","en_revision",{resolucion:null,porque:null});
+    case "baja": { const x=usuario(arg); return Store.update("usuarios",x.id,{activo:x.activo===false}).then(()=>toast(`${x.nombre}: ${x.activo===false?"reactivado":"dado de baja"}`)); }
+    /* problemas */
+    case "anotar": return abrirProblema();
+    case "exportar": return exportarCSV();
+    case "pf": S.pf=arg; return vProblemas();
+    case "delPask": S.conf="del:"+arg; return vProblemas();
+    case "delP": S.conf=null; await Store.del("problemas",arg); return toast("Problema borrado");
+  }
+});
+async function agregarNota(id,texto,nombre){ const t=tramite(id); return Store.update("tramites",id,{notas:[...(t.notas||[]),{t:Date.now(),nombre:nombre||yo().nombre,texto}]}); }
+
+/* campos con data-w: se actualiza el dato sin redibujar el formulario (no se pierde el foco) */
+document.addEventListener("input", e=>{
+  const el=e.target;
+  if(el.dataset.mask==="fecha") mascaraFecha(el);
+  if(el.dataset.mask==="num"||el.dataset.mask==="num4"){ const v=el.value.replace(/\D/g,"").slice(0,el.dataset.mask==="num4"?4:9); if(v!==el.value) el.value=v; }
+  if(el.dataset.w && W){ setPath(W,el.dataset.w,el.value); actualizarArmador(); }
+});
+document.addEventListener("change", async e=>{
+  const el=e.target;
+  if(el.dataset.w && W && el.tagName==="SELECT"){ setPath(W,el.dataset.w,el.value); if(el.dataset.redraw) vArmador(); else actualizarArmador(); return; }
+  if(el.id==="dj"&&W){ W.dj=el.checked; return vArmador(); }
+  if(el.dataset.adj){ const f=el.files[0]; if(f) subirAdj(el.dataset.adj, el.dataset.k, f); return; }
+  if(el.id==="subirOrden"){ const f=el.files[0], t=tramite(el.dataset.arg); if(!f) return;
+    try{ toast("Subiendo…"); const r=await Store.subir(f); await mover(t.id,"Incorporó: "+f.name,null,{},{orden:{nombre:f.name.replace(/\.[a-z0-9]+$/i,""),origen:"egg",por:yo().nombre,archivos:[{...r,n:f.name}]}}); }catch(err){ toast(err.message||"No se pudo subir."); } return; }
+  if(el.dataset.cknota){ const t=tramite(el.dataset.arg), c={...(t.control||{})}; c[el.dataset.cknota]={...(c[el.dataset.cknota]||{}),nota:el.value.trim()}; return Store.update("tramites",t.id,{control:c}); }
+  if(el.id==="prepTxt"){ return Store.update("tramites",el.dataset.arg,{prep:el.value.trim()}); }
+  if(el.dataset.rol){ const x=usuario(el.dataset.rol);
+    if(el.value==="auxiliar"&&S.usuarios.filter(y=>y.rol==="escribano_egg"&&y.activo!==false).length<2){ el.value=x.rol; toast("Tiene que quedar al menos un escribano activo."); return; }
+    await Store.update("usuarios",x.id,{rol:el.value}); toast(`${x.nombre}: ahora es ${ROLES[el.value].n}`); return; }
+  if(el.dataset.est){ return Store.update("problemas",el.dataset.est,{estado:el.value}); }
+});
+document.addEventListener("submit", async e=>{
+  if(e.target.id!=="fnota") return; e.preventDefault(); const txt=$("#notaTxt").value.trim(); if(!txt) return;
+  await agregarNota(e.target.dataset.arg,txt); });
+function actualizarArmador(){ carpeta(); const c=document.querySelector('[data-act="cont"]'); if(c&&W.paso<5) c.disabled=!okPaso(W.paso); }
+
+async function subirAdj(ctx,k,file){
+  try{ toast("Subiendo "+file.name+"…"); const r=await Store.subir(file);
+    if(ctx==="w"){ W.adj[k]=r; vArmador(); }
+    else if(ctx==="c"){ const t=tramite(S.sel); await Store.update("tramites",t.id,{corr:{...(t.corr||{}),[k]:r}}); }
+    else if(ctx==="p"){ const t=tramite(S.sel); await mover(t.id,"Adjuntó "+TRAMITES[t.tipo].producto.toLowerCase(),null,{producto:r}); }
+    toast("Adjuntado: "+file.name);
+  }catch(e){ toast(e.message||"No se pudo subir el archivo."); }
+}
+function adjuntarEjemplo(ctx,k,n){
+  const t=ctx==="w"?null:tramite(S.sel), w=ctx==="w"?W:t.w, u=ctx==="w"?titular():usuario(t.solicitante);
+  const lin = ctx==="p" ? [`${TRAMITES[t.tipo].form}`,`Trámite ${t.nro}`,`Requirente: ${t.solicitanteNombre}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} — ${protocolo(t).acto}`,`Matrícula ${protocolo(t).matricula}`,`Fecha de emisión: ${fFecha(Date.now())}`]
+    : k==="nota" ? [textoNota(w,u),"","Firmado por el/los requirente/s.","Certifico que la/s firma/s que antecede/n fue/ron puesta/s en mi presencia. (Certificación simulada)"]
+    : [`Presentado por: ${u.nombre} (${u.doc||""})`,`Trámite: ${TRAMITES[w.tipo].n}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"}`,`Fecha: ${fFecha(Date.now())}`];
+  subirAdj(ctx,k,pdfFile(n,lin));
+}
+
+/* ==================================================================
+   ARRANQUE
+   ================================================================== */
+(async function(){
+  render();
+  await Store.init();
+  S.me=lsGet("simsig_me");
+  const onErr=e=>{ toast("Se perdió la conexión con la base. Recargá la página."); console.error(e); };
+  Store.subscribe("usuarios",l=>{ S.usuarios=l; S.listo.usuarios=true;
+    if(S.me&&!yo()&&l.length) S.me=null;
+    if(yo()?.activo===false){ S.me=null; lsSet("simsig_me",null); toast("Tu usuario fue dado de baja."); }
+    if(S.vista==="login"&&yo()) S.vista=lado(yo())==="egg"?"bandeja":"mis";
+    if(yo()&&["bandeja","ficha","usuarios"].includes(S.vista)&&lado(yo())!=="egg") S.vista="mis";
+    if(yo()&&["mis","det"].includes(S.vista)&&lado(yo())==="egg") S.vista="bandeja";
+    if(S.vista==="usuarios"&&!esEsc()) S.vista="bandeja";
+    refrescar(); },onErr);
+  Store.subscribe("tramites",l=>{ S.tramites=l; S.listo.tramites=true; refrescar(); },onErr);
+  Store.subscribe("problemas",l=>{ S.problemas=l; refrescar(); },onErr);
+})();
+/* Redibuja sin romper lo que se está escribiendo */
+function refrescar(){
+  if(S.vista==="armador"&&W){ renderTop(); return; }
+  const a=document.activeElement;
+  if(a&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&a.type!=="file"&&a.type!=="checkbox"))&&$("#app").contains(a)){ renderTop(); return; }
+  render();
+}
+</script>
+</body>
+</html>
