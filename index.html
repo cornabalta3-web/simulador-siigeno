@@ -265,6 +265,8 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 .acc .in{padding:4px 16px 16px 44px;display:flex;flex-direction:column;gap:10px}
 .login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.login.l3{grid-template-columns:1fr}}
+body.egg nav.tabs button[data-go="bandeja"]{font-size:14.5px;color:#fff;border:1px solid rgba(224,176,76,.6)}
+body.egg nav.tabs button[data-go="bandeja"][aria-current=true]{background:rgba(224,176,76,.22)}
 .navbar{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px;margin-top:6px}
 .navbar .izq,.navbar .der{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .navbar .der{margin-left:auto;flex-direction:column;align-items:flex-end;gap:6px}
@@ -591,7 +593,7 @@ const tasaAlAlta = t => { const c=cotizar(t.w); return c?c.total:0; };
    ================================================================== */
 const PASOS=["Escritura","Carácter","Costo","Envío"];
 function pantalla(){
-  const n={login:"Ingreso",mis:"Mis trámites",armador:"Armador de solicitud",busqueda:"Encontrar la escritura",det:"Mi trámite",bandeja:"Bandeja de trámites",ficha:"Ficha del trámite",usuarios:"Usuarios y roles",problemas:"Problemas anotados"}[S.vista]||S.vista;
+  const n={login:"Ingreso",mis:"Mis trámites",armador:"Armador de solicitud",busqueda:"Encontrar la escritura",det:"Mi trámite",bandeja:"Bandeja de entrada",ficha:"Ficha del trámite",usuarios:"Usuarios y roles",problemas:"Problemas anotados"}[S.vista]||S.vista;
   const u=yo(); return (u?(lado(u)==="egg"?"Escribanía · ":"Requirentes · "):"")+n+(S.vista==="armador"&&W?` · paso ${W.paso} (${PASOS[W.paso-1]})`:"")+(S.vista==="ficha"?` · ${({datos:"Datos",docs:"Documentos",hist:"Historial"})[S.tabF]}`:"");
 }
 function renderTop(){
@@ -604,7 +606,7 @@ function renderTop(){
   const misReq=S.tramites.filter(t=>t.solicitante===u.id&&(t.etapa==="falta_algo"||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo"||t.etapa==="encontrada")).length;
   const abiertos=S.problemas.filter(p=>!["Resuelto","No se arregla"].includes(p.estado)).length;
   $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">${egg?"Gestión interna · Escribanía":"Requirentes"}</span></div>
-    <nav class="tabs">${egg?nb("bandeja","Bandeja",esEsc()?nuevos:0)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados",abiertos)}</nav>
+    <nav class="tabs">${egg?nb("bandeja","Bandeja de entrada",nuevos)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados",abiertos)}</nav>
     <div class="me"><div class="who">${esc(u.nombre)}<span>${esc(ROLES[u.rol].n)}</span></div><span class="av top">${esc(iniciales(u.nombre))}</span>
     <button class="ghost" type="button" data-act="salir">Cambiar de usuario</button></div>`;
 }
@@ -1002,14 +1004,12 @@ function vBandeja(){
   const l=base.filter(t=>S.fB==="todos"||grupoEgg(t)===S.fB).sort((a,b)=>orden[grupoEgg(a)]-orden[grupoEgg(b)]||b.ingreso-a.ingreso);
   const nuevos=ext.filter(sinDueno), nuevo=null;
   $("#app").innerHTML=`<div class="stack">
-    <div class="spread"><h1 class="t">Bandeja de trámites</h1><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
+    <div class="spread"><div><h1 class="t">Bandeja de entrada</h1><p class="hint">${nuevos.length?`<b style="color:var(--req-acc)">${nuevos.length} sin asignar</b> · `:""}Tocá una fila para abrir el trámite.</p></div><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
     ${S.conf==="mesa"?`<div class="card row"><label class="f" for="mesaReq" style="margin:0">¿Para qué requirente?</label><select id="mesaReq" style="max-width:320px">${S.usuarios.filter(x=>lado(x)==="req"&&x.activo!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.nombre)} · ${esc(x.doc||"")}</option>`).join("")}</select>
       <button class="btn pri" type="button" data-act="mesaOk">Empezar la carga</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div>`:""}
     <div class="tabsline" role="tablist"><button type="button" role="tab" disabled title="No se simula en esta prueba">Internos · reparticiones y expediente<span class="n">0</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="ext" aria-selected="${S.tabB==="ext"}">Externos · ciudadanos y escribanos<span class="n">${ext.length}</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="mios" aria-selected="${S.tabB==="mios"}">Míos<span class="n">${mios.length}</span></button></div>
-    ${nuevos.length&&S.tabB==="ext"?`<div class="box b-warn"><b>${nuevos.length===1?"Hay 1 pendiente sin asignar":`Hay ${nuevos.length} pendientes sin asignar`}.</b> ${esEsc()?"Abrí cada uno y elegí quién lo hace.":"Los asigna el escribano."}
-      <div class="pendientes">${nuevos.map(t=>`<button type="button" data-act="abrirFicha" data-arg="${t.id}"><b>${esc(t.nro)}</b> · ${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(t.w))} · ${esc(t.solicitanteNombre)} · ${esc(t.carril==="directo"?"carril directo, ya pago":t.tipo==="busqueda"?"hay que ubicarla":"hay que controlarlo")} · ${hace(t.ingreso)}</button>`).join("")}</div></div>`:""}
     <div class="spread" style="align-items:center"><div class="pills">${GRUPOS.map(g=>`<button type="button" class="${S.fB===g[0]?"on":""}" data-act="fB" data-arg="${g[0]}">${g[1]} · ${base.filter(t=>g[0]==="todos"||grupoEgg(t)===g[0]).length}</button>`).join("")}</div>
       <div class="leyenda">${GRUPOS.slice(1).map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join("")}</div></div>
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Carácter</th><th>Ingreso</th><th>Tasa</th><th>Estado</th><th>A cargo</th><th>Archivos</th></tr></thead><tbody>
@@ -1184,7 +1184,7 @@ function vFicha(){
       ${notas.length?`<div class="notes">${notas.map(n=>`<div class="note"><span class="av">${esc(iniciales(n.nombre))}</span><div><div class="t"><b>${esc(n.nombre)}</b> · ${fCorta(n.t)} ${fHora(n.t)}</div><p>${esc(n.texto)}</p></div></div>`).join("")}</div>`:`<span class="sub">Sin notas todavía.</span>`}
       <form id="fnota" class="row" data-arg="${t.id}"><input type="text" id="notaTxt" placeholder="Escribí una nota para el equipo" style="flex:1"><button class="btn sm" type="submit">Agregar</button></form></div></aside>`;
 
-  app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">Volver a la bandeja externa</button></div>
+  app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">← Volver a la bandeja de entrada</button></div>
     <div class="spread"><div class="row"><h1 class="t">${t.tipo==="busqueda"?"Búsqueda":"Trámite"} ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
     <div class="box b-mute spread" style="align-items:center"><span>Lo pidió <b>${esc(t.solicitanteNombre)}</b> (${esc(ROLES[usuario(t.solicitante)?.rol]?.n||"requirente")}). Del lado del requirente lo ve solo esa persona.</span><button class="btn sm" type="button" data-act="verComoReq" data-arg="${t.id}">Ver lo que ve ${esc(t.solicitanteNombre)}</button></div>
     ${soloVer&&t.responsable?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
