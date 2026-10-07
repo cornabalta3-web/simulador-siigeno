@@ -265,8 +265,25 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 .acc .in{padding:4px 16px 16px 44px;display:flex;flex-direction:column;gap:10px}
 .login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:900px){.login.l3{grid-template-columns:1fr}}
-body.egg nav.tabs button[data-go="bandeja"]{font-size:14.5px;color:#fff;border:1px solid rgba(224,176,76,.6)}
-body.egg nav.tabs button[data-go="bandeja"][aria-current=true]{background:rgba(224,176,76,.22)}
+header.top{border-bottom:0}
+.topin{justify-content:space-between;padding-block:10px}
+.me .salir{background:none;border:0;color:#AFC0D2;font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:0}
+.me .salir:hover{color:#fff}
+.subnav{background:var(--surface);border-bottom:1px solid var(--line);box-shadow:inset 0 3px 0 var(--acc)}
+.subin{display:flex;align-items:stretch;gap:2px;min-height:50px;overflow-x:auto}
+.subnav button{background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px 9px;font-weight:600;font-size:15px;color:var(--muted);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
+.subnav button:hover{color:var(--fg)}
+.subnav button[aria-current=true]{color:var(--fg);border-bottom-color:var(--acc)}
+.subnav .badge{margin-left:0}
+.subnav .sec{margin-left:auto;font-size:13px;font-weight:500}
+.pie{font-size:11.5px;color:var(--muted);padding-block:0 90px;text-align:center}
+.seg{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.seg button{display:inline-flex;align-items:center;gap:7px;border:1px solid transparent;background:none;border-radius:999px;padding:6px 12px;font-size:13.5px;color:var(--muted);cursor:pointer}
+.seg button:hover{color:var(--fg)}
+.seg button.on{background:var(--surface);border-color:var(--line);color:var(--fg);font-weight:600}
+.seg i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.seg .n{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:500}
+.seg .sep{width:1px;height:20px;background:var(--line);margin:0 6px}
 .navbar{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px;margin-top:6px}
 .navbar .izq,.navbar .der{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .navbar .der{margin-left:auto;flex-direction:column;align-items:flex-end;gap:6px}
@@ -303,9 +320,10 @@ tr.emit td{background:var(--ok-bg)}
 </head>
 <body>
 <script src="config.js"></script>
-<div class="flag">Simulador de prueba · datos inventados · <b id="modoTxt">conectando…</b></div>
 <header class="top"><div class="wrap topin" id="top"></div></header>
+<nav class="subnav" aria-label="Secciones"><div class="wrap subin" id="subnav"></div></nav>
 <main class="page wrap" id="app"><div class="empty">Cargando el simulador…</div></main>
+<div class="pie wrap">Simulador de prueba · datos inventados · <span id="modoTxt">conectando…</span></div>
 <button class="fab" id="fab" type="button">Anotar problema</button>
 <div id="layer"></div>
 
@@ -600,15 +618,16 @@ function renderTop(){
   const u=yo(), egg=lado(u)==="egg";
   document.body.classList.toggle("egg", egg);
   $("#modoTxt").textContent = Store.modo==="compartido"?"base compartida entre colegas"+(Store.fuente==="Firebase"?" (Firebase)":""):Store.modo==="local"?"datos guardados solo en este navegador":"conectando…";
-  const nb=(k,n,b)=>`<button type="button" data-go="${k}" ${S.vista===k||(k==="bandeja"&&S.vista==="ficha")||(k==="mis"&&["det","armador","busqueda"].includes(S.vista))?'aria-current="true"':""}>${n}${b?`<span class="badge">${b}</span>`:""}</button>`;
-  if(!u){ $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">Ingreso de prueba</span></div><nav class="tabs">${nb("problemas","Problemas anotados")}</nav>`; return; }
+  const nb=(k,n,b,cls="")=>`<button type="button" class="${cls}" data-go="${k}" ${S.vista===k||(k==="bandeja"&&S.vista==="ficha")||(k==="mis"&&["det","armador","busqueda"].includes(S.vista))?'aria-current="true"':""}>${n}${b?`<span class="badge">${b}</span>`:""}</button>`;
+  const abiertos=S.problemas.filter(p=>!["Resuelto","No se arregla"].includes(p.estado)).length;
+  if(!u){ $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">Ingreso de prueba</span></div>`;
+    $("#subnav").innerHTML=nb("login","Ingresar")+nb("problemas",`Problemas anotados${abiertos?` (${abiertos})`:""}`,0,"sec"); return; }
   const nuevos=activos().filter(t=>!t.responsable&&!CERRADOS.includes(t.etapa)&&!["encontrada"].includes(t.etapa)).length;
   const misReq=S.tramites.filter(t=>t.solicitante===u.id&&(t.etapa==="falta_algo"||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo"||t.etapa==="encontrada")).length;
-  const abiertos=S.problemas.filter(p=>!["Resuelto","No se arregla"].includes(p.estado)).length;
   $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">${egg?"Gestión interna · Escribanía":"Requirentes"}</span></div>
-    <nav class="tabs">${egg?nb("bandeja","Bandeja de entrada",nuevos)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados",abiertos)}</nav>
-    <div class="me"><div class="who">${esc(u.nombre)}<span>${esc(ROLES[u.rol].n)}</span></div><span class="av top">${esc(iniciales(u.nombre))}</span>
-    <button class="ghost" type="button" data-act="salir">Cambiar de usuario</button></div>`;
+    <div class="me"><div class="who">${esc(u.nombre)}<span>${esc(ROLES[u.rol].n)} · <button class="salir" type="button" data-act="salir">Cambiar de usuario</button></span></div><span class="av top">${esc(iniciales(u.nombre))}</span></div>`;
+  $("#subnav").innerHTML=(egg?nb("bandeja","Bandeja de entrada",nuevos)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq))
+    +nb("problemas",`Problemas anotados${abiertos?` (${abiertos})`:""}`,0,"sec");
 }
 function ir(v,sel){ S.vista=v; if(sel!==undefined) S.sel=sel; S.conf=null; if(v!=="ficha") S.tabF="datos"; S.verDocs=false; render(); window.scrollTo({top:0}); }
 function render(){
@@ -998,32 +1017,27 @@ const sinDueno = t => !t.responsable && !CERRADOS.includes(t.etapa) && t.etapa!=
 const grupoEgg = t => sinDueno(t)?"nuevo":CERRADOS.includes(t.etapa)?"cerrado":(ETAPAS[t.etapa].req[0]&&["falta_algo","encontrada"].includes(t.etapa)||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo")?"req":"curso";
 const GRUPOS=[["todos","Todos",null],["nuevo","Sin asignar","var(--req-acc)"],["curso","En curso","var(--info)"],["req","Esperan al requirente","#8E6BBF"],["cerrado","Terminados","var(--ok)"]];
 function vBandeja(){
-  const u=yo(), ext=activos().sort((a,b)=>b.ingreso-a.ingreso), mios=ext.filter(t=>t.responsable===u.id);
-  const base=S.tabB==="mios"?mios:ext; if(!S.fB) S.fB="todos";
+  const u=yo(), ext=activos(), base=S.tabB==="mios"?ext.filter(t=>t.responsable===u.id):ext; if(!S.fB) S.fB="todos";
   const orden={nuevo:0,curso:1,req:2,cerrado:3};
   const l=base.filter(t=>S.fB==="todos"||grupoEgg(t)===S.fB).sort((a,b)=>orden[grupoEgg(a)]-orden[grupoEgg(b)]||b.ingreso-a.ingreso);
-  const nuevos=ext.filter(sinDueno), nuevo=null;
+  const nuevos=ext.filter(sinDueno).length;
+  const estadoSub=t=>{ const tc=tasaCol(t).replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim(); return `${t.responsable?esc(nombreDe(t.responsable)):"Nadie a cargo"} · ${esc(tc)}`; };
   $("#app").innerHTML=`<div class="stack">
-    <div class="spread"><div><h1 class="t">Bandeja de entrada</h1><p class="hint">${nuevos.length?`<b style="color:var(--req-acc)">${nuevos.length} sin asignar</b> · `:""}Tocá una fila para abrir el trámite.</p></div><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
+    <div class="spread" style="align-items:flex-end"><div><h1 class="t">Bandeja de entrada</h1>
+      <p class="hint">${nuevos?`<b style="color:var(--req-acc)">${nuevos} sin asignar.</b> `:""}Tocá una fila para abrir el trámite.</p></div>
+      <button class="btn" type="button" data-act="mesa">Cargar por mesa de entradas</button></div>
     ${S.conf==="mesa"?`<div class="card row"><label class="f" for="mesaReq" style="margin:0">¿Para qué requirente?</label><select id="mesaReq" style="max-width:320px">${S.usuarios.filter(x=>lado(x)==="req"&&x.activo!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.nombre)} · ${esc(x.doc||"")}</option>`).join("")}</select>
       <button class="btn pri" type="button" data-act="mesaOk">Empezar la carga</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div>`:""}
-    <div class="tabsline" role="tablist"><button type="button" role="tab" disabled title="No se simula en esta prueba">Internos · reparticiones y expediente<span class="n">0</span></button>
-      <button type="button" role="tab" data-act="tabB" data-arg="ext" aria-selected="${S.tabB==="ext"}">Externos · ciudadanos y escribanos<span class="n">${ext.length}</span></button>
-      <button type="button" role="tab" data-act="tabB" data-arg="mios" aria-selected="${S.tabB==="mios"}">Míos<span class="n">${mios.length}</span></button></div>
-    <div class="spread" style="align-items:center"><div class="pills">${GRUPOS.map(g=>`<button type="button" class="${S.fB===g[0]?"on":""}" data-act="fB" data-arg="${g[0]}">${g[1]} · ${base.filter(t=>g[0]==="todos"||grupoEgg(t)===g[0]).length}</button>`).join("")}</div>
-      <div class="leyenda">${GRUPOS.slice(1).map(g=>`<span><i style="background:${g[2]}"></i>${g[1]}</span>`).join("")}</div></div>
-    ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Carácter</th><th>Ingreso</th><th>Tasa</th><th>Estado</th><th>A cargo</th><th>Archivos</th></tr></thead><tbody>
+    <div class="seg">${GRUPOS.map(g=>`<button type="button" class="${S.fB===g[0]?"on":""}" data-act="fB" data-arg="${g[0]}">${g[2]?`<i style="background:${g[2]}"></i>`:""}${g[1]} <span class="n">${base.filter(t=>g[0]==="todos"||grupoEgg(t)===g[0]).length}</span></button>`).join("")}
+      <span class="sep"></span><button type="button" class="${S.tabB==="mios"?"on":""}" data-act="tabB" data-arg="${S.tabB==="mios"?"ext":"mios"}">Solo los míos</button></div>
+    ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Estado</th><th>Ingreso</th></tr></thead><tbody>
       ${l.map(t=>`<tr class="click g-${grupoEgg(t)}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
         <td><b>${esc(nombreT(t))}</b><div class="sub">${t.tipo==="busqueda"?"para "+esc(nombreW(t.w).toLowerCase()):"Esc. "+esc(escTxt(t.w).replace("N.º ",""))}</div></td>
-        <td><b>${esc(t.solicitanteNombre)}</b><div class="sub">${esc(t.solicitanteDoc)}</div></td><td>${esc(CARACTERES[t.w.caracter]?.corto||"—")}</td>
-        <td class="num">${fFecha(t.ingreso)}<div class="sub">${fHora(t.ingreso)}</div></td><td>${tasaCol(t)}</td><td>${chipEgg(t)}</td>
-        <td>${t.responsable?esc(nombreDe(t.responsable)):`<span style="color:var(--bad)">—</span>`}</td>
-        <td><button class="btn sm" type="button" data-act="abrirDocs" data-arg="${t.id}">📄 ${nArchivos(t)}</button></td></tr>`).join("")}
-      </tbody></table><div class="tfoot"><span>Mostrando ${l.length} · se abre la fila y se trabaja desde la ficha</span><span>Simulador SIIGENO · EGG</span></div></div>`
+        <td>${esc(t.solicitanteNombre)}<div class="sub">${esc(CARACTERES[t.w.caracter]?.corto||"—")}</div></td>
+        <td>${chipEgg(t)}<div class="sub" style="margin-top:3px">${estadoSub(t)}</div></td>
+        <td class="num">${fFecha(t.ingreso)}<div class="sub">${hace(t.ingreso)}</div></td></tr>`).join("")}
+      </tbody></table></div>`
       :`<div class="card empty">${base.length?"No hay trámites en este filtro.":S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como ciudadana (Cambiar de usuario) y enviá uno."}</div>`}
-    ${esEsc()&&S.tramites.length?`<div class="card spread"><div><h3 class="t">Empezar la prueba de cero</h3><p class="hint">Borra todos los trámites. Los usuarios y los problemas anotados quedan.</p></div>
-      ${S.conf==="reset"?`<span class="row"><span class="box b-bad">¿Borrar ${S.tramites.length} trámites?</span><button class="btn sm" type="button" data-act="resetOk">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
-        :`<button class="btn" type="button" data-act="reset">Borrar trámites de prueba</button>`}</div>`:""}
   </div>`;
 }
 
@@ -1186,7 +1200,7 @@ function vFicha(){
 
   app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">← Volver a la bandeja de entrada</button></div>
     <div class="spread"><div class="row"><h1 class="t">${t.tipo==="busqueda"?"Búsqueda":"Trámite"} ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
-    <div class="box b-mute spread" style="align-items:center"><span>Lo pidió <b>${esc(t.solicitanteNombre)}</b> (${esc(ROLES[usuario(t.solicitante)?.rol]?.n||"requirente")}). Del lado del requirente lo ve solo esa persona.</span><button class="btn sm" type="button" data-act="verComoReq" data-arg="${t.id}">Ver lo que ve ${esc(t.solicitanteNombre)}</button></div>
+    <div class="sub" style="margin-top:-6px">Lo pidió ${esc(t.solicitanteNombre)} · <button class="link" type="button" data-act="verComoReq" data-arg="${t.id}" style="font-size:12.5px">Ver lo que ve el requirente</button></div>
     ${soloVer&&t.responsable?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
     ${t.tipo==="busqueda"&&et==="buscando"?`<div class="box b-info">Definición abierta: quién atiende las búsquedas asistidas. En la prueba, cualquiera de la Escribanía.</div>`:""}
     ${conf}
@@ -1225,7 +1239,10 @@ function vUsuarios(){
       <div class="field"><label class="f" for="nuN">Nombre</label><input type="text" id="nuN" placeholder="Ej.: Micucci" required></div>
       <div class="field"><label class="f" for="nuU">Usuario</label><input type="text" id="nuU" placeholder="Ej.: micucci" required></div>
       <div class="field"><label class="f" for="nuR">Rol</label><select id="nuR"><option value="auxiliar">Auxiliar (EGG)</option><option value="escribano_egg">Escribano/a (EGG)</option><option value="particular">Ciudadano/a (externo)</option><option value="escribano_ext">Escribano/a de registro (externo)</option></select></div></div>
-      <p class="legend" style="margin:0">Entra con la clave de prueba ${CLAVE}.</p><div><button class="btn pri" type="submit">Crear usuario</button></div></form></div>`;
+      <p class="legend" style="margin:0">Entra con la clave de prueba ${CLAVE}.</p><div><button class="btn pri" type="submit">Crear usuario</button></div></form>
+    ${S.tramites.length?`<div class="card spread"><div><h3 class="t">Empezar la prueba de cero</h3><p class="hint">Borra todos los trámites. Los usuarios y los problemas anotados quedan.</p></div>
+      ${S.conf==="reset"?`<span class="row"><span class="box b-bad">¿Borrar ${S.tramites.length} trámites?</span><button class="btn sm" type="button" data-act="resetOk">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
+        :`<button class="btn" type="button" data-act="reset">Borrar trámites de prueba</button>`}</div>`:""}</div>`;
   $("#fnu").onsubmit=async e=>{ e.preventDefault(); const n=$("#nuN").value.trim(), us=$("#nuU").value.trim().toLowerCase().replace(/\s+/g,""), r=$("#nuR").value;
     if(!n||!us) return; if(S.usuarios.some(x=>(x.usuario||"").toLowerCase()===us)){ toast("Ese usuario ya existe."); return; }
     const d={usuario:us,nombre:n,rol:r,activo:true,clave:CLAVE,creado:Date.now()}; if(r==="particular"){ d.doc="20-00000000-0"; d.domicilio="Córdoba"; } if(r==="escribano_ext"){ d.doc="Registro —"; d.domicilio="Córdoba"; }
@@ -1404,7 +1421,7 @@ document.addEventListener("click", async e=>{
     case "abrirDocs": e.stopPropagation(); S.vista="ficha"; S.sel=arg; S.tabF="docs"; S.filtroDoc="todos"; return render();
     case "mesa": S.conf="mesa"; return vBandeja();
     case "mesaOk": { const para=$("#mesaReq").value; if(!para) return; W=nuevoW(para); S.conf=null; return ir("armador"); }
-    case "reset": S.conf="reset"; return vBandeja();
+    case "reset": S.conf="reset"; return vUsuarios();
     case "resetOk": S.conf=null; for(const x of S.tramites.slice()) await Store.del("tramites",x.id); return toast("Trámites borrados");
     case "tabF": S.tabF=arg; return vFicha();
     case "filtroDoc": S.filtroDoc=arg; return vFicha();
