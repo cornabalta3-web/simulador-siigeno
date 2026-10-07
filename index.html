@@ -12,9 +12,9 @@
    contenido en una columna con panel lateral fijo; botón "Anotar problema" abajo a la derecha.
    Tomado del recorrido final del armador y la bandeja. */
 :root{
-  --req-head:#0F4468; --req-acc:#C2571A; --egg-head:#18222F; --egg-acc:#D9A93A;
-  --bg:#F3F2EE; --surface:#FFFFFF; --surface-2:#F7F6F2; --fg:#1D2530; --muted:#69717E; --line:#DEDCD5;
-  --link:#0F4468; --acc:var(--req-acc); --head:var(--req-head);
+  --req-head:#0A4467; --req-acc:#C25A1E; --egg-head:#16222E; --egg-acc:#E0B04C;
+  --bg:#F5F3EE; --surface:#FFFFFF; --surface-2:#F7F6F2; --fg:#1D2530; --muted:#69717E; --line:#DEDCD5;
+  --link:#0A4467; --acc:var(--req-acc); --head:var(--req-head);
   --ok:#1D6B3F; --ok-bg:#E3F0E7; --warn:#8A6410; --warn-bg:#FBF1DA; --bad:#9E2A1E; --bad-bg:#FBE9E6;
   --info:#24527A; --info-bg:#E6EEF6; --orange:#A84A12; --orange-bg:#FBE8DA; --mute-bg:#ECEAE4;
   --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
@@ -253,6 +253,28 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 .docrow .dn b{display:block;font-size:14px;font-weight:600}
 .docrow .dn span{font-size:12px;color:var(--muted)}
 .foot{font-size:11.5px;color:var(--muted);text-align:right;margin-top:6px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs figure{margin:0;position:relative;width:96px;height:72px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.thumbs button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(10,16,24,.7);color:#fff;font-size:12px;cursor:pointer;line-height:1}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:14px;text-align:center;color:var(--muted);font-size:13px}
+.drop.on{border-color:var(--req-acc);background:var(--orange-bg)}
+.acc{border:1.5px solid var(--line);border-radius:10px;background:var(--surface);overflow:hidden}
+.acc[open]{border-color:var(--req-head);box-shadow:0 0 0 1px var(--req-head) inset}
+.acc .opt{border:0;border-radius:0}
+.acc .in{padding:4px 16px 16px 44px;display:flex;flex-direction:column;gap:10px}
+.login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:900px){.login.l3{grid-template-columns:1fr}}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.login.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:900px){.login.l3{grid-template-columns:1fr}}
+.split{grid-template-columns:1fr}}
+.nuevo-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.08em;background:var(--req-acc);color:#fff;border-radius:4px;padding:2px 6px}
+.costline{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.costline .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.costtot{display:flex;justify-content:space-between;align-items:baseline;padding-top:12px}
+.costtot .v{font-family:var(--serif);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+tr.emit td{background:var(--ok-bg)}
 @media (prefers-reduced-motion:no-preference){.drawer .in{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}}}
 </style>
 </head>
@@ -267,64 +289,78 @@ tr.nuevo td:first-child{box-shadow:inset 3px 0 0 var(--req-acc)}
 <script>
 "use strict";
 /* ==================================================================
-   CATÁLOGO — sale del recorrido final del armador y la bandeja.
-   Trámites, caracteres, documentos y etapas son datos: se cambian acá.
+   CATÁLOGO — sale del canvas «Armador de solicitud — SIIGENO Requirentes»
+   (Mockup de pantallas + Recorrido final). Son datos: se cambian acá.
    ================================================================== */
+/* Lo que se elige en el paso 1 (pantalla «Iniciar solicitud») */
+const OPCIONES = [
+  {k:"copia_simple",   n:"Copia simple",               d:"Digital, se descarga del portal. Para archivo o consulta.", tipo:"copia", modo:"simple", soporte:"digital"},
+  {k:"copia_cert",     n:"Copia certificada",          d:"En papel, con firma y sello. Se retira con turno.",          tipo:"copia", modo:"cert",   soporte:"papel"},
+  {k:"copia_cert_dig", n:"Copia certificada digital",  d:"Con firma digital, se descarga del portal.",                 tipo:"copia", modo:"cert",   soporte:"digital"},
+  {k:"testimonio",     n:"Segundo o ulterior testimonio", d:"Para reemplazar un testimonio perdido, robado o extraviado. Se vuelve a inscribir.", tipo:"testimonio"},
+  {k:"antecedentes",   n:"Consulta de antecedentes",   d:"Solo escribanos en ejercicio. Sin costo.", tipo:"antecedentes", soloEscribanos:true}
+];
+/* Tabla de tasas de SIIGENO (por hoja autenticada; testimonio monto fijo). El segundo ejemplar y siguientes, al 50 %. */
+const TASAS = {simple_digital:1000, cert_papel:3220, cert_digital:2000, testimonio_papel:70950, testimonio_digital:40000};
 const TRAMITES = {
-  copia:{n:"Copia de escritura", d:"Simple o certificada, en papel o digital. Para acreditar lo que dice una escritura.",
-    form:"SOLICITUD DE COPIAS Y COPIAS CERTIFICADAS", caracteres:["parte","sucesor_u","sucesor_s","apoderado","profesional","organismo","interes"],
-    precios:{simple_papel:2000,simple_digital:1000,cert_papel:3220,cert_digital:2000}, producto:"Copia emitida"},
-  testimonio:{n:"Segundo o ulterior testimonio", d:"Para reemplazar un testimonio perdido, robado o extraviado. Se vuelve a inscribir.",
-    form:"SOLICITUD DE SEGUNDOS O ULTERIORES TESTIMONIOS", caracteres:["parte","sucesor_u","interes"],
-    precios:{papel:70950,digital:40000}, producto:"Testimonio emitido", reinscribe:true},
-  antecedentes:{n:"Consulta de antecedentes", d:"Solo para escribanos en ejercicio.",
-    form:"SOLICITUD DE CONSULTA DE ANTECEDENTES", caracteres:["escribano"], precios:{}, producto:"Habilitación de la consulta", soloEscribanos:true, sinCosto:true}
+  copia:{n:"Copia", form:"SOLICITUD DE COPIAS Y COPIAS CERTIFICADAS", producto:"Copia emitida",
+    caracteres:["parte","sucesor_u","sucesor_s","apoderado","profesional","organismo","interes"]},
+  testimonio:{n:"Segundo o ulterior testimonio", form:"SOLICITUD DE SEGUNDOS O ULTERIORES TESTIMONIOS", producto:"Testimonio emitido", reinscribe:true,
+    caracteres:["parte","sucesor_u","interes"]},
+  antecedentes:{n:"Consulta de antecedentes", form:"SOLICITUD DE CONSULTA DE ANTECEDENTES", producto:"Habilitación de la consulta", sinCosto:true, caracteres:["escribano"]},
+  busqueda:{n:"Búsqueda asistida", form:"PEDIDO DE BÚSQUEDA DE ESCRITURA", producto:"", sinCosto:true, caracteres:[]}
 };
+/* Los siete caracteres desplegados (pantalla «Los siete caracteres»). Lo que se adjunta va adentro del carácter. */
 const CARACTERES = {
-  parte:{t:"Fui parte de la escritura", d:"Tu CiDi ya te acredita. No adjuntás nada.", corto:"Parte", docs:[], campos:[]},
-  sucesor_u:{t:"Soy heredera o sucesora universal", d:"De alguien que sí fue parte. Hay que acreditar que falleció, el vínculo, y la declaratoria.", corto:"Heredera",
-    titulo:"Datos de la declaratoria", campos:[["autos","Autos caratulados","GÓMEZ, Roberto — Declaratoria de herederos"],["juzgado","Juzgado y secretaría","Civ. y Com. 14.ª Nom. · Sec. 2"],["fecha","Fecha","dd/mm/aaaa"]],
-    docs:[["defuncion","Partida de defunción","De la parte que figura en la escritura"],["nacimiento","Partida de nacimiento o libreta de familia","Acredita el vínculo"],["declaratoria","Declaratoria de herederos","Te declara heredera"]],
-    aviso:"Tienen que pedirlo todos los herederos declarados. Si son más de uno, todos firman la nota."},
-  sucesor_s:{t:"Soy sucesor singular", d:"Adquirí el derecho por instrumento público.", corto:"Sucesor singular",
-    titulo:"Dónde consta el instrumento", campos:[["esc","Escritura N° del instrumento",""],["reg","Escribano/a y registro",""],["fecha","Fecha","dd/mm/aaaa"]],
-    docs:[["instrumento","Constancias del instrumento público","Del que surge tu carácter"]]},
-  apoderado:{t:"Actúo como apoderado", d:"En representación de otra persona.", corto:"Apoderado",
-    titulo:"Datos del poder", campos:[["esc","Escritura N° del poder",""],["reg","Escribano/a y registro",""],["quien","A quién representás",""]],
-    docs:[["poder","Poder o autorización con firmas certificadas","Con facultades expresas para este trámite"]]},
-  profesional:{t:"Soy profesional interviniente", d:"Abogado, escribano, contador, agrimensor, martillero, perito.", corto:"Profesional",
-    titulo:"Tu intervención", campos:[["mat","Profesión y matrícula",""],["quien","A quién representás",""],["autos","Carátula del expediente, si hay",""]],
-    docs:[["autorizacion","Autorización de tu representado",""],["interes","Acreditación del interés legítimo","Para qué la necesitás"]]},
-  organismo:{t:"Soy juez u organismo público", d:"Lo requiero en ejercicio de mis funciones.", corto:"Organismo",
-    titulo:"Datos del requerimiento", campos:[["org","Organismo o juzgado",""],["oficio","N° de oficio o expediente",""]],
-    docs:[["oficio","Oficio o requerimiento","Firmado en ejercicio de funciones"]]},
-  interes:{t:"Acredito interés legítimo", d:"Tenés que fundamentarlo por escrito.", corto:"Interés legítimo",
-    titulo:"El interés que invocás", campos:[["tipo","Tipo de instrumento","Medida cautelar, orden judicial, mutuo…"],["donde","Dónde consta","Juzgado, registro o entidad, y número"]],
-    docs:[["instrumento","Instrumento que acredita el interés","Medida cautelar, orden judicial, financiación u otro"]]},
-  escribano:{t:"Soy escribano en ejercicio", d:"Único carácter habilitado para la consulta.", corto:"Escribano/a",
-    titulo:"Tu registro", campos:[["mat","Matrícula profesional",""],["reg","Registro notarial a cargo",""]], docs:[]}
+  parte:{t:"Fui parte de la escritura", d:"Comprador, vendedor, donante, donatario, cedente, cesionario. Tu CiDi ya te acredita.", corto:"Parte",
+    nada:"No adjuntás nada. Tu cuenta de Ciudadano Digital ya te identifica y la escritura dice que estuviste. Pasás directo al costo.", guia:"Guía de requisitos · legitimación, inciso 3", docs:[], campos:[]},
+  sucesor_u:{t:"Soy heredero o sucesor universal", d:"De alguien que sí fue parte de la escritura.", corto:"Heredero/a", guia:"Guía · representación de las partes — sucesores universales",
+    docs:[["defuncion","Partida de defunción de la parte","Acredita que la parte falleció"],["nacimiento","Libreta de familia o partida de nacimiento","Acredita tu vínculo con la parte"],["declaratoria","Declaratoria de herederos","Acredita tu carácter de heredero declarado"]],
+    campos:[["autos","Autos caratulados","GÓMEZ, Roberto — Declaratoria de herederos"],["juzgado","Juzgado y secretaría","Dónde tramitó"],["fecha","Fecha","dd/mm/aaaa"]],
+    aviso:"Si el trámite es un segundo testimonio, lo tienen que pedir todos los herederos declarados, sin excepción, y todos firman el formulario."},
+  sucesor_s:{t:"Soy sucesor singular", d:"Adquiriste el derecho por un instrumento público posterior.", corto:"Sucesor singular", guia:"Guía · representación de las partes — sucesores singulares",
+    docs:[["instrumento","Constancias del instrumento público del que surge tu carácter",""]],
+    campos:[["registro","Escribanía o registro","Registro 412"],["esc","N.º de escritura","118"],["fecha","Fecha","dd/mm/aaaa"]]},
+  apoderado:{t:"Actúo como apoderado o representante", d:"De cualquiera de los anteriores.", corto:"Apoderado/a", guia:"Guía · legitimación inciso 5 y representación de las partes",
+    unaDe:true, docs:[["poder","Poder por escritura pública, vigente y con facultades expresas",""],["autorizacion","Autorización con firmas certificadas ante escribano, que además certifique el carácter invocado por el autorizante",""]],
+    campos:[["cuil","CUIL de quien representás","El sistema trae sus datos"]]},
+  profesional:{t:"Soy profesional interviniente", d:"Abogado, escribano, procurador, contador, ingeniero, agrimensor, martillero, o perito designado por un juez.", corto:"Profesional",
+    guia:"Guía · legitimación inciso 1 y representación — profesionales", aviso:"Necesitás la cuenta CiDi habilitada para este trámite.",
+    docs:[["autorizacion","Autorización de tu representado",""],["interes","Acreditación del interés legítimo",""]],
+    campos:[["matricula","Matrícula","N.º"],["colegio","Colegio o consejo","El que corresponda"]]},
+  organismo:{t:"Soy juez u organismo público", d:"Lo requiero en ejercicio de mis funciones. Exento de tasa.", corto:"Juez u organismo", exento:true, guia:"Guía · legitimación inciso 2",
+    docs:[["oficio","Oficio o requerimiento",""]], campos:[["organismo","Juzgado u organismo","Cuál"],["caratula","Carátula del expediente","Autos"]],
+    aviso:"Exento de tasa. El costo aparece en cero con el fundamento al lado."},
+  interes:{t:"Acredito interés legítimo", d:"Un acreedor con medida cautelar sobre el inmueble, un banco que financia una hipoteca, cualquiera que pueda fundamentarlo.", corto:"Interés legítimo",
+    guia:"Guía · legitimación inciso 6", docs:[["respaldo","Documentación que respalde ese interés",""]],
+    campos:[["fundamento","Fundamentá para qué la necesitás","Lo lee una persona de la Escribanía, así que escribilo completo",true]]},
+  escribano:{t:"Escribano en ejercicio", d:"La consulta de antecedentes no usa la pantalla de carácter.", corto:"Escribano/a", docs:[], campos:[]}
 };
 const MOTIVOS = ["Extravío del testimonio original","Sustracción (robo o hurto)","Destrucción o deterioro","Nunca se retiró de la notaría"];
 const OBJETOS = ["Archivo personal","Trámite bancario o crediticio","Trámite sucesorio","Trámite judicial","Gestión ante organismo público","Otro"];
 const DESTINOS = ["Municipalidad","Registro General de la Provincia","Juzgado","Banco o entidad financiera","Dirección General de Rentas","Otro organismo"];
-const PROTOCOLOS = ["Sección A — inscribibles","Sección B — no inscribibles"];
+const PROTOCOLOS = ["Sección A — actos inscribibles","Sección B — actos no inscribibles"];
+const ACTOS = ["No lo sé","Compraventa","Donación","Hipoteca","Cesión","Acta"];
 
-/* Estados. "egg" es lo que ve la escribanía; "req" lo que ve el requirente. */
+/* Una sola máquina de estados, dos vistas: lo que ve la Escribanía y lo que ve el requirente. */
 const ETAPAS = {
-  borrador:      {egg:["Borrador","c-mute"],        req:["Borrador","c-mute"]},
-  sin_asignar:   {egg:["Sin asignar","c-mute"],     req:["En revisión","c-info"]},
-  asignado:      {egg:["Asignado","c-info"],        req:["En revisión","c-info"]},
-  en_revision:   {egg:["En revisión","c-info"],     req:["En revisión","c-info"]},
-  falta_algo:    {egg:["Falta algo","c-warn"],      req:["Falta algo","c-warn"]},
-  a_pagar:       {egg:["A pagar","c-orange"],       req:["A pagar","c-orange"]},
-  en_preparacion:{egg:["En preparación","c-mute"],  req:["En preparación","c-mute"]},
-  listo:         {egg:["Listo","c-ok"],             req:["Listo","c-ok"]},
-  entregado:     {egg:["Entregado","c-mute"],       req:["Entregado","c-mute"]},
-  no_corresponde:{egg:["No corresponde","c-bad"],   req:["No corresponde","c-bad"]}
+  borrador:      {egg:["Borrador","c-mute"],             req:["Borrador","c-mute"]},
+  buscando:      {egg:["Búsqueda asistida","c-info"],    req:["Buscando tu escritura","c-info"]},
+  encontrada:    {egg:["Escritura identificada","c-ok"], req:["Encontramos tu escritura","c-ok"]},
+  no_encontrada: {egg:["No encontrada","c-bad"],         req:["No la encontramos","c-bad"]},
+  sin_asignar:   {egg:["Sin asignar","c-mute"],          req:["En revisión","c-info"]},
+  asignado:      {egg:["Asignado","c-info"],             req:["En revisión","c-info"]},
+  en_revision:   {egg:["En revisión","c-info"],          req:["En revisión","c-info"]},
+  falta_algo:    {egg:["Falta algo","c-warn"],           req:["Falta algo","c-warn"]},
+  a_pagar:       {egg:["A pagar","c-orange"],            req:["A pagar","c-orange"]},
+  en_preparacion:{egg:["En preparación","c-mute"],       req:["En preparación","c-mute"]},
+  listo:         {egg:["Listo","c-ok"],                  req:["Listo","c-ok"]},
+  entregado:     {egg:["Entregado","c-mute"],            req:["Entregado","c-mute"]},
+  no_corresponde:{egg:["No corresponde","c-bad"],        req:["No corresponde","c-bad"]}
 };
-const CERRADOS = ["entregado","no_corresponde"];
+const CERRADOS = ["entregado","no_corresponde","no_encontrada"];
 const ROLES = {
-  particular:{n:"Requirente", lado:"req"}, escribano_ext:{n:"Escribano/a de registro", lado:"req"},
+  particular:{n:"Ciudadano/a", lado:"req"}, escribano_ext:{n:"Escribano/a de registro", lado:"req"},
   escribano_egg:{n:"Escribano/a", lado:"egg"}, auxiliar:{n:"Auxiliar", lado:"egg"}
 };
 const USUARIOS_PRUEBA = [
@@ -335,8 +371,6 @@ const USUARIOS_PRUEBA = [
   {id:"u-peralta", usuario:"peralta", nombre:"L. Peralta", rol:"auxiliar"}
 ];
 const CLAVE = "1234";
-const TIPOS_PROB = ["Error","Falta función","Lento / se cuelga","Confuso","Formato o texto","Datos incorrectos","Otro"];
-const GRAVEDAD = ["Bloquea","Molesta","Menor"];
 const ESTADOS_PROB = ["Nuevo","Reportado","Resuelto","No se arregla"];
 
 /* ==================================================================
@@ -357,9 +391,7 @@ const iniciales = n => String(n||"?").replace(/^Esc\.\s*/,"").replace(/[^A-Za-z�
 const lsGet = k => { try{ return localStorage.getItem(k); }catch(e){ return null; } };
 const lsSet = (k,v) => { try{ v==null ? localStorage.removeItem(k) : localStorage.setItem(k,v); }catch(e){} };
 const clon = o => JSON.parse(JSON.stringify(o));
-function getPath(o,p){ return p.split(".").reduce((a,k)=>a==null?a:a[k],o); }
 function setPath(o,p,v){ const ks=p.split("."); let a=o; ks.slice(0,-1).forEach(k=>{ if(a[k]==null||typeof a[k]!=="object") a[k]={}; a=a[k]; }); a[ks.at(-1)]=v; }
-/* máscara dd/mm/aaaa: solo reescribe si cambió, y deja el cursor al final de lo tipeado */
 function mascaraFecha(inp){ const dig=inp.value.replace(/\D/g,"").slice(0,8); let v=dig;
   if(dig.length>4) v=dig.slice(0,2)+"/"+dig.slice(2,4)+"/"+dig.slice(4); else if(dig.length>2) v=dig.slice(0,2)+"/"+dig.slice(2);
   if(v!==inp.value){ inp.value=v; try{ inp.setSelectionRange(v.length,v.length); }catch(e){} } return v; }
@@ -387,13 +419,21 @@ function pdfBlob(titulo, lineas){
 const nombreArchivo = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)+".pdf";
 const pdfFile = (titulo, lineas) => new File([pdfBlob(titulo,lineas)], nombreArchivo(titulo), {type:"application/pdf"});
 const blobADataUrl = b => new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=no; r.readAsDataURL(b); });
+/* Achica una captura antes de guardarla, para que entre cómoda en la base */
+async function achicarImagen(file, max=1400){
+  try{
+    const url=URL.createObjectURL(file); const img=new Image();
+    await new Promise((ok,no)=>{ img.onload=ok; img.onerror=no; img.src=url; });
+    const k=Math.min(1, max/Math.max(img.width,img.height)); const c=document.createElement("canvas");
+    c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+    const blob=await new Promise(ok=>c.toBlob(ok,"image/jpeg",0.82)); URL.revokeObjectURL(url);
+    return blob ? new File([blob], (file.name||"captura").replace(/\.\w+$/,"")+".jpg", {type:"image/jpeg"}) : file;
+  }catch(e){ return file; }
+}
 
 /* ==================================================================
-   ALMACÉN — base compartida de claude.ai o, si no hay, este navegador
+   ALMACÉN — Firebase (página pública), la base de claude.ai, o este navegador
    ================================================================== */
-const COLS=["usuarios","tramites","problemas"];
-/* Firebase con la misma forma que la base del artifact: collection().onSnapshot, doc().get/set/update/delete.
-   Se carga solo si hay config.js con los datos del proyecto. */
 async function firebaseDb(cfg){
   const V="12.7.0";
   const A=await import(`https://www.gstatic.com/firebasejs/${V}/firebase-app.js`);
@@ -407,17 +447,16 @@ async function firebaseDb(cfg){
       return { get:async()=>snap(await F.getDoc(r)), set:d=>F.setDoc(r,d), update:d=>F.updateDoc(r,d), delete:()=>F.deleteDoc(r) }; }
   };
 }
+const COLS=["usuarios","tramites","problemas"];
 const Store = {
   modo:null, db:null, assets:null, downloads:null, subs:{}, fuente:"", limite:170*1024,
   async init(){
     let db=null;
-    /* 1) Firebase, si config.js trae los datos del proyecto (página pública en GitHub Pages) */
     const cfg=window.FIREBASE_CONFIG;
     if(cfg&&cfg.projectId){
       try{ db=await firebaseDb(cfg); this.modo="compartido"; this.db=db; this.fuente="Firebase"; this.limite=700*1024; return; }
       catch(e){ console.error(e); toast("No se pudo conectar con Firebase: se guarda solo en este navegador."); }
     }
-    /* 2) La base del artifact, si se abre desde claude.ai */
     if(window.claude && typeof window.claude.use==="function"){ try{ db=await window.claude.use("db"); }catch(e){} }
     if(db){ this.modo="compartido"; this.db=db; this.fuente="claude.ai";
       try{ this.assets=await window.claude.use("assets"); }catch(e){}
@@ -436,7 +475,6 @@ const Store = {
     const m=this._read(c); m[id]={...(m[id]||{}),...patch}; lsSet("simsig_"+c,JSON.stringify(m)); this._emit(c); },
   async del(c,id){ if(this.modo==="compartido") return this.db.doc(c+"/"+id).delete();
     const m=this._read(c); delete m[id]; lsSet("simsig_"+c,JSON.stringify(m)); this._emit(c); },
-  /* Archivos: primero el almacén de archivos del artifact; si no se puede, el archivo chico va dentro de la base. */
   async subir(file){
     if(this.modo==="compartido" && this.assets){
       try{ const r=await this.assets.upload(file,{type:file.type||"application/pdf"}); return {ref:"a:"+r.id,nombre:file.name}; }
@@ -462,9 +500,10 @@ const Store = {
    ESTADO
    ================================================================== */
 const S = { usuarios:[], tramites:[], problemas:[], me:null, listo:{}, vista:"login", sel:null,
-  tabB:"ext", tabF:"datos", filtroDoc:"todos", conf:null, loginSel:null, loginErr:"", aviso:null, verDocs:false, pf:"todos", asignarA:null };
+  tabB:"ext", tabF:"datos", filtroDoc:"todos", conf:null, loginSel:null, loginErr:"", aviso:null, verDocs:false, pf:"abiertos", asignarA:null, abierto:null };
 let W=null;   // solicitud en armado
 let P=null;   // problema en armado
+let B=null;   // pedido de búsqueda en armado
 
 const yo = () => S.usuarios.find(u=>u.id===S.me)||null;
 const lado = u => u?ROLES[u.rol]?.lado:null;
@@ -473,48 +512,76 @@ const usuario = id => S.usuarios.find(u=>u.id===id);
 const nombreDe = id => usuario(id)?.nombre||"—";
 const tramite = id => S.tramites.find(t=>t.id===id);
 const activos = () => S.tramites.filter(t=>t.etapa!=="borrador");
+const opcionDe = w => OPCIONES.find(o=>o.k===w.opcion);
+function nombreW(w){ if(!w) return "—"; if(w.tipo==="copia"){ const o=opcionDe(w); return o?o.n:"Copia"; }
+  if(w.tipo==="testimonio") return "Segundo o ulterior testimonio"+(w.soporte?(w.soporte==="papel"?" · papel":" · digital"):"");
+  return TRAMITES[w.tipo]?.n||"—"; }
+const nombreT = t => t.tipo==="busqueda" ? "Búsqueda asistida" : nombreW(t.w);
+const escTxt = w => w?.esc?.n ? `N.º ${w.esc.n} · ${w.esc.protocolo?.startsWith("Sección B")?"B":"A"} · ${w.esc.anio}` : "a ubicar";
+const titular = () => W&&W.para ? usuario(W.para) : yo();
 
-/* documentos que pide cada caso */
+/* documentos que pide cada caso: todos se adjuntan en el paso Carácter, salvo la nota firmada, que va al final */
 function docsDe(w){
   if(!w||!w.tipo||!w.caracter) return [];
-  const l=(CARACTERES[w.caracter].docs||[]).map(d=>({k:d[0],n:d[1],d:d[2]}));
+  const C=CARACTERES[w.caracter];
+  const l=(C.docs||[]).map(d=>({k:d[0],n:d[1],d:d[2],grupo:C.unaDe?"rep":null}));
   if(w.tipo==="testimonio"){
-    if(/Extrav|Sustrac/.test(w.pedido?.motivo||"")) l.push({k:"denuncia",n:"Denuncia por extravío o robo",d:"La exposición policial o judicial"});
-    l.push({k:"nota",n:"Nota de solicitud con firma certificada ante escribano",d:"La genera el sistema en el paso 6. La imprimís, la firman ante escribano y la subís acá.",nota:true});
+    l.push({k:"denuncia",n:"Denuncia policial por robo, hurto o extravío",d:"La exposición, con la mayor cantidad de datos posibles",extra:true});
+    if(w.extra?.obligaciones==="si") l.push({k:"conformidad",n:"Conformidad del acreedor o autorización judicial",d:"Porque la escritura tiene obligaciones pendientes",extra:true});
+    l.push({k:"nota",n:"Nota de solicitud con firma certificada ante escribano",d:"La genera el sistema en el paso 4. La imprimís, la firman ante escribano y la subís.",nota:true});
   }
   return l;
 }
+const docsOk = (w,filtro) => { const ds=docsDe(w).filter(filtro||(()=>true)); const g=ds.filter(d=>d.grupo); return ds.filter(d=>!d.grupo).every(d=>w.adj?.[d.k]) && (!g.length||g.some(d=>w.adj?.[d.k])); };
 function itemsControl(t){
-  const l=docsDe(t.w).map(d=>({k:d.k,n:d.k==="nota"?"Nota con firma certificada":d.n}));
-  if(t.tipo==="testimonio") l.push({k:"obligaciones",n:"Obligaciones pendientes"});
-  if(!l.length) l.push({k:"parte",n:t.w.caracter==="escribano"?"Matrícula y registro vigentes":"Coincide con la parte del protocolo"});
+  const w=t.w, l=[];
+  docsDe(w).forEach(d=>{ if(d.grupo){ if(!l.some(x=>x.k===d.grupo)) l.push({k:d.grupo,n:"Poder o autorización",docs:docsDe(w).filter(x=>x.grupo).map(x=>x.k)}); }
+    else l.push({k:d.k,n:d.k==="nota"?"Nota con firma certificada":d.n,docs:[d.k]}); });
+  if(w.caracter==="interes") l.push({k:"fundamento",n:"Fundamento del interés",docs:[]});
+  if(t.tipo==="testimonio") l.push({k:"obligaciones",n:"Obligaciones pendientes",docs:[]});
+  if(!l.length) l.push({k:"parte",n:w.caracter==="escribano"?"Matrícula y registro vigentes":"Coincide con la parte del protocolo",docs:[]});
   return l;
 }
-function protocolo(t){ const n=parseInt(t.w.esc.n||"0",10)||7;
+function protocolo(w){ const n=parseInt(w.esc?.n||"0",10)||7;
   return {acto:["Compraventa","Donación","Adjudicación — Ley 9811","Cesión de derechos"][n%4], comprador:["Roberto Gómez","Ana Gómez","Luis Ferreyra","Marta Ríos"][n%4],
     vendedor:["Inmobiliaria del Centro S.A.","Provincia de Córdoba","Héctor Ledesma","Juan Pérez"][n%4], matricula:(1204156+n).toLocaleString("es-AR"),
     domicilio:"Deán Funes "+(1000+n%400), fojas:(n*7)%12+4, obligaciones:"No consta"}; }
-function tasaDe(t){ const T=TRAMITES[t.tipo], w=t.w;
-  if(T.sinCosto) return 0;
-  if(t.tipo==="copia") return (T.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte]||0)*protocolo(t).fojas*(+w.pedido.ejemplares||1);
-  return (T.precios[w.soporte]||0)*(+w.pedido.ejemplares||1); }
-const escTxt = w => w.esc.busqueda ? "a ubicar" : `N.º ${w.esc.n} · ${w.esc.protocolo?.startsWith("Sección B")?"B":"A"} · ${w.esc.anio}`;
+/* cotización: fojas × tasa (copias), monto fijo (testimonio); ejemplares adicionales al 50 % */
+function cotizar(w){
+  if(!w.tipo||w.tipo==="antecedentes") return {sinCosto:true, total:0, lineas:[]};
+  const ej=Math.max(1,+w.pedido?.ejemplares||1), C=w.caracter&&CARACTERES[w.caracter];
+  let base, det;
+  if(w.tipo==="testimonio"){ if(!w.soporte) return null; base=TASAS["testimonio_"+w.soporte]; det=`Monto fijo · ${w.soporte==="papel"?"en papel":"digital firmado"}`; }
+  else { const u=TASAS[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte]; const f=protocolo(w).fojas; base=u*f; det=`${f} hojas autenticadas × ${pesos(u)}`; }
+  const lineas=[[nombreW(w),det,base]];
+  if(ej>1) lineas.push(["Ejemplar adicional",`${ej-1} ejemplar${ej>2?"es":""} al 50 %`,Math.round(base*0.5*(ej-1))]);
+  let total=lineas.reduce((a,l)=>a+l[2],0);
+  if(C?.exento){ lineas.push(["Exención aplicada","Juez u organismo público · legitimación inciso 2",-total]); total=0; }
+  return {total, lineas, exento:!!C?.exento};
+}
+/* el carácter decide cuándo se cotiza: parte → ahora y paga al enviar; los demás → al dar el alta */
+const carrilDirecto = w => w.caracter==="parte" && w.tipo!=="antecedentes";
+const tasaAlAlta = t => { const c=cotizar(t.w); return c?c.total:0; };
 
 /* ==================================================================
    ENCABEZADO
    ================================================================== */
-function pantalla(){ const n={login:"Ingreso",mis:"Mis trámites",armador:"Armador de solicitud",det:"Trámite (requirente)",bandeja:"Bandeja de trámites",ficha:"Ficha del trámite",usuarios:"Usuarios y roles",problemas:"Problemas anotados"}[S.vista]||S.vista;
-  const u=yo(); return (u?(lado(u)==="egg"?"Escribanía · ":"Requirentes · "):"")+n+(S.vista==="armador"&&W?` · paso ${W.paso}`:"")+(S.vista==="ficha"?` · pestaña ${S.tabF}`:""); }
+const PASOS=["Escritura","Carácter","Costo","Envío"];
+function pantalla(){
+  const n={login:"Ingreso",mis:"Mis trámites",armador:"Armador de solicitud",busqueda:"Encontrar la escritura",det:"Mi trámite",bandeja:"Bandeja de trámites",ficha:"Ficha del trámite",usuarios:"Usuarios y roles",problemas:"Problemas anotados"}[S.vista]||S.vista;
+  const u=yo(); return (u?(lado(u)==="egg"?"Escribanía · ":"Requirentes · "):"")+n+(S.vista==="armador"&&W?` · paso ${W.paso} (${PASOS[W.paso-1]})`:"")+(S.vista==="ficha"?` · ${({datos:"Datos",docs:"Documentos",hist:"Historial"})[S.tabF]}`:"");
+}
 function renderTop(){
   const u=yo(), egg=lado(u)==="egg";
   document.body.classList.toggle("egg", egg);
   $("#modoTxt").textContent = Store.modo==="compartido"?"base compartida entre colegas"+(Store.fuente==="Firebase"?" (Firebase)":""):Store.modo==="local"?"datos guardados solo en este navegador":"conectando…";
-  const nb=(k,n,b)=>`<button type="button" data-go="${k}" ${S.vista===k||(k==="bandeja"&&S.vista==="ficha")||(k==="mis"&&["det","armador"].includes(S.vista))?'aria-current="true"':""}>${n}${b?`<span class="badge">${b}</span>`:""}</button>`;
+  const nb=(k,n,b)=>`<button type="button" data-go="${k}" ${S.vista===k||(k==="bandeja"&&S.vista==="ficha")||(k==="mis"&&["det","armador","busqueda"].includes(S.vista))?'aria-current="true"':""}>${n}${b?`<span class="badge">${b}</span>`:""}</button>`;
   if(!u){ $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">Ingreso de prueba</span></div><nav class="tabs">${nb("problemas","Problemas anotados")}</nav>`; return; }
-  const sinAsig=activos().filter(t=>t.etapa==="sin_asignar").length;
-  const misReq=S.tramites.filter(t=>t.solicitante===u.id&&(t.etapa==="falta_algo"||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo")).length;
+  const nuevos=activos().filter(t=>!t.responsable&&!CERRADOS.includes(t.etapa)&&!["encontrada"].includes(t.etapa)).length;
+  const misReq=S.tramites.filter(t=>t.solicitante===u.id&&(t.etapa==="falta_algo"||t.etapa==="a_pagar"&&!t.tasa?.pagada||t.etapa==="listo"||t.etapa==="encontrada")).length;
+  const abiertos=S.problemas.filter(p=>!["Resuelto","No se arregla"].includes(p.estado)).length;
   $("#top").innerHTML=`<div class="brand"><span class="n">SIIGENO</span><span class="k">${egg?"Gestión interna · Escribanía":"Requirentes"}</span></div>
-    <nav class="tabs">${egg?nb("bandeja","Bandeja",esEsc()?sinAsig:0)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados")}</nav>
+    <nav class="tabs">${egg?nb("bandeja","Bandeja",esEsc()?nuevos:0)+(esEsc()?nb("usuarios","Usuarios y roles"):""):nb("mis","Mis trámites",misReq)}${nb("problemas","Problemas anotados",abiertos)}</nav>
     <div class="me"><div class="who">${esc(u.nombre)}<span>${esc(ROLES[u.rol].n)}</span></div><span class="av top">${esc(iniciales(u.nombre))}</span>
     <button class="ghost" type="button" data-act="salir">Cambiar de usuario</button></div>`;
 }
@@ -522,26 +589,28 @@ function ir(v,sel){ S.vista=v; if(sel!==undefined) S.sel=sel; S.conf=null; if(v!
 function render(){
   if(!yo() && S.vista!=="problemas") S.vista="login";
   renderTop();
-  ({login:vLogin,mis:vMis,armador:vArmador,det:vDetReq,bandeja:vBandeja,ficha:vFicha,usuarios:vUsuarios,problemas:vProblemas}[S.vista]||vLogin)();
+  ({login:vLogin,mis:vMis,armador:vArmador,busqueda:vBusqueda,det:vDetReq,bandeja:vBandeja,ficha:vFicha,usuarios:vUsuarios,problemas:vProblemas}[S.vista]||vLogin)();
 }
 
 /* ==================================================================
-   INGRESO SIMULADO
+   INGRESO SIMULADO — se elige con qué sombrero entrar
    ================================================================== */
 function vLogin(){
   const app=$("#app");
   if(!S.listo.usuarios){ app.innerHTML=`<div class="empty">Conectando con la base…</div>`; return; }
   if(!S.usuarios.length){
     app.innerHTML=`<div class="card stack" style="max-width:640px;margin:0 auto"><h2 class="t">Todavía no hay usuarios de prueba</h2>
-      <p class="hint">Se crean cinco, los del recorrido: Ana Gómez (requirente), la Esc. Estela Bustos (escribana de registro), G. Suárez (escribano de la EGG) y A. Molina y L. Peralta (auxiliares). Todos entran con la clave <b>${CLAVE}</b>.</p>
+      <p class="hint">Se crean cinco: Ana Gómez (ciudadana), la Esc. Estela Bustos (escribana de registro), G. Suárez (escribano de la EGG) y A. Molina y L. Peralta (auxiliares). Todos entran con la clave <b>${CLAVE}</b>.</p>
       <div><button class="btn pri" type="button" data-act="seed">Crear usuarios de prueba</button></div></div>`; return;
   }
-  const lista=l=>S.usuarios.filter(u=>u.activo!==false&&ROLES[u.rol]?.lado===l).sort((a,b)=>a.rol.localeCompare(b.rol)||a.nombre.localeCompare(b.nombre)).map(u=>`
+  const lista=f=>S.usuarios.filter(u=>u.activo!==false&&f(u)).sort((a,b)=>a.rol.localeCompare(b.rol)||a.nombre.localeCompare(b.nombre)).map(u=>`
     <button class="who-opt" type="button" data-act="loginSel" data-arg="${esc(u.id)}" aria-pressed="${S.loginSel===u.id}"><span class="av">${esc(iniciales(u.nombre))}</span>
-    <span><b>${esc(u.nombre)}</b><span>${esc(ROLES[u.rol].n)} · usuario <b style="display:inline">${esc(u.usuario)}</b></span></span></button>`).join("")||`<div class="empty">Sin usuarios activos.</div>`;
-  app.innerHTML=`<div class="stack"><div><h1 class="t">Ingresar</h1><p class="hint">Elegí con quién probar y escribí la clave (${CLAVE}). En el sistema real se entra con CiDi; acá es simulado. Para probar los dos lados, entrá con uno, hacé tu parte y usá «Cambiar de usuario».</p></div>
-    <div class="login"><section class="portal"><div class="ph r"><div class="k">Portal externo</div><div class="n">SIIGENO · Requirentes</div></div><div class="pb">${lista("req")}</div></section>
-      <section class="portal"><div class="ph e"><div class="k">Gestión interna</div><div class="n">SIIGENO · Escribanía</div></div><div class="pb">${lista("egg")}</div></section></div>
+    <span><b>${esc(u.nombre)}</b><span>${esc(ROLES[u.rol].n)} · usuario <b style="display:inline">${esc(u.usuario)}</b></span></span></button>`).join("")||`<div class="empty">Nadie con este rol.</div>`;
+  app.innerHTML=`<div class="stack"><div><h1 class="t">¿Cómo entrás?</h1><p class="hint">Elegí de qué lado probar y con qué persona. En el sistema real se entra con CiDi; acá es simulado y la clave es ${CLAVE}. Para hacer los dos lados, entrá con uno, hacé tu parte y usá «Cambiar de usuario».</p></div>
+    <div class="login l3">
+      <section class="portal"><div class="ph r"><div class="k">Portal externo</div><div class="n">Soy ciudadano/a</div></div><div class="pb">${lista(u=>u.rol==="particular")}</div></section>
+      <section class="portal"><div class="ph r"><div class="k">Portal externo</div><div class="n">Soy escribano/a de registro</div></div><div class="pb">${lista(u=>u.rol==="escribano_ext")}</div></section>
+      <section class="portal"><div class="ph e"><div class="k">Gestión interna</div><div class="n">Trabajo en la Escribanía</div></div><div class="pb">${lista(u=>lado(u)==="egg")}</div></section></div>
     <form class="card" id="flogin" style="max-width:520px"><div class="g2">
       <div class="field"><label class="f" for="lu">Usuario</label><input type="text" id="lu" autocomplete="username" value="${esc(usuario(S.loginSel)?.usuario||"")}"></div>
       <div class="field"><label class="f" for="lc">Clave</label><input type="password" id="lc" autocomplete="current-password"></div></div>
@@ -560,132 +629,152 @@ function vLogin(){
 function chipReq(t){ const e=ETAPAS[t.etapa].req; if(t.etapa==="a_pagar"&&t.tasa?.pagada) return `<span class="chip c-info">Pago acreditado</span>`; return `<span class="chip ${e[1]}">${e[0]}</span>`; }
 function chipEgg(t){ const e=ETAPAS[t.etapa].egg; return `<span class="chip ${e[1]}">${e[0]}</span>`; }
 function queSigue(t){
+  const L=(txt)=>`<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">${txt}</button>`;
   switch(t.etapa){
     case "borrador": return `<button class="link" type="button" data-act="seguir" data-arg="${t.id}">Seguí completando</button>`;
-    case "falta_algo": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Corregir y reenviar</button>`;
-    case "a_pagar": return t.tasa?.pagada?"Nada por ahora":`<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Pagar ${pesos(t.tasa?.monto)}</button>`;
-    case "listo": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">${t.w.soporte==="papel"?(t.turno?`Turno ${t.turno.fecha} ${t.turno.hora}`:"Sacar turno"):"Descargar"}</button>`;
+    case "encontrada": return `<button class="link" type="button" data-act="seguir" data-arg="${t.id}">Seguir el trámite</button>`;
+    case "no_encontrada": return L("Ver qué pasó");
+    case "falta_algo": return L("Ver qué falta y corregir");
+    case "a_pagar": return t.tasa?.pagada?"Nada por ahora":L("Pagar "+pesos(t.tasa?.monto));
+    case "listo": return L(t.w.soporte==="papel"?(t.turno?`Turno ${t.turno.fecha} ${t.turno.hora}`:"Sacar turno para retirar"):"Descargar");
     case "entregado": return `Retirado el ${fFecha(t.entregado)}`;
-    case "no_corresponde": return `<button class="link" type="button" data-act="abrirReq" data-arg="${t.id}">Ver la resolución</button>`;
+    case "no_corresponde": return L("Ver el fundamento");
     default: return "Nada por ahora";
   }
 }
 function vMis(){
-  const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>(b.ingreso||b.creado)-(a.ingreso||a.creado));
+  const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>(b.actualizado||b.creado)-(a.actualizado||a.creado));
   $("#app").innerHTML=`<div class="stack">
-    <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer. Si no tenés que hacer nada, lo dice también.</p></div>
+    <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer vos. Si no tenés que hacer nada, lo dice también.</p></div>
       <button class="btn pri" type="button" data-act="nuevo">Nuevo trámite</button></div>
-    ${S.aviso?`<div class="box b-ok">✓ <b>Enviamos tu solicitud.</b> Número ${esc(S.aviso)}. Te avisamos acá cuando haya novedades.</div>`:""}
+    ${S.aviso?`<div class="box b-ok">✓ <b>${esc(S.aviso)}</b></div>`:""}
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>Trámite</th><th>Escritura</th><th>Estado</th><th>Qué sigue</th></tr></thead><tbody>
-      ${l.map(t=>`<tr class="click" data-act="${t.etapa==="borrador"?"seguir":"abrirReq"}" data-arg="${t.id}"><td><b>${esc(TRAMITES[t.tipo].n)}</b>${t.nro?`<div class="sub">Solicitud ${esc(t.nro)}</div>`:""}</td>
-        <td class="num">${t.w.esc?.n||t.w.esc?.busqueda?esc(escTxt(t.w)):"—"}</td><td>${chipReq(t)}</td><td>${queSigue(t)}</td></tr>`).join("")}
+      ${l.map(t=>`<tr class="click" data-act="${["borrador","encontrada"].includes(t.etapa)?"seguir":"abrirReq"}" data-arg="${t.id}"><td><b>${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(t.w))}</b>${t.tipo==="busqueda"?`<div class="sub">para ${esc(nombreW(t.w).toLowerCase())}</div>`:""}</td>
+        <td class="num">${esc(escTxt(t.w))}</td><td>${chipReq(t)}</td><td>${queSigue(t)}</td></tr>`).join("")}
       </tbody></table><div class="tfoot"><span>${l.length} trámite${l.length===1?"":"s"}</span><span>Simulador SIIGENO · EGG</span></div></div>`
       :`<div class="card empty">Todavía no iniciaste ningún trámite. Con <b>Nuevo trámite</b> armás el primero.</div>`}</div>`;
 }
 
 /* ==================================================================
-   REQUIRENTE — ARMADOR DE SOLICITUD (6 pasos)
+   REQUIRENTE — ARMADOR (4 pasos: Escritura · Carácter · Costo · Envío)
    ================================================================== */
-const PASOS=["Qué necesitás","Carácter","Escritura","Datos del pedido","Documentación","Enviar"];
-function nuevoW(para){ return {paso:1, id:null, para:para||null, tipo:null, caracter:null, acred:{}, esc:{anio:"",n:"",protocolo:PROTOCOLOS[0],fecha:"",busqueda:""},
-  soporte:null, modo:null, pedido:{ejemplares:"1",motivo:"",para:"",denuncia:{fecha:"",lugar:"",nro:""},obligaciones:null,objeto:"",destino:""}, adj:{}, dj:false, tabC:"falta", enviando:false}; }
-const titular = () => W&&W.para ? usuario(W.para) : yo();
+function nuevoW(para){ return {paso:1, id:null, para:para||null, opcion:null, tipo:null, modo:null, soporte:null, caracter:null, acred:{},
+  esc:{anio:"",n:"",protocolo:PROTOCOLOS[0],fecha:"",identificada:false}, extra:{denuncia:{fecha:"",lugar:"",nro:""},obligaciones:null},
+  pedido:{ejemplares:"1",motivo:"",para:"",objeto:"",destino:""}, adj:{}, dj:false, tabC:"falta", enviando:false}; }
 function okPaso(n){
   const w=W;
-  if(n===1) return !!w.tipo;
-  if(n===2) return !!w.caracter && (CARACTERES[w.caracter].campos||[]).every(c=>(w.acred[c[0]]||"").trim() && (c[0]!=="fecha"||fechaOk(w.acred.fecha)));
-  if(n===3) return (w.esc.busqueda.trim() || (w.esc.anio.length===4 && w.esc.n && fechaOk(w.esc.fecha))) && !!w.soporte && (w.tipo!=="copia"||!!w.modo);
+  if(n===1) return !!w.tipo && (w.esc.identificada || (w.esc.anio.length===4 && !!w.esc.n && fechaOk(w.esc.fecha)));
+  if(n===2){ if(w.tipo==="antecedentes") return true;
+    if(!w.caracter) return false;
+    const C=CARACTERES[w.caracter];
+    if(!(C.campos||[]).every(c=>(w.acred[c[0]]||"").trim() && (c[0]!=="fecha"||fechaOk(w.acred.fecha)))) return false;
+    if(w.tipo==="testimonio"){ const d=w.extra.denuncia; if(!(fechaOk(d.fecha)&&d.lugar.trim()&&d.nro.trim()&&w.extra.obligaciones)) return false; }
+    return docsOk(w,d=>!d.nota); }
+  if(n===3) return !!w.soporte && +w.pedido.ejemplares>0;
   if(n===4){ const p=w.pedido;
-    if(w.tipo==="testimonio") return !!p.motivo && +p.ejemplares>0 && p.para.trim() && p.obligaciones && (!/Extrav|Sustrac/.test(p.motivo) || (fechaOk(p.denuncia.fecha)&&p.denuncia.lugar.trim()&&p.denuncia.nro.trim()));
-    if(w.tipo==="copia") return !!p.objeto && +p.ejemplares>0 && (w.modo!=="cert"||!!p.destino);
-    return !!p.para.trim(); }
-  if(n===5) return docsDe(w).every(d=>w.adj[d.k]);
+    const datos = w.tipo==="testimonio" ? (!!p.motivo && p.para.trim()) : w.tipo==="copia" ? (!!p.objeto && (w.modo!=="cert"||!!p.destino)) : !!p.para.trim();
+    return !!datos && docsOk(w,d=>d.nota); }
   return false;
 }
-function costoW(){ const w=W, T=w.tipo&&TRAMITES[w.tipo]; if(!T) return null; if(T.sinCosto) return {txt:"Sin costo", det:"La consulta de antecedentes es gratuita, digital o presencial."};
-  if(w.tipo==="testimonio"){ if(!w.soporte) return null; const m=T.precios[w.soporte]*(+w.pedido.ejemplares||1);
-    return {monto:m, txt:pesos(m), det:`Segundo testimonio ${w.soporte==="papel"?"en papel":"digital firmado"}. Monto fijo por ejemplar. Se paga cuando la Escribanía dé el alta.`}; }
-  if(!w.modo||!w.soporte) return null; const u=T.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte];
-  return {txt:pesos(u)+" por hoja", det:`Copia ${w.modo==="cert"?"certificada":"simple"} ${w.soporte==="papel"?"en papel":"digital"}. La cantidad de hojas la sabe la Escribanía: el total lo calcula al dar el alta.`}; }
-
 function vArmador(){
   if(!W) W=nuevoW();
-  const w=W, u=titular(), T=w.tipo&&TRAMITES[w.tipo], esEscr=u.rol==="escribano_ext";
-  const steps=PASOS.map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<w.paso?"done":i+1===w.paso?"cur":""}"><i>${i+1}</i>${p}</span>`).join("");
+  const w=W, u=titular(), esEscr=u.rol==="escribano_ext";
+  const ant=w.tipo==="antecedentes";
+  const steps=PASOS.map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<w.paso?"done":i+1===w.paso?"cur":""}"><i>${i+1}</i>${p}${i===1&&ant?" (no aplica)":""}</span>`).join("");
   let body="";
   if(w.paso===1){
-    body=`<span class="eyebrow acc">Paso 1 de 6</span><h2 class="t">¿Qué necesitás?</h2><p class="hint">Elegí el trámite. De esto depende todo lo que sigue.</p>
-      <div class="box b-info spread" style="margin-top:4px"><div><b>${W.para?"Datos del requirente":"Tus datos ya están cargados"}</b><div>${esc(u.nombre)} · ${esc(u.doc||"")} · ${esc(u.domicilio||"")}</div></div>
-        <span class="sub">${W.para?"Carga por mesa de entradas":"Vienen de CiDi. Si hay que corregirlos, es desde tu perfil."}</span></div>
-      <div class="opts">${Object.entries(TRAMITES).map(([k,x])=>`<button class="opt" type="button" data-act="w" data-arg="tipo" data-v="${k}" aria-pressed="${w.tipo===k}" ${x.soloEscribanos&&!esEscr?"disabled":""}><span><span class="ot">${x.n}</span><span class="od">${x.d}</span></span></button>`).join("")}</div>`;
+    body=`<div><span class="eyebrow acc">Paso 1 de 4</span><h2 class="t">¿Sobre qué escritura es tu trámite?</h2><p class="hint">Elegí qué necesitás. Si tenés a mano los datos de la escritura, cargalos. Si no los tenés, igual podés empezar.</p></div>
+      <div class="box b-info spread"><div><b>${W.para?"Datos del requirente":"Ingresaste con Ciudadano Digital · Nivel 2"}</b><div>${esc(u.nombre)} · ${esc(u.doc||"")} · ${esc(u.domicilio||"")}</div></div>
+        <span class="sub">${W.para?"Carga por mesa de entradas":"Si hay que corregirlos, es desde tu perfil de CiDi."}</span></div>
+      <div><div class="eyebrow" style="margin-bottom:8px">Qué necesitás</div>
+        <div class="opts">${OPCIONES.map(o=>`<button class="opt" type="button" data-act="opcion" data-arg="${o.k}" aria-pressed="${w.opcion===o.k}" ${o.soloEscribanos&&!esEscr?"disabled":""}><span><span class="ot">${o.n}</span><span class="od">${o.d}</span></span></button>`).join("")}</div></div>
+      ${w.esc.identificada?`<div class="box b-ok"><b>Escritura identificada por la Escribanía:</b> N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo)} · ${esc(w.esc.fecha)}.</div>`
+      :`<div class="split"><div class="card" style="background:var(--surface-2)"><h3 class="t">Tengo los datos de la escritura</h3><p class="hint" style="margin-bottom:10px">Están en el testimonio: año, número, sección y fecha.</p>
+          <div class="g2"><div class="field"><label class="f" for="eanio">Año</label><input type="text" id="eanio" data-w="esc.anio" data-mask="num4" inputmode="numeric" value="${esc(w.esc.anio)}"></div>
+            <div class="field"><label class="f" for="enro">Número de escritura</label><input type="text" id="enro" data-w="esc.n" data-mask="num" inputmode="numeric" value="${esc(w.esc.n)}"></div>
+            <div class="field"><label class="f" for="eprot">Protocolo</label><select id="eprot" data-w="esc.protocolo">${PROTOCOLOS.map(p=>`<option ${w.esc.protocolo===p?"selected":""}>${p}</option>`).join("")}</select></div>
+            <div class="field"><label class="f" for="efecha">Fecha de la escritura</label><input type="text" id="efecha" data-w="esc.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(w.esc.fecha)}"></div></div></div>
+        <div class="card"><span class="nuevo-tag">NUEVO</span><h3 class="t" style="margin-top:6px">No sé los datos de la escritura</h3>
+          <p class="hint">Es lo que pasa cuando perdiste el testimonio, o cuando la escritura la firmó alguien de tu familia y vos solo sabés del inmueble. Contanos lo que sí sabés y la buscamos por vos.</p>
+          <p class="legend">El protocolo de la Escribanía está digitalizado, pero no es de consulta pública: la búsqueda la hace personal de la Escribanía y te devuelve la escritura confirmada.</p>
+          <div style="margin-top:10px"><button class="btn" type="button" data-act="irBusqueda" ${w.tipo?"":"disabled"}>Buscarla con lo que tengo</button>${w.tipo?"":`<div class="legend">Primero elegí qué necesitás.</div>`}</div></div></div>`}
+      <p class="legend">El costo se calcula con las fojas reales de la escritura. Lo vas a ver en el paso 3, antes de confirmar nada.</p>`;
   } else if(w.paso===2){
-    const C=w.caracter&&CARACTERES[w.caracter];
-    body=`<span class="eyebrow acc">Paso 2 de 6</span><h2 class="t">¿En qué carácter lo pedís?</h2>
-      <p class="hint">${w.tipo==="testimonio"?"Para un segundo testimonio solo pueden pedirlo tres: la parte, sus herederos, o quien acredite interés legítimo.":w.tipo==="antecedentes"?"La consulta está reservada a escribanos en ejercicio.":"Según lo que elijas cambia la documentación que hay que acreditar."}</p>
-      <div class="opts">${T.caracteres.map(c=>`<button class="opt" type="button" data-act="w" data-arg="caracter" data-v="${c}" aria-pressed="${w.caracter===c}"><span><span class="ot">${CARACTERES[c].t}</span><span class="od">${CARACTERES[c].d}</span></span></button>`).join("")}</div>
-      ${C&&C.campos.length?`<div class="dash"><div class="eyebrow" style="color:var(--warn);margin-bottom:10px">${esc(C.titulo)}</div><div class="g3">${C.campos.map(c=>`<div class="field"><label class="f" for="ac_${c[0]}">${esc(c[1])}</label>
-        <input type="text" id="ac_${c[0]}" data-w="acred.${c[0]}" ${c[0]==="fecha"?'data-mask="fecha" inputmode="numeric"':""} placeholder="${esc(c[2])}" value="${esc(w.acred[c[0]]||"")}"></div>`).join("")}</div>
-        ${C.aviso&&w.tipo==="testimonio"?`<p class="legend" style="color:var(--warn)">${esc(C.aviso)}</p>`:""}</div>`:""}`;
+    const T=TRAMITES[w.tipo];
+    body=`<div><span class="eyebrow acc">Paso 2 de 4</span><h2 class="t">¿Con qué carácter la pedís?</h2><p class="hint">De esto depende qué tenés que acreditar, y también cuándo vas a ver el costo. Lo que hay que adjuntar aparece adentro del carácter que elijas.</p></div>
+      <div class="stack" style="gap:9px">${T.caracteres.map(k=>acordeon(k)).join("")}</div>
+      ${w.tipo==="testimonio"?`<div class="card stack" style="background:var(--surface-2)"><div class="eyebrow">Esto no depende del carácter · el segundo testimonio suma</div>
+        <div class="g3" style="grid-template-columns:1fr 2fr 1fr"><div class="field"><label class="f" for="dfec">Fecha de la denuncia</label><input type="text" id="dfec" data-w="extra.denuncia.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(w.extra.denuncia.fecha)}"></div>
+          <div class="field"><label class="f" for="dlug">Comisaría o unidad judicial</label><input type="text" id="dlug" data-w="extra.denuncia.lugar" placeholder="Unidad Judicial 7 — Córdoba" value="${esc(w.extra.denuncia.lugar)}"></div>
+          <div class="field"><label class="f" for="dnro">N.º de exposición</label><input type="text" id="dnro" data-w="extra.denuncia.nro" placeholder="4471/26" value="${esc(w.extra.denuncia.nro)}"></div></div>
+        ${docsDe(w).filter(d=>d.k==="denuncia").map(d=>filaAdj(d,w.adj[d.k],"w")).join("")}
+        <div><label class="f">¿La escritura tiene obligaciones pendientes de dar o hacer a cargo de otra parte?</label><div class="opts two">
+          <button class="opt" type="button" data-act="w" data-arg="extra.obligaciones" data-v="no" aria-pressed="${w.extra.obligaciones==="no"}"><span><span class="ot">No</span><span class="od">El precio se pagó íntegro en el acto.</span></span></button>
+          <button class="opt" type="button" data-act="w" data-arg="extra.obligaciones" data-v="si" aria-pressed="${w.extra.obligaciones==="si"}"><span><span class="ot">Sí</span><span class="od">Hace falta conformidad del acreedor o autorización judicial.</span></span></button></div></div>
+        ${docsDe(w).filter(d=>d.k==="conformidad").map(d=>filaAdj(d,w.adj[d.k],"w")).join("")}
+        <p class="legend">La certificación notarial de tu firma va en la nota de solicitud, en el paso 4.</p></div>`:""}
+      <div class="g2"><div class="box b-mute"><b>Si fuiste parte</b><br>No adjuntás nada. En el paso siguiente ya ves el monto y pagás al enviar.</div>
+        <div class="box b-mute"><b>En los demás casos</b><br>Un escribiente revisa lo que adjuntaste. Cuando da el alta, el monto aparece en tu bandeja y pagás desde ahí.</div></div>`;
   } else if(w.paso===3){
-    const sop = w.tipo==="testimonio" ? [["papel","Papel",`Se retira con turno. ${pesos(T.precios.papel)}`],["digital","Digital firmado",`Se descarga del portal. ${pesos(T.precios.digital)}`]]
-      : w.tipo==="copia" ? [["papel","Papel","Se retira con turno"],["digital","Digital","Se descarga del portal"]]
-      : [["digital","Digital","Visualización en línea por 3 horas, con marca de agua"],["papel","Presencial","En la Escribanía, con turno"]];
-    body=`<span class="eyebrow acc">Paso 3 de 6</span><h2 class="t">¿Sobre qué escritura?</h2><p class="hint">Los datos están en el testimonio que tenías. Si no los tenés, usá la búsqueda.</p>
-      ${w.esc.busqueda!==null&&w.esc.modoBusqueda?`<div class="field"><label class="f" for="eb">Contá lo que sabés: partes, fecha aproximada, inmueble</label><textarea id="eb" data-w="esc.busqueda" placeholder="Ej.: compró mi papá, Roberto Gómez, una casa en Deán Funes 1180 alrededor de 2011">${esc(w.esc.busqueda)}</textarea>
-        <p class="legend">La Escribanía la ubica con esto. La búsqueda demora más. <button class="link" type="button" data-act="busqueda" data-arg="0">Tengo el número</button></p></div>`
-      :`<div class="g4"><div class="field"><label class="f" for="eanio">Año</label><input type="text" id="eanio" data-w="esc.anio" data-mask="num4" inputmode="numeric" value="${esc(w.esc.anio)}"></div>
-        <div class="field"><label class="f" for="enro">Número de escritura</label><input type="text" id="enro" data-w="esc.n" data-mask="num" inputmode="numeric" value="${esc(w.esc.n)}"></div>
-        <div class="field"><label class="f" for="eprot">Protocolo</label><select id="eprot" data-w="esc.protocolo">${PROTOCOLOS.map(p=>`<option ${w.esc.protocolo===p?"selected":""}>${p}</option>`).join("")}</select></div>
-        <div class="field"><label class="f" for="efecha">Fecha</label><input type="text" id="efecha" data-w="esc.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(w.esc.fecha)}"></div></div>
-        <div class="box b-mute spread"><span>¿No sabés el número de tu escritura?</span><button class="link" type="button" data-act="busqueda" data-arg="1">Buscarla con lo que tengo</button></div>`}
-      ${w.tipo==="copia"?`<div><label class="f">Tipo de copia</label><div class="opts two">${[["simple","Simple","Para archivo o consulta"],["cert","Certificada","Con firma y sello. Para presentar ante un organismo"]].map(o=>`<button class="opt" type="button" data-act="w" data-arg="modo" data-v="${o[0]}" aria-pressed="${w.modo===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>`:""}
-      <div><label class="f">Soporte</label><div class="opts two">${sop.map(o=>`<button class="opt" type="button" data-act="w" data-arg="soporte" data-v="${o[0]}" aria-pressed="${w.soporte===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>
-      ${w.tipo!=="antecedentes"?`<div class="box b-info">No te pedimos cuántas hojas tiene: eso lo sabe la Escribanía.${w.tipo==="testimonio"?" Para el testimonio el monto es fijo igual.":""}</div>`:""}`;
-  } else if(w.paso===4){
-    const p=w.pedido;
-    if(w.tipo==="testimonio") body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Lo que va en la nota de solicitud. Se completa solo con esto.</p>
-      <div class="g2" style="grid-template-columns:3fr 1fr"><div class="field"><label class="f" for="pmot">Motivo</label><select id="pmot" data-w="pedido.motivo" data-redraw="1"><option value="">Elegí</option>${MOTIVOS.map(m=>`<option ${p.motivo===m?"selected":""}>${m}</option>`).join("")}</select></div>
-        <div class="field"><label class="f" for="pej">Ejemplares</label><input type="text" id="pej" data-w="pedido.ejemplares" data-mask="num" inputmode="numeric" value="${esc(p.ejemplares)}"></div></div>
-      <div class="field"><label class="f" for="ppara">Para qué lo necesitás</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Sucesión en trámite. Lo pide el juzgado para inscribir la transferencia." value="${esc(p.para)}"><p class="legend">Lo lee una persona de la Escribanía.</p></div>
-      ${/Extrav|Sustrac/.test(p.motivo)?`<div class="card" style="background:var(--surface-2)"><div class="eyebrow" style="margin-bottom:10px">Denuncia por ${/Sustrac/.test(p.motivo)?"robo":"extravío"}</div><div class="g3" style="grid-template-columns:1fr 2fr 1fr">
-        <div class="field"><label class="f" for="pdf">Fecha</label><input type="text" id="pdf" data-w="pedido.denuncia.fecha" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa" value="${esc(p.denuncia.fecha)}"></div>
-        <div class="field"><label class="f" for="pdl">Comisaría o unidad judicial</label><input type="text" id="pdl" data-w="pedido.denuncia.lugar" placeholder="Unidad Judicial 7 — Córdoba" value="${esc(p.denuncia.lugar)}"></div>
-        <div class="field"><label class="f" for="pdn">N.º de exposición</label><input type="text" id="pdn" data-w="pedido.denuncia.nro" placeholder="4471/26" value="${esc(p.denuncia.nro)}"></div></div></div>`:""}
-      <div><label class="f">¿La escritura tiene obligaciones pendientes de dar o hacer a cargo de otra parte?</label><div class="opts two">
-        <button class="opt" type="button" data-act="w" data-arg="pedido.obligaciones" data-v="no" aria-pressed="${p.obligaciones==="no"}"><span><span class="ot">No</span><span class="od">El precio se pagó íntegro en el acto.</span></span></button>
-        <button class="opt" type="button" data-act="w" data-arg="pedido.obligaciones" data-v="si" aria-pressed="${p.obligaciones==="si"}"><span><span class="ot">Sí</span><span class="od">Vas a necesitar conformidad del acreedor o autorización judicial.</span></span></button></div></div>`;
-    else if(w.tipo==="copia") body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Lo que va en la nota de solicitud.</p>
-      <div class="g2" style="grid-template-columns:3fr 1fr"><div class="field"><label class="f" for="pobj">Para qué la necesitás</label><select id="pobj" data-w="pedido.objeto"><option value="">Elegí</option>${OBJETOS.map(o=>`<option ${p.objeto===o?"selected":""}>${o}</option>`).join("")}</select></div>
-        <div class="field"><label class="f" for="pej">Ejemplares</label><input type="text" id="pej" data-w="pedido.ejemplares" data-mask="num" inputmode="numeric" value="${esc(p.ejemplares)}"></div></div>
-      ${w.modo==="cert"?`<div class="field"><label class="f" for="pdst">Dónde la vas a presentar</label><select id="pdst" data-w="pedido.destino"><option value="">Elegí</option>${DESTINOS.map(o=>`<option ${p.destino===o?"selected":""}>${o}</option>`).join("")}</select></div>`:""}`;
-    else body=`<span class="eyebrow acc">Paso 4 de 6</span><h2 class="t">Datos del pedido</h2><p class="hint">Para qué hacés el estudio de títulos.</p>
-      <div class="field"><label class="f" for="ppara">Motivo de la consulta</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Estudio de títulos para una compraventa en trámite" value="${esc(p.para)}"></div>`;
-  } else if(w.paso===5){
-    const ds=docsDe(w);
-    body=`<span class="eyebrow acc">Paso 5 de 6</span><h2 class="t">Adjuntá la documentación</h2><p class="hint">Solo lo que corresponde a tu caso. Sin todo esto la solicitud no se puede enviar. Si no tenés el archivo a mano, usá «PDF de ejemplo».</p>
-      ${ds.length?ds.map(d=>filaAdj(d,w.adj[d.k],"w")).join(""):`<div class="box b-ok">No tenés que adjuntar nada: tu ingreso ya te acredita.</div>`}
-      ${ds.some(d=>d.nota)&&!w.adj.nota?`<div class="box b-warn">La nota la genera el sistema en el paso siguiente (Descargar la nota para firmar). Después la imprimís, la firman ante un escribano y la subís acá.</div>`:""}`;
+    const c=cotizar(w), pr=protocolo(w), directo=carrilDirecto(w);
+    const sopT=[["papel","Papel",`Se retira con turno. ${pesos(TASAS.testimonio_papel)}`],["digital","Digital firmado",`Se descarga del portal. ${pesos(TASAS.testimonio_digital)}`]];
+    const sopA=[["digital","Digital","Visualización en línea por 3 horas, con marca de agua y sin descarga"],["papel","Presencial","En la Escribanía, con turno"]];
+    body=`<div><span class="eyebrow acc">Paso 3 de 4</span><h2 class="t">Cuánto sale tu trámite</h2>
+      <p class="hint">${ant?"La consulta de antecedentes es sin costo.":directo?"Calculado sobre la extensión real de la escritura y las tasas vigentes. Pagás al enviar y el trámite entra a la Escribanía ya abonado.":c?.exento?"Exento de tasa.":"El monto final lo confirma la Escribanía al dar el alta, después de revisar lo que adjuntaste. Te mostramos cómo se calcula."}</p></div>
+      ${w.tipo==="testimonio"?`<div><label class="f">Soporte</label><div class="opts two">${sopT.map(o=>`<button class="opt" type="button" data-act="w" data-arg="soporte" data-v="${o[0]}" aria-pressed="${w.soporte===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>`:""}
+      ${ant?`<div><label class="f">¿Cómo querés consultarla?</label><div class="opts two">${sopA.map(o=>`<button class="opt" type="button" data-act="w" data-arg="soporte" data-v="${o[0]}" aria-pressed="${w.soporte===o[0]}"><span><span class="ot">${o[1]}</span><span class="od">${o[2]}</span></span></button>`).join("")}</div></div>`:""}
+      ${!ant?`<div class="card"><div class="eyebrow" style="margin-bottom:8px">Escritura identificada</div><div class="kv"><div><div class="l">Escritura</div><div class="v">N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])} · ${esc(w.esc.fecha)}</div></div>
+          ${directo||w.tipo==="testimonio"?`<div><div class="l">Acto</div><div class="v">${esc(pr.acto)}</div></div>`:""}${directo?`<div><div class="l">Extensión</div><div class="v">${pr.fojas} hojas</div><div class="s2">Tomada del protocolo digitalizado</div></div>`:""}</div>
+          ${!directo&&w.tipo==="copia"?`<p class="legend">La extensión de la escritura es información reservada: se muestra recién cuando la Escribanía controla tu carácter.</p>`:""}</div>
+        <div class="card"><div class="eyebrow" style="margin-bottom:4px">Detalle</div>
+          ${c&&(directo||w.tipo==="testimonio"||c.exento)?c.lineas.map(l=>`<div class="costline"><span><b>${esc(l[0])}</b><div class="sub">${esc(l[1])}</div></span><span class="v">${l[2]<0?"− "+pesos(-l[2]):pesos(l[2])}</span></div>`).join("")+`<div class="costtot"><span class="eyebrow">Total ${directo?"a pagar":"estimado"}</span><span class="v">${pesos(c.total)}</span></div>`
+            :w.tipo==="copia"?`<div class="costline"><span><b>${esc(nombreW(w))}</b><div class="sub">Por hoja autenticada</div></span><span class="v">${pesos(TASAS[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte])} × hoja</span></div><p class="legend">El total aparece en tu bandeja cuando la Escribanía da el alta.</p>`
+            :`<p class="hint">Elegí el soporte para ver el monto.</p>`}
+          <div class="field" style="max-width:220px;margin-top:12px"><label class="f" for="pej">Ejemplares</label><input type="text" id="pej" data-w="pedido.ejemplares" data-mask="num" data-redraw="1" inputmode="numeric" value="${esc(w.pedido.ejemplares)}"><p class="legend">El segundo y los siguientes van al 50 %.</p></div></div>`:""}`;
   } else {
-    const c=costoW(), ds=docsDe(w), n=ds.filter(d=>w.adj[d.k]).length, falta=[1,2,3,4,5].filter(i=>!okPaso(i));
-    body=`<span class="eyebrow acc">Paso 6 de 6</span><h2 class="t">Revisá y enviá</h2><p class="hint">Esto es lo que va a recibir la Escribanía. Después de enviar, lo seguís desde Mis trámites.</p>
-      <div class="tiles"><div class="tile"><div class="l">Trámite</div><div class="v">${esc(T.n)} · ${w.soporte==="papel"?"papel":"digital"}</div></div>
-        <div class="tile"><div class="l">Carácter</div><div class="v">${esc(CARACTERES[w.caracter].corto)}</div></div>
-        <div class="tile"><div class="l">Escritura</div><div class="v">${w.esc.busqueda?"A ubicar por la Escribanía":`N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])} · ${esc(w.esc.fecha)}`}</div></div>
-        <div class="tile"><div class="l">${w.tipo==="copia"?"Objeto":"Motivo"}</div><div class="v">${esc(w.tipo==="copia"?w.pedido.objeto:w.tipo==="testimonio"?w.pedido.motivo.split(" ")[0]+(w.pedido.denuncia.nro?" · denuncia "+w.pedido.denuncia.nro:""):w.pedido.para)}</div></div>
-        <div class="tile"><div class="l">Adjuntos</div><div class="v">${ds.length?`${n} de ${ds.length}`:"No hace falta"}</div></div>
-        <div class="tile"><div class="l">Costo</div><div class="v">${esc(c?.txt||"—")}${c?.monto?" · se paga al dar el alta":""}</div></div></div>
+    const c=cotizar(w), ds=docsDe(w), notaD=ds.find(d=>d.nota), p=w.pedido, falta=[1,2,3].filter(i=>!okPaso(i)), directo=carrilDirecto(w)&&c&&c.total>0;
+    body=`<div><span class="eyebrow acc">Paso 4 de 4</span><h2 class="t">Revisá y enviá</h2><p class="hint">Lo que falta para la nota de solicitud, y el resumen de lo que va a recibir la Escribanía.</p></div>
+      ${w.tipo==="testimonio"?`<div class="g2" style="grid-template-columns:2fr 3fr"><div class="field"><label class="f" for="pmot">Motivo</label><select id="pmot" data-w="pedido.motivo"><option value="">Elegí</option>${MOTIVOS.map(m=>`<option ${p.motivo===m?"selected":""}>${m}</option>`).join("")}</select></div>
+          <div class="field"><label class="f" for="ppara">Para qué lo necesitás</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Sucesión en trámite. Lo pide el juzgado." value="${esc(p.para)}"></div></div>`
+       :w.tipo==="copia"?`<div class="g2"><div class="field"><label class="f" for="pobj">Para qué la necesitás</label><select id="pobj" data-w="pedido.objeto" data-redraw="1"><option value="">Elegí</option>${OBJETOS.map(o=>`<option ${p.objeto===o?"selected":""}>${o}</option>`).join("")}</select></div>
+          ${w.modo==="cert"?`<div class="field"><label class="f" for="pdst">Dónde la vas a presentar</label><select id="pdst" data-w="pedido.destino"><option value="">Elegí</option>${DESTINOS.map(o=>`<option ${p.destino===o?"selected":""}>${o}</option>`).join("")}</select></div>`:""}</div>`
+       :`<div class="field"><label class="f" for="ppara">Motivo de la consulta</label><input type="text" id="ppara" data-w="pedido.para" placeholder="Ej.: Estudio de títulos para una compraventa en trámite" value="${esc(p.para)}"></div>`}
+      ${notaD?`<div class="card stack" style="background:var(--surface-2)"><div class="spread"><div><b>Nota de solicitud con firma certificada</b><div class="sub">El sistema la arma con lo que cargaste. La imprimís, la firman ${w.caracter==="sucesor_u"?"todos los herederos":"vos"} ante un escribano, y la subís acá.</div></div>
+          <button class="btn" type="button" data-act="notaFirmar">Descargar la nota para firmar</button></div>${filaAdj(notaD,w.adj.nota,"w")}</div>`:""}
+      <div class="tiles"><div class="tile"><div class="l">Trámite</div><div class="v">${esc(nombreW(w))}</div></div>
+        <div class="tile"><div class="l">Carácter</div><div class="v">${esc(CARACTERES[w.caracter]?.corto||"—")}</div></div>
+        <div class="tile"><div class="l">Escritura</div><div class="v">${esc(escTxt(w))}</div></div>
+        <div class="tile"><div class="l">Adjuntos</div><div class="v">${ds.filter(d=>w.adj[d.k]).length} de ${ds.filter(d=>!d.grupo).length+(ds.some(d=>d.grupo)?1:0)}</div></div>
+        <div class="tile"><div class="l">Ejemplares</div><div class="v">${esc(p.ejemplares)}</div></div>
+        <div class="tile"><div class="l">Costo</div><div class="v">${ant?"Sin costo":c?.exento?"Exento":carrilDirecto(w)?pesos(c.total)+" · se paga ahora":"Se calcula al dar el alta"}</div></div></div>
       ${falta.length?`<div class="box b-warn">Falta completar: ${falta.map(i=>`<button class="link" type="button" data-act="paso" data-arg="${i}">paso ${i} (${PASOS[i-1]})</button>`).join(", ")}.</div>`:""}
-      <label class="box b-mute row" style="cursor:pointer"><input type="checkbox" id="dj" ${w.dj?"checked":""}> <span>Declaro que los datos y documentos son verdaderos${w.caracter==="sucesor_u"?" y que soy heredera declarada de la parte interviniente":""}.</span></label>
-      <div class="box b-info">Después de enviar no podés editarlo. Si falta algo, la Escribanía te lo observa y vuelve a tu bandeja para corregir.</div>`;
+      <label class="box b-mute row" style="cursor:pointer"><input type="checkbox" id="dj" ${w.dj?"checked":""}> <span>Declaro que los datos y documentos son verdaderos${w.caracter==="sucesor_u"?" y que soy heredero/a declarado/a de la parte interviniente":""}.</span></label>
+      <div class="box b-info">Después de enviar no podés editarlo. Si falta algo, la Escribanía te lo observa y vuelve a tu bandeja apuntando al paso que hay que corregir.</div>`;
+    W._directo=directo;
   }
-  const navBtns = w.paso<6
-    ? `<button class="btn pri" type="button" data-act="cont" ${w.paso<5&&!okPaso(w.paso)?"disabled":""}>Continuar</button>${w.paso===5&&!W.para?`<button class="btn" type="button" data-act="guardarW">Guardar y seguir después</button>`:""}${w.paso>1?`<button class="btn" type="button" data-act="volverW">Volver</button>`:""}`
-    : `<button class="btn hot" type="button" data-act="enviar" ${[1,2,3,4,5].every(okPaso)&&w.dj&&!w.enviando?"":"disabled"}>Enviar a la Escribanía</button>
-       ${w.tipo==="testimonio"?`<button class="btn" type="button" data-act="notaFirmar">Descargar la nota para firmar</button>`:""}<button class="btn" type="button" data-act="volverW">Volver</button>`;
+  const listo=[1,2,3,4].every(okPaso)&&w.dj&&!w.enviando;
+  const navBtns = w.paso<4
+    ? `<button class="btn pri" type="button" data-act="cont" ${okPaso(w.paso)?"":"disabled"}>Continuar</button>${w.paso>1?`<button class="btn" type="button" data-act="volverW">Volver</button>`:""}${!W.para&&w.tipo?`<button class="btn" type="button" data-act="guardarW">Guardar borrador</button>`:""}`
+    : `<button class="btn hot" type="button" data-act="enviar" ${listo?"":"disabled"}>${W._directo?`Pagar ${pesos(cotizar(w).total)} y enviar`:"Enviar a la Escribanía"}</button><button class="btn" type="button" data-act="volverW">Volver</button>${!W.para?`<button class="btn" type="button" data-act="guardarW">Guardar borrador</button>`:""}`;
   $("#app").innerHTML=`<div class="stack"><div class="steps">${steps}</div>
-    <div class="cols"><div class="card stack">${body}<div class="acts" style="margin-top:8px">${navBtns}</div></div>
+    <div class="cols"><div class="card stack">${body}<div class="acts" style="margin-top:8px">${navBtns}</div>${w.paso<4&&!okPaso(w.paso)?`<p class="legend" id="porque">${esc(porqueNo(w.paso))}</p>`:`<p class="legend" id="porque"></p>`}</div>
     <aside class="card stack" id="carpeta"></aside></div></div>`;
   carpeta();
+}
+function porqueNo(n){ const w=W;
+  if(n===1) return !w.tipo?"Elegí qué necesitás.":"Cargá año (cuatro cifras), número y fecha de la escritura, o buscala con lo que tengas.";
+  if(n===2){ if(!w.caracter) return "Elegí el carácter."; if(!okPaso(2)) return "Completá los datos y adjuntá lo que pide el carácter."; }
+  if(n===3) return w.tipo==="testimonio"||w.tipo==="antecedentes"?"Elegí el soporte.":"Indicá la cantidad de ejemplares.";
+  return ""; }
+function acordeon(k){
+  const w=W, C=CARACTERES[k], sel=w.caracter===k;
+  const docs=sel?docsDe(w).filter(d=>!d.extra&&!d.nota):[];
+  return `<div class="acc" ${sel?"open":""}><button class="opt" type="button" data-act="w" data-arg="caracter" data-v="${k}" aria-pressed="${sel}"><span><span class="ot">${C.t}</span><span class="od">${C.d}</span></span></button>
+    ${sel?`<div class="in">${C.nada?`<div class="box b-ok">${esc(C.nada)}</div>`:""}
+      ${docs.length?`<div class="eyebrow">${C.unaDe?"Adjuntás una de las dos":"Tenés que adjuntar"}</div>${docs.map(d=>filaAdj(d,w.adj[d.k],"w")).join("")}`:""}
+      ${C.campos.length?`<div class="g3">${C.campos.map(c=>`<div class="field" ${c[3]?'style="grid-column:1/-1"':""}><label class="f" for="ac_${c[0]}">${esc(c[1])}</label>
+        ${c[3]?`<textarea id="ac_${c[0]}" data-w="acred.${c[0]}" placeholder="${esc(c[2])}">${esc(w.acred[c[0]]||"")}</textarea>`:`<input type="text" id="ac_${c[0]}" data-w="acred.${c[0]}" ${c[0]==="fecha"?'data-mask="fecha" inputmode="numeric"':""} placeholder="${esc(c[2])}" value="${esc(w.acred[c[0]]||"")}">`}</div>`).join("")}</div>`:""}
+      ${C.aviso?`<p class="legend" style="color:var(--warn)">${esc(C.aviso)}</p>`:""}<p class="legend">${esc(C.guia||"")}</p></div>`:""}</div>`;
 }
 function filaAdj(d,arch,ctx){ return `<div class="docrow ${arch?"":"pend"}"><span class="ico ${arch?"ok":"pend"}" style="${arch?"":"background:transparent;border:2px solid var(--req-acc)"}">${arch?"✓":""}</span>
   <div class="dn"><b>${esc(d.n)}</b><span>${arch?`Adjuntado · ${esc(arch.nombre)}`:"Falta"}${d.d&&!arch?" · "+esc(d.d):""}</span></div>
@@ -693,49 +782,96 @@ function filaAdj(d,arch,ctx){ return `<div class="docrow ${arch?"":"pend"}"><spa
   <label class="btn sm" for="fa_${ctx}_${d.k}">${arch?"Cambiar":"Adjuntar"}</label><input type="file" id="fa_${ctx}_${d.k}" data-adj="${ctx}" data-k="${d.k}" accept="application/pdf,image/*" hidden>
   <button class="btn sm" type="button" data-act="ejemplo" data-arg="${ctx}" data-k="${d.k}" data-n="${esc(d.n)}">PDF de ejemplo</button></div></div>`; }
 function carpeta(){
-  const box=$("#carpeta"); if(!box||!W) return; const w=W, T=w.tipo&&TRAMITES[w.tipo], ds=docsDe(w), n=ds.filter(d=>w.adj[d.k]).length;
+  const box=$("#carpeta"); if(!box||!W) return; const w=W, ds=docsDe(w);
   const it=(ok,txt)=>`<li class="${ok?"":"p"}"><span class="ico ${ok?"ok":""}">${ok?"✓":""}</span>${esc(txt)}</li>`;
-  const nota=ds.find(d=>d.nota);
-  const items=[it(okPaso(1),"Trámite elegido"), it(okPaso(2),okPaso(2)?"Carácter: "+CARACTERES[w.caracter].corto.toLowerCase():"Elegir el carácter"),
-    it(okPaso(3),okPaso(3)?(w.esc.busqueda?"Escritura: a ubicar":`Escritura ${w.esc.n} · ${w.esc.protocolo.startsWith("Sección B")?"B":"A"} · ${w.esc.anio}`):"Identificar la escritura"),
-    it(okPaso(4),"Datos del pedido"),
-    ...(nota? [it(ds.filter(d=>!d.nota).every(d=>w.adj[d.k]), ds.length>1?`${n-(w.adj.nota?1:0)} de ${ds.length-1} adjuntos`:"Sin adjuntos del carácter"), it(!!w.adj.nota,"Nota de solicitud con firma certificada")]
-       : [it(okPaso(5), ds.length?`Adjuntar documentación (${n} de ${ds.length})`:"Documentación: no hace falta")])];
-  const c=costoW();
+  const c=w.tipo?cotizar(w):null;
+  const items=[it(!!w.tipo,w.tipo?"Trámite: "+nombreW(w).toLowerCase():"Elegir el trámite"),
+    it(okPaso(1),okPaso(1)?"Escritura "+escTxt(w).replace("N.º ",""):"Identificar la escritura"),
+    w.tipo==="antecedentes"?it(true,"Carácter: no aplica"):it(okPaso(2),okPaso(2)?"Carácter acreditado: "+CARACTERES[w.caracter].corto.toLowerCase():w.caracter?"Adjuntar lo que pide el carácter":"Elegir el carácter"),
+    it(okPaso(3),okPaso(3)?"Costo: "+(w.tipo==="antecedentes"?"sin costo":c?.exento?"exento":carrilDirecto(w)?pesos(c.total):"al dar el alta"):"Ver el costo"),
+    it(okPaso(4),ds.some(d=>d.nota)?"Nota con firma certificada y datos del pedido":"Datos del pedido")];
   const tabs=[["falta","Qué falta"],["costo","Cuánto sale"],["form","Tu formulario"]];
-  box.innerHTML=`<div><div class="eyebrow">Carpeta del trámite</div><h3 class="t" style="margin-top:4px">${T?esc(T.n):"Todavía sin trámite"}</h3></div>
+  box.innerHTML=`<div><div class="eyebrow">Carpeta del trámite</div><h3 class="t" style="margin-top:4px">${w.tipo?esc(nombreW(w)):"Todavía sin trámite"}</h3></div>
     <div class="tabsline" role="tablist">${tabs.map(x=>`<button type="button" role="tab" data-act="tabC" data-arg="${x[0]}" aria-selected="${w.tabC===x[0]}">${x[1]}</button>`).join("")}</div>
     ${w.tabC==="falta"?`<ul class="miss">${items.join("")}</ul>`
-     :w.tabC==="costo"?(c?`<div style="font-family:var(--serif);font-size:30px;font-weight:600">${esc(c.txt)}</div><p class="hint">${esc(c.det)}</p>`:`<p class="hint">El costo aparece cuando elijas el trámite y el soporte.</p>`)
-     :`<div class="box b-mute" style="font-size:12.5px"><div class="eyebrow" style="text-align:center;margin-bottom:8px;color:var(--link)">${T?esc(T.form):"Solicitud"}</div>${esc(textoNota(w))}</div><p class="hint">Se completa solo con lo que cargaste.</p>`}`;
+     :w.tabC==="costo"?(!w.tipo?`<p class="hint">Elegí el trámite.</p>`:w.tipo==="antecedentes"?`<div style="font-family:var(--serif);font-size:28px;font-weight:600">Sin costo</div>`
+        :c&&(carrilDirecto(w)||w.tipo==="testimonio"||c.exento)?`<div style="font-family:var(--serif);font-size:30px;font-weight:600">${pesos(c.total)}</div><p class="hint">${carrilDirecto(w)?"Lo pagás al enviar.":c.exento?"Exento de tasa.":"Se paga cuando la Escribanía da el alta."}</p>`
+        :`<p class="hint">${w.tipo==="copia"&&w.soporte?`${pesos(TASAS[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte])} por hoja. El total sale de las fojas reales de la escritura.`:"Aparece cuando elijas el soporte."}</p>`)
+     :`<div class="box b-mute" style="font-size:12.5px"><div class="eyebrow" style="text-align:center;margin-bottom:8px;color:var(--link)">${w.tipo?esc(TRAMITES[w.tipo].form):"Solicitud"}</div>${esc(textoNota(w))}</div><p class="hint">Se completa solo con lo que cargaste.</p>`}`;
 }
 function textoNota(w,u){ u=u||(w.para?usuario(w.para):yo()); if(!w.tipo) return "Elegí el trámite para ver la nota.";
-  const T=TRAMITES[w.tipo], C=w.caracter&&CARACTERES[w.caracter];
-  return `Sra. Escribana General de Gobierno: ${u.nombre}${u.doc?`, ${u.doc}`:""}, con domicilio en ${u.domicilio||"—"}, en carácter de ${C?C.corto.toLowerCase():"—"}${w.acred.autos?` (autos «${w.acred.autos}»)`:""}, solicita ${T.n.toLowerCase()}${w.soporte?` en soporte ${w.soporte==="papel"?"papel":"digital"}`:""} de la escritura ${w.esc.busqueda?"que se describe: "+w.esc.busqueda:`N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} (${w.esc.protocolo})`}${w.pedido.motivo?`. Motivo: ${w.pedido.motivo.toLowerCase()}`:""}${w.pedido.denuncia.nro?`, denuncia N.º ${w.pedido.denuncia.nro} ante ${w.pedido.denuncia.lugar} del ${w.pedido.denuncia.fecha}`:""}${w.pedido.para?`. Destino: ${w.pedido.para}`:w.pedido.objeto?`. Objeto: ${w.pedido.objeto.toLowerCase()}`:""}.`; }
+  const C=w.caracter&&CARACTERES[w.caracter];
+  return `Sra. Escribana General de Gobierno: ${u.nombre}${u.doc?`, ${u.doc}`:""}, con domicilio en ${u.domicilio||"—"}, en carácter de ${C?C.corto.toLowerCase():"—"}${w.acred.autos?` (autos «${w.acred.autos}»)`:""}, solicita ${nombreW(w).toLowerCase()} de la escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} (${w.esc.protocolo}), en ${w.pedido.ejemplares||1} ejemplar(es)${w.pedido.motivo?`. Motivo: ${w.pedido.motivo.toLowerCase()}`:""}${w.extra?.denuncia?.nro?`, denuncia N.º ${w.extra.denuncia.nro} ante ${w.extra.denuncia.lugar} del ${w.extra.denuncia.fecha}`:""}${w.pedido.para?`. Destino: ${w.pedido.para}`:w.pedido.objeto?`. Objeto: ${w.pedido.objeto.toLowerCase()}`:""}.`; }
 
 async function enviarW(){
   const w=W; if(w.enviando) return; w.enviando=true; vArmador();
-  const u=titular(), quien=yo(), ahora=Date.now(), ds=docsDe(w);
-  const max=S.tramites.map(t=>parseInt(t.nro,10)||0).reduce((a,b)=>Math.max(a,b),4900), nro=String(max+1).padStart(5,"0");
-  const ordenes=[], ad=ds.filter(d=>!d.nota).map(d=>({...w.adj[d.k],n:d.n}));
-  ordenes.push(w.adj.nota? {n:1,t:ahora,nombre:"Nota de solicitud",origen:"req",por:u.nombre,archivos:[{...w.adj.nota,n:"Nota firmada"}]}
-                         : {n:1,t:ahora,nombre:"Nota de solicitud",origen:"req",por:u.nombre,gen:{titulo:TRAMITES[w.tipo].form,lineas:[textoNota(w,u)]}});
-  if(ad.length) ordenes.push({n:2,t:ahora,nombre:`Documentación del carácter${ad.length>1?` (${ad.length} archivos)`:""}`,origen:"req",por:u.nombre,archivos:ad});
-  ordenes.push({n:ordenes.length+1,t:ahora,nombre:"Constancia de inicio",origen:"auto",por:"SIIGENO",gen:{titulo:"Constancia de inicio — Solicitud "+nro,lineas:[`Trámite: ${TRAMITES[w.tipo].n}`,`Requirente: ${u.nombre} (${u.doc||""})`,`Ingreso: ${fFecha(ahora)} ${fHora(ahora)}`]}});
-  const hist=[{t:ahora,nombre:W.para?quien.nombre:u.nombre,accion:W.para?"Cargado por mesa de entradas":"Enviado desde el portal"}];
-  const wSave=clon({...w,enviando:false,paso:1,dj:false});
-  const doc={nro, tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", origen:W.para?"mesa":"portal", w:wSave, adj:clon(w.adj),
-    etapa:"sin_asignar", responsable:null, control:{}, tasa:null, turno:null, ordenes, historial:hist, notas:[], creado:w.creado||ahora, ingreso:ahora, actualizado:ahora};
+  const u=titular(), quien=yo(), ahora=Date.now(), ds=docsDe(w), prev=w.id?tramite(w.id):null;
+  const directo=carrilDirecto(w), c=cotizar(w);
+  const max=S.tramites.map(t=>parseInt(t.nro,10)||0).reduce((a,b)=>Math.max(a,b),4900);
+  const nro=prev?.nro||String(max+1).padStart(5,"0");
+  const ordenes=[...(prev?.ordenes||[])]; const add=o=>ordenes.push({...o,n:ordenes.length+1,t:ahora});
+  add(w.adj.nota? {nombre:"Nota de solicitud con firma certificada",origen:"req",por:u.nombre,archivos:[{...w.adj.nota,n:"Nota firmada"}]}
+                : {nombre:"Nota de solicitud",origen:"req",por:u.nombre,gen:{titulo:TRAMITES[w.tipo].form,lineas:[textoNota(w,u)]}});
+  const ad=ds.filter(d=>!d.nota&&w.adj[d.k]).map(d=>({...w.adj[d.k],n:d.n,k:d.k}));
+  if(ad.length) add({nombre:`Documentación del carácter${ad.length>1?` (${ad.length} archivos)`:""}`,origen:"req",por:u.nombre,archivos:ad});
+  add({nombre:"Constancia de inicio",origen:"auto",por:"SIIGENO",gen:{titulo:"Constancia de inicio — Solicitud "+nro,lineas:[`Trámite: ${nombreW(w)}`,`Requirente: ${u.nombre} (${u.doc||""})`,`Ingreso: ${fFecha(ahora)} ${fHora(ahora)}`]}});
+  const hist=[...(prev?.historial||[]), {t:ahora,nombre:W.para?quien.nombre:u.nombre,accion:W.para?"Cargado por mesa de entradas":"Enviado desde el portal"}];
+  let etapa="sin_asignar", tasa=null;
+  if(directo){
+    etapa="en_preparacion";
+    if(c.total>0){ tasa={monto:c.total,t:ahora,pagada:true,pagadaEn:ahora};
+      add({nombre:"Comprobante de pago",origen:"auto",por:"SIIGENO",gen:{titulo:"Comprobante de pago — Trámite "+nro,lineas:[`Tasa Retributiva de Servicios: ${pesos(c.total)}`,`Pagado el ${fFecha(ahora)} a las ${fHora(ahora)} (simulado)`]}});
+      hist.push({t:ahora,nombre:"SIIGENO",accion:"Pago acreditado"}); }
+    hist.push({t:ahora,nombre:"SIIGENO",accion:"Carril directo: figura como parte en el protocolo"});
+  }
+  const doc={nro, tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", origen:W.para?"mesa":"portal", carril:directo?"directo":"control",
+    w:clon({...w,enviando:false,dj:false,_directo:undefined}), adj:clon(w.adj), etapa, responsable:null, control:{}, tasa, turno:null, ordenes, historial:hist,
+    notas:prev?.notas||[], busqueda:prev?.busqueda||null, creado:prev?.creado||ahora, ingreso:ahora, actualizado:ahora};
   const id=w.id||nuevoId("t");
   try{ await Store.set("tramites",id,doc); W=null;
-    if(lado(quien)==="egg"){ toast("Trámite "+nro+" cargado"); ir("ficha",id); } else { S.aviso=nro; ir("mis"); } }
+    if(lado(quien)==="egg"){ toast("Trámite "+nro+" cargado"); ir("ficha",id); }
+    else { S.aviso=directo&&tasa?`Pagaste y enviamos tu solicitud. Número ${nro}. Entra a la Escribanía ya abonada.`:`Enviamos tu solicitud. Número ${nro}. Te avisamos acá cuando haya novedades.`; ir("mis"); } }
   catch(e){ w.enviando=false; vArmador(); toast("No se pudo enviar: "+(e.message||e.code||"error")); }
 }
 async function guardarBorrador(){
-  const w=W, u=yo(), ahora=Date.now(), id=w.id||nuevoId("t");
-  const doc={nro:"", tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", w:clon({...w,enviando:false}), adj:clon(w.adj),
-    etapa:"borrador", ordenes:[], historial:[], notas:[], creado:w.creado||ahora, actualizado:ahora};
-  try{ await Store.set("tramites",id,doc); W=null; toast("Guardado. Lo seguís desde Mis trámites."); ir("mis"); }catch(e){ toast("No se pudo guardar."); }
+  const w=W, u=yo(), ahora=Date.now(), id=w.id||nuevoId("t"), prev=w.id?tramite(w.id):null;
+  const doc={...(prev||{}), nro:prev?.nro||"", tipo:w.tipo, solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", w:clon({...w,enviando:false,_directo:undefined}), adj:clon(w.adj),
+    etapa:prev&&prev.etapa==="encontrada"?"encontrada":"borrador", ordenes:prev?.ordenes||[], historial:prev?.historial||[], notas:prev?.notas||[], creado:prev?.creado||ahora, actualizado:ahora};
+  try{ await Store.set("tramites",id,doc); W=null; S.aviso="Guardado. Lo seguís desde acá cuando quieras."; ir("mis"); }catch(e){ toast("No se pudo guardar."); }
+}
+
+/* ==================================================================
+   REQUIRENTE — «No sé los datos»: pedido de búsqueda asistida
+   ================================================================== */
+function vBusqueda(){
+  const u=yo(), b=B;
+  $("#app").innerHTML=`<div class="stack"><div><button class="link" type="button" data-act="volverArmador">Volver</button></div>
+    <div class="cols"><form class="card stack" id="fbus"><div><h1 class="t">Ayudanos a encontrar tu escritura</h1><p class="hint">Completá lo que recuerdes. No hace falta llenar todo: con dos o tres datos alcanza para empezar a buscar. Cuantos más cargues, más rápido la ubicamos.</p></div>
+      <div class="eyebrow">Quiénes intervinieron</div>
+      <div class="g2"><div class="field"><label class="f">Tu CUIL</label><input type="text" value="${esc(u.doc||"")}" disabled><p class="legend">Tomado de tu cuenta de Ciudadano Digital</p></div>
+        <div class="field"><label class="f" for="bo">Otra persona que intervino</label><input type="text" id="bo" data-b="otra" placeholder="El que vendió, donó, cedió, o la repartición" value="${esc(b.otra)}"></div></div>
+      <div class="eyebrow">Sobre el acto</div>
+      <div class="g3"><div class="field"><label class="f" for="ba">Tipo de acto</label><select id="ba" data-b="acto">${ACTOS.map(a=>`<option ${b.acto===a?"selected":""}>${a}</option>`).join("")}</select></div>
+        <div class="field"><label class="f" for="bd">Desde el año</label><input type="text" id="bd" data-b="desde" data-mask="num4" inputmode="numeric" value="${esc(b.desde)}"></div>
+        <div class="field"><label class="f" for="bh">Hasta el año</label><input type="text" id="bh" data-b="hasta" data-mask="num4" inputmode="numeric" value="${esc(b.hasta)}"></div></div>
+      <div class="eyebrow">Sobre el bien</div>
+      <div class="g3"><div class="field"><label class="f" for="bc">N.º de cuenta de Rentas</label><input type="text" id="bc" data-b="cuenta" value="${esc(b.cuenta)}"></div>
+        <div class="field"><label class="f" for="bm">Matrícula</label><input type="text" id="bm" data-b="matricula" value="${esc(b.matricula)}"></div>
+        <div class="field"><label class="f" for="bl">Localidad</label><input type="text" id="bl" data-b="localidad" value="${esc(b.localidad)}"></div></div>
+      <div class="field"><label class="f" for="bx">Cualquier otra cosa que recuerdes</label><textarea id="bx" data-b="otraCosa">${esc(b.otraCosa)}</textarea></div>
+      <div class="acts"><button class="btn hot" type="submit">Enviar para búsqueda</button><button class="btn" type="button" data-act="guardarW">Guardar borrador</button></div></form>
+    <aside class="card stack"><div class="eyebrow">Qué pasa después</div>
+      <ol style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13.5px"><li>Personal de la Escribanía busca en el protocolo digitalizado con los datos que cargaste.</li>
+      <li>Te avisamos en tu bandeja. Si hay más de una coincidencia, te mostramos cuáles para que elijas.</li><li>Con la escritura identificada, seguís el trámite desde donde lo dejaste.</li></ol>
+      <div class="box b-mute"><b>Por qué no buscás vos</b><br>El contenido del protocolo es reservado. Que exista la escritura de una persona, y de cuántas fojas es, no se muestra a quien todavía no acreditó derecho a pedirla.</div></aside></div></div>`;
+  $("#fbus").onsubmit=async e=>{ e.preventDefault();
+    const datos=["otra","cuenta","matricula","localidad","otraCosa","desde"].filter(k=>(B[k]||"").trim()).length + (B.acto&&B.acto!=="No lo sé"?1:0);
+    if(datos<2){ toast("Cargá al menos dos datos para poder buscar."); return; }
+    const ahora=Date.now(), id=W.id||nuevoId("t"), max=S.tramites.map(t=>parseInt(t.nro,10)||0).reduce((a,b)=>Math.max(a,b),4900), nro=String(max+1).padStart(5,"0");
+    const doc={nro, tipo:"busqueda", solicitante:u.id, solicitanteNombre:u.nombre, solicitanteDoc:u.doc||"", origen:"portal", w:clon({...W,enviando:false}), adj:{}, busqueda:clon(B),
+      etapa:"buscando", responsable:null, control:{}, tasa:null, ordenes:[{n:1,t:ahora,nombre:"Pedido de búsqueda de escritura",origen:"req",por:u.nombre,gen:{titulo:"Pedido de búsqueda — "+nro,lineas:Object.entries(B).filter(([k,v])=>v).map(([k,v])=>`${k}: ${v}`)}}],
+      historial:[{t:ahora,nombre:u.nombre,accion:"Pidió búsqueda asistida de la escritura"}], notas:[], creado:ahora, ingreso:ahora, actualizado:ahora};
+    try{ await Store.set("tramites",id,doc); W=null; B=null; S.aviso=`Recibimos tu pedido de búsqueda (N.º ${nro}). Te avisamos acá cuando la encontremos.`; ir("mis"); }catch(err){ toast("No se pudo enviar."); } };
 }
 
 /* ==================================================================
@@ -744,32 +880,35 @@ async function guardarBorrador(){
 function vDetReq(){
   const t=tramite(S.sel), u=yo(), app=$("#app");
   if(!t||t.solicitante!==u.id){ app.innerHTML=`<div class="card empty">Ese trámite no es tuyo o ya no existe. <button class="link" type="button" data-go="mis">Volver</button></div>`; return; }
-  const T=TRAMITES[t.tipo], w=t.w, pagada=t.tasa?.pagada;
-  const flag=Object.entries(t.control||{}).filter(([k,v])=>t.etapa==="falta_algo"&&v.e&&v.e!=="ok").map(([k])=>k);
+  const w=t.w, T=TRAMITES[t.tipo], pagada=t.tasa?.pagada;
+  const flag=t.etapa==="falta_algo"?Object.entries(t.control||{}).filter(([k,v])=>v.e&&v.e!=="ok").map(([k])=>k):[];
   let cur=5;
-  if(t.etapa==="falta_algo") cur=2; else if(t.etapa==="a_pagar"&&!pagada) cur=3; else if(t.etapa==="no_corresponde") cur=2.5;
-  const track=["Escritura","Carácter","Costo","Envío"].map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<cur?"done":i+1===cur?"cur":""}"><i>${i+1}</i>${p}</span>`).join("");
+  if(t.etapa==="falta_algo") cur=flag.includes("nota")&&flag.length===1?4:2; else if(t.etapa==="a_pagar"&&!pagada) cur=3; else if(t.etapa==="no_corresponde") cur=2.5; else if(t.tipo==="busqueda") cur=1;
+  const track=PASOS.map((p,i)=>`${i?'<span class="ln"></span>':""}<span class="s ${i+1<cur?"done":i+1===cur?"cur":""}"><i>${i+1}</i>${p}</span>`).join("");
   const presento=(t.ordenes||[]).filter(o=>o.origen==="req").flatMap(o=>o.archivos?o.archivos.map(a=>({n:a.n||o.nombre,ref:a.ref,nom:a.nombre})):[{n:o.nombre,gen:o}]);
-  const chips=`<div><div class="eyebrow" style="margin-bottom:8px">Lo que presentaste</div><div class="pills">${presento.map(p=>p.ref?`<button type="button" data-ver="${esc(p.ref)}" data-nom="${esc(p.nom)}">${esc(p.n)}</button>`:`<button type="button" data-act="verOrden" data-arg="${t.id}" data-n="${p.gen.n}">${esc(p.n)}</button>`).join("")}</div></div>`;
+  const chips=presento.length?`<div><div class="eyebrow" style="margin-bottom:8px">Lo que presentaste</div><div class="pills">${presento.map(p=>p.ref?`<button type="button" data-ver="${esc(p.ref)}" data-nom="${esc(p.nom)}">${esc(p.n)}</button>`:`<button type="button" data-act="verOrden" data-arg="${t.id}" data-n="${p.gen.n}">${esc(p.n)}</button>`).join("")}</div></div>`:"";
   let main="", btns="";
-  const items=itemsControl(t);
+  const items=t.tipo==="busqueda"?[]:itemsControl(t);
   switch(t.etapa){
+    case "buscando": main=`<div class="big b-info"><h3>La estamos buscando</h3>Personal de la Escribanía busca en el protocolo digitalizado con lo que cargaste. Te avisamos acá.</div>`; break;
+    case "no_encontrada": main=`<div class="big b-bad"><h3>No la encontramos</h3>${esc(t.resolucion||"")}</div>`; btns=`<button class="btn hot" type="button" data-act="nuevo">Iniciar de nuevo</button>`; break;
     case "sin_asignar": case "asignado": case "en_revision":
       main=`<div class="big b-info"><h3>No tenés que hacer nada</h3>Lo recibimos el ${fCorta(t.ingreso)} a las ${fHora(t.ingreso)}. Te vamos a avisar acá cuando haya novedades.</div>${chips}`; btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`; break;
     case "falta_algo": {
       const okL=items.filter(i=>!flag.includes(i.k)&&t.control?.[i.k]?.e==="ok").map(i=>i.n);
-      main=`<div class="big b-warn"><h3>Falta algo</h3>${esc(t.obs||"")}</div>
+      const corregibles=items.filter(i=>flag.includes(i.k)&&i.docs.length);
+      main=`<div class="big b-warn"><h3>${esc(items.filter(i=>flag.includes(i.k)).map(i=>i.n).join(" · ")||"Falta algo")}</h3>${esc(t.obs||"")}</div>
         ${okL.length?`<div class="card"><div class="eyebrow" style="margin-bottom:6px">Lo que sí está bien</div>${esc(okL.join(", "))}. Eso no lo tenés que volver a subir.</div>`:""}
-        ${S.conf==="corregir"?`<div class="card stack"><h3 class="t">Corregí lo observado</h3>${flag.filter(k=>docsDe(w).some(d=>d.k===k)).map(k=>{ const d=docsDe(w).find(x=>x.k===k); return filaAdj(d, (t.corr||{})[k], "c"); }).join("")||`<p class="hint">Lo observado no es un archivo. Contá qué hiciste y reenviá.</p>`}
-          <div class="field"><label class="f" for="corrNota">Comentario para la Escribanía (opcional)</label><textarea id="corrNota"></textarea></div>
-          ${w.tipo==="testimonio"&&flag.includes("nota")?`<button class="link" type="button" data-act="notaFirmarT" data-arg="${t.id}">Descargar la nota para firmar</button>`:""}</div>`:""}`;
-      const pend=flag.filter(k=>docsDe(w).some(d=>d.k===k)&&!(t.corr||{})[k]);
+        ${S.conf==="corregir"?`<div class="card stack"><h3 class="t">Corregí lo observado · paso ${cur} (${PASOS[cur-1]})</h3>${corregibles.flatMap(i=>i.docs.map(k=>{ const d=docsDe(w).find(x=>x.k===k); return filaAdj(d,(t.corr||{})[k],"c"); })).join("")||`<p class="hint">Lo observado no es un archivo. Contá qué hiciste y reenviá.</p>`}
+          ${flag.includes("nota")?`<button class="link" type="button" data-act="notaFirmarT" data-arg="${t.id}">Descargar la nota para firmar</button>`:""}
+          <div class="field"><label class="f" for="corrNota">Comentario para la Escribanía (opcional)</label><textarea id="corrNota"></textarea></div></div>`:""}`;
+      const pend=corregibles.filter(i=>!i.docs.some(k=>(t.corr||{})[k]));
       btns = S.conf==="corregir" ? `<button class="btn hot" type="button" data-act="reenviar" ${pend.length?"disabled":""}>Reenviar a la Escribanía</button><button class="btn" type="button" data-act="cancel">Cancelar</button>`
         : `<button class="btn hot" type="button" data-act="corregir">Corregir y reenviar</button><button class="btn" type="button" data-act="verDocs">Ver qué mandé</button>`; break; }
     case "a_pagar":
       if(pagada){ main=`<div class="big b-info"><h3>Pago acreditado</h3>No tenés que hacer nada. La Escribanía empieza a prepararlo.</div>${chips}`; btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`; }
       else { main=`<div class="big b-orange"><h3>Tenés que pagar la tasa</h3>Ya está todo controlado. Pagá y el trámite entra a trabajarse.</div>
-        <div class="card spread" style="align-items:center"><div><b>${esc(T.n)}${t.tipo==="testimonio"?(w.soporte==="papel"?" en papel":" digital"):""}</b><div class="sub">${t.tipo==="testimonio"?"Monto fijo: no depende de cuántas fojas tenga la escritura":`${protocolo(t).fojas} hojas según el protocolo`}</div></div><div style="font-family:var(--serif);font-size:28px;font-weight:600">${pesos(t.tasa?.monto)}</div></div>
+        <div class="card spread" style="align-items:center"><div><b>${esc(nombreW(w))}</b><div class="sub">${t.tipo==="testimonio"?"Monto fijo: no depende de cuántas fojas tenga la escritura":`${protocolo(w).fojas} hojas según el protocolo`}</div></div><div style="font-family:var(--serif);font-size:28px;font-weight:600">${pesos(t.tasa?.monto)}</div></div>
         ${S.conf==="pagar"?`<div class="box b-mute row">Pago simulado: no se cobra nada. <button class="btn go sm" type="button" data-act="pagarOk">Confirmar pago de ${pesos(t.tasa?.monto)}</button><button class="btn sm" type="button" data-act="cancel">Cancelar</button></div>`:""}`;
         btns=`<button class="btn hot" type="button" data-act="pagar">Pagar ahora</button><button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Boleta">Descargar la boleta</button>`; }
       break;
@@ -786,19 +925,19 @@ function vDetReq(){
         btns=`<button class="btn go" type="button" data-act="turno">${t.turno?"Cambiar el turno":"Sacar turno"}</button><button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`;
       } else {
         main=`<div class="big b-ok"><h3>Está listo</h3>Es digital: lo descargás desde acá. Al descargarlo, el trámite queda cerrado.</div>`;
-        btns=`<button class="btn go" type="button" data-act="descargarFinal">Descargar ${esc(T.producto.toLowerCase())}</button><button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`;
+        btns=`<button class="btn go" type="button" data-act="descargarFinal">Descargar</button><button class="btn" type="button" data-act="verDocs">Ver mis documentos</button>`;
       } break;
     case "entregado":
       main=`<div class="big b-mute"><h3>${w.soporte==="papel"?"Lo retiraste":"Lo descargaste"} el ${fCorta(t.entregado)} a las ${fHora(t.entregado)}</h3>El trámite está cerrado. Vas a poder seguir viendo siempre lo que presentaste y lo que se te entregó.</div>${chips}`;
       btns=`<button class="btn" type="button" data-act="verDocs">Ver mis documentos</button><button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Constancia de entrega">Descargar la constancia</button>`; break;
     case "no_corresponde":
       main=`<div class="big b-bad"><h3>No pudimos darle curso</h3>${esc(t.resolucion||"")}</div>
-        <div class="card" style="border-color:var(--bad-bg)"><div class="eyebrow" style="color:var(--bad);margin-bottom:6px">Por qué</div>${esc(t.porque||"La documentación no acredita el carácter invocado.")} Si conseguís la documentación, podés iniciarlo de nuevo sin volver a pagar.</div>`;
+        <div class="card"><div class="eyebrow" style="color:var(--bad);margin-bottom:6px">Por qué</div>${esc(t.porque||"La documentación no acredita el carácter invocado.")} Si conseguís la documentación, podés iniciarlo de nuevo.</div>`;
       btns=`<button class="btn" type="button" data-act="verOrdenNom" data-arg="${t.id}" data-n="Resolución">Ver la resolución</button><button class="btn hot" type="button" data-act="reiniciar">Iniciar de nuevo</button>`; break;
   }
-  const docs=S.verDocs?`<div class="card stack"><h3 class="t">Mis documentos</h3>${hojaRuta(t,false)}</div>`:"";
+  const docs=S.verDocs?`<div class="card stack" style="padding:0"><h3 class="t" style="padding:16px 18px 0">Mis documentos</h3>${hojaRuta(t,false)}</div>`:"";
   app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="mis">Mis trámites</button></div>
-    <div class="row"><h1 class="t">${esc(T.n)}</h1>${chipReq(t)}</div><div class="sub" style="margin-top:-8px">Escritura ${esc(escTxt(w))} — solicitud ${esc(t.nro)}</div>
+    <div class="row"><h1 class="t">${esc(t.tipo==="busqueda"?"Búsqueda de escritura":nombreW(w))}</h1>${chipReq(t)}</div><div class="sub" style="margin-top:-8px">Escritura ${esc(escTxt(w))} — solicitud ${esc(t.nro)}</div>
     <div class="steps">${track}</div>${main}<div class="acts">${btns}</div>${docs}</div>`;
 }
 
@@ -806,15 +945,17 @@ function vDetReq(){
    ESCRIBANÍA — BANDEJA
    ================================================================== */
 function tasaCol(t){
-  if(TRAMITES[t.tipo].sinCosto) return `<span class="tag c-mute">Sin costo</span><div class="sub">solo escribanos</div>`;
+  if(t.tipo==="busqueda") return `<span class="tag c-mute">Sin tasa</span><div class="sub">búsqueda</div>`;
+  if(t.tipo==="antecedentes") return `<span class="tag c-mute">Sin costo</span><div class="sub">solo escribanos</div>`;
+  if(CARACTERES[t.w.caracter]?.exento) return `<span class="tag c-mute">Exenta</span><div class="sub">organismo público</div>`;
   if(!t.tasa) return `<span class="tag c-mute">Sin tasar</span><div class="sub">falta el alta</div>`;
   return t.tasa.pagada?`<span class="tag c-ok">Paga</span><div class="sub">${pesos(t.tasa.monto)}</div>`:`<span class="tag c-orange">A pagar</span><div class="sub">${pesos(t.tasa.monto)}</div>`;
 }
 const nArchivos = t => (t.ordenes||[]).length;
+const sinDueno = t => !t.responsable && !CERRADOS.includes(t.etapa) && t.etapa!=="encontrada";
 function vBandeja(){
   const u=yo(), ext=activos().sort((a,b)=>b.ingreso-a.ingreso), mios=ext.filter(t=>t.responsable===u.id);
-  const l=S.tabB==="mios"?mios:ext;
-  const nuevo=ext.find(t=>t.etapa==="sin_asignar");
+  const l=S.tabB==="mios"?mios:ext, nuevo=ext.find(sinDueno);
   $("#app").innerHTML=`<div class="stack">
     <div class="spread"><h1 class="t">Bandeja de trámites</h1><button class="btn pri" type="button" data-act="mesa">Cargar trámite por mesa de entradas</button></div>
     ${S.conf==="mesa"?`<div class="card row"><label class="f" for="mesaReq" style="margin:0">¿Para qué requirente?</label><select id="mesaReq" style="max-width:320px">${S.usuarios.filter(x=>lado(x)==="req"&&x.activo!==false).map(x=>`<option value="${esc(x.id)}">${esc(x.nombre)} · ${esc(x.doc||"")}</option>`).join("")}</select>
@@ -822,17 +963,17 @@ function vBandeja(){
     <div class="tabsline" role="tablist"><button type="button" role="tab" disabled title="No se simula en esta prueba">Internos · reparticiones y expediente<span class="n">0</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="ext" aria-selected="${S.tabB==="ext"}">Externos · ciudadanos y escribanos<span class="n">${ext.length}</span></button>
       <button type="button" role="tab" data-act="tabB" data-arg="mios" aria-selected="${S.tabB==="mios"}">Míos<span class="n">${mios.length}</span></button></div>
-    ${nuevo&&S.tabB==="ext"?`<div class="box b-warn spread" style="align-items:center"><span><b>Llegó un trámite nuevo ${hace(nuevo.ingreso)} y nadie lo tiene.</b> ${nuevo.w.caracter==="parte"?"Es la parte: va por el carril directo.":"Como el carácter no es «parte», no fue por el carril directo: hay que controlarlo."}</span>
-      <span class="row">${esEsc()?`<button class="btn" type="button" data-act="abrirAsignar" data-arg="${nuevo.id}">Asignar</button>`:""}<button class="btn pri" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Abrir</button></span></div>`:""}
+    ${nuevo&&S.tabB==="ext"?`<div class="box b-warn spread" style="align-items:center"><span><b>Llegó ${nuevo.tipo==="busqueda"?"un pedido de búsqueda":"un trámite nuevo"} ${hace(nuevo.ingreso)} y nadie lo tiene.</b> ${nuevo.tipo==="busqueda"?"El requirente no sabe los datos de la escritura: hay que ubicarla en el protocolo.":nuevo.carril==="directo"?"Fue parte: vino por el carril directo, ya pago y en preparación.":"Como el carácter no es «parte», no fue por el carril directo: hay que controlarlo."}</span>
+      <span class="row">${esEsc()?`<button class="btn" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Asignar</button>`:""}<button class="btn pri" type="button" data-act="abrirFicha" data-arg="${nuevo.id}">Abrir</button></span></div>`:""}
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Requirente</th><th>Carácter</th><th>Ingreso</th><th>Tasa</th><th>Estado</th><th>A cargo</th><th>Archivos</th></tr></thead><tbody>
       ${l.map(t=>`<tr class="click ${t===nuevo&&S.tabB==="ext"?"nuevo":""}" data-act="abrirFicha" data-arg="${t.id}"><td class="nro">${esc(t.nro)}</td>
-        <td><b>${esc(TRAMITES[t.tipo].n.replace("Copia de escritura","Copia "+(t.w.modo==="cert"?"certificada":"simple")+(t.w.soporte==="digital"?" digital":"")))}</b><div class="sub">Esc. ${esc(escTxt(t.w).replace("N.º ",""))}</div></td>
-        <td><b>${esc(t.solicitanteNombre)}</b><div class="sub">${esc(t.solicitanteDoc)}</div></td><td>${esc(CARACTERES[t.w.caracter].corto)}</td>
+        <td><b>${esc(nombreT(t))}</b><div class="sub">${t.tipo==="busqueda"?"para "+esc(nombreW(t.w).toLowerCase()):"Esc. "+esc(escTxt(t.w).replace("N.º ",""))}</div></td>
+        <td><b>${esc(t.solicitanteNombre)}</b><div class="sub">${esc(t.solicitanteDoc)}</div></td><td>${esc(CARACTERES[t.w.caracter]?.corto||"—")}</td>
         <td class="num">${fFecha(t.ingreso)}<div class="sub">${fHora(t.ingreso)}</div></td><td>${tasaCol(t)}</td><td>${chipEgg(t)}</td>
         <td>${t.responsable?esc(nombreDe(t.responsable)):`<span style="color:var(--bad)">—</span>`}</td>
         <td><button class="btn sm" type="button" data-act="abrirDocs" data-arg="${t.id}">📄 ${nArchivos(t)}</button></td></tr>`).join("")}
       </tbody></table><div class="tfoot"><span>Mostrando ${l.length} · se abre la fila y se trabaja desde la ficha</span><span>Simulador SIIGENO · EGG</span></div></div>`
-      :`<div class="card empty">${S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como Ana Gómez (Cambiar de usuario) y enviá uno."}</div>`}
+      :`<div class="card empty">${S.tabB==="mios"?"No tenés trámites a cargo. Los asigna el escribano.":"Todavía no llegó ningún trámite. Entrá como ciudadana (Cambiar de usuario) y enviá uno."}</div>`}
     ${esEsc()&&S.tramites.length?`<div class="card spread"><div><h3 class="t">Empezar la prueba de cero</h3><p class="hint">Borra todos los trámites. Los usuarios y los problemas anotados quedan.</p></div>
       ${S.conf==="reset"?`<span class="row"><span class="box b-bad">¿Borrar ${S.tramites.length} trámites?</span><button class="btn sm" type="button" data-act="resetOk">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
         :`<button class="btn" type="button" data-act="reset">Borrar trámites de prueba</button>`}</div>`:""}
@@ -849,17 +990,14 @@ function puede(t,a){
     case "asignar": return e && !cerrado;
     case "tomarYo": return e && et==="sin_asignar";
     case "tomar": return mio && et==="asignado";
-    case "controlar": return trabaja && et==="en_revision";
-    case "observar": return trabaja && et==="en_revision";
-    case "alta": return trabaja && et==="en_revision";
+    case "controlar": case "observar": case "alta": return trabaja && et==="en_revision";
     case "noCorresponde": return e && ["sin_asignar","asignado","en_revision","falta_algo"].includes(et);
     case "reenviarAviso": return trabaja && et==="falta_algo";
     case "empezar": return trabaja && et==="a_pagar";
-    case "producto": return trabaja && et==="en_preparacion";
-    case "listo": return trabaja && et==="en_preparacion";
+    case "producto": case "listo": return trabaja && et==="en_preparacion";
     case "entrega": return trabaja && et==="listo" && t.w.soporte==="papel";
     case "reabrir": return e && et==="no_corresponde";
-    case "nota": return true;
+    case "buscar": return et==="buscando";
   }
   return false;
 }
@@ -871,86 +1009,106 @@ async function mover(id, accion, etapa, extra={}, opts={}){
   try{ await Store.update("tramites",id,patch); if(opts.toast!==false) toast(accion); }
   catch(e){ toast("No se pudo guardar: "+(e.message||e.code||"error")); }
 }
+const ck=(e,b,s)=>`<div class="ck"><span class="ico ${e}">${e==="ok"?"✓":e==="bad"?"×":e==="warn"?"!":""}</span><div><b>${esc(b)}</b><span>${esc(s||"")}</span></div></div>`;
+const ordenDe=(t,nombre)=>[...(t.ordenes||[])].reverse().find(o=>o.nombre.startsWith(nombre));
+function armarObs(t){ const c=t.control||{};
+  const l=itemsControl(t).filter(i=>c[i.k]?.e&&c[i.k].e!=="ok").map(i=>`${i.n}: ${c[i.k].nota||(c[i.k].e==="impide"?"impide dar el alta":"hay que corregirlo")}.`);
+  return l.join(" ") + (l.length?" Devuelto al requirente para corregir.":""); }
 function vFicha(){
   const t=tramite(S.sel), app=$("#app"), u=yo();
   if(!t){ app.innerHTML=`<div class="card empty">Ese trámite no existe. <button class="link" type="button" data-go="bandeja">Volver</button></div>`; return; }
-  const T=TRAMITES[t.tipo], w=t.w, pr=protocolo(t), items=itemsControl(t), ctl=t.control||{};
+  const T=TRAMITES[t.tipo], w=t.w, pr=protocolo(w), et=t.etapa, mio=t.responsable===u.id, soloVer=!esEsc()&&!mio;
+  const items=t.tipo==="busqueda"?[]:itemsControl(t), ctl=t.control||{};
   const st=k=>ctl[k]?.e, nOk=items.filter(i=>st(i.k)==="ok").length, nC=items.filter(i=>st(i.k)==="corregir").length, nI=items.filter(i=>st(i.k)==="impide").length;
-  const mio=t.responsable===u.id, soloVer=!esEsc()&&!mio;
-  /* botones de cabecera, con el porqué cuando están apagados */
-  const B=(txt,act,on,why,cls="")=>`<div class="a"><button class="btn ${cls}" type="button" data-act="${act}" data-arg="${t.id}" ${on?"":"disabled"}>${txt}</button>${!on&&why?`<span class="why">${esc(why)}</span>`:""}</div>`;
+  const Bt=(txt,act,on,why,cls="")=>`<div class="a"><button class="btn ${cls}" type="button" data-act="${act}" data-arg="${t.id}" ${on?"":"disabled"}>${txt}</button>${!on&&why?`<span class="why">${esc(why)}</span>`:""}</div>`;
+  const exento=!!CARACTERES[w.caracter]?.exento, sinTasa=T.sinCosto||exento;
   let head=[];
-  const et=t.etapa;
-  if(et==="sin_asignar"){ head=[esEsc()?B("Tomarlo yo","tomarYo",true):"", B("Observar","x",false,"Primero hay que asignarlo"), B("Dar el alta y tasar","x",false,"Primero hay que asignarlo")]; }
-  else if(et==="asignado"){ head=[B("Tomar para revisión","tomar",puede(t,"tomar"),mio?"":`Lo toma ${nombreDe(t.responsable)}`,"pri"), B("Observar","x",false,"Primero hay que tomarlo"), B("Dar el alta y tasar","x",false,"Primero hay que tomarlo")]; }
+  if(t.tipo==="busqueda") head = et==="buscando"?[Bt("No se encontró","noEnc",true,"","")]:[];
+  else if(et==="sin_asignar") head=[esEsc()?Bt("Tomarlo yo","tomarYo",true):"", Bt("Observar","x",false,"Primero hay que asignarlo"), Bt("Dar el alta y tasar","x",false,"Primero hay que asignarlo")];
+  else if(et==="asignado") head=[Bt("Tomar para revisión","tomar",puede(t,"tomar"),mio?"":`Lo toma ${nombreDe(t.responsable)}`,"pri"), Bt("Observar","x",false,"Primero hay que tomarlo"), Bt("Dar el alta y tasar","x",false,"Primero hay que tomarlo")];
   else if(et==="en_revision"){ const todo=nOk===items.length;
-    head=[B("Observar y devolver","observar",puede(t,"observar")&&(nC+nI)>0,soloVer?"No está a tu cargo":"Marcá qué está mal en el control","hot"),
-      B(T.sinCosto?"Dar el alta":"Dar el alta y tasar","alta",puede(t,"alta")&&todo,soloVer?"No está a tu cargo":nI?"Hay un ítem que lo impide":nC?"Hay un ítem a corregir":"Faltan ítems por controlar"),
-      B("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")]; }
-  else if(et==="falta_algo"){ head=[B("Reenviar aviso","reenviarAviso",puede(t,"reenviarAviso"),"No está a tu cargo"), B("Dar el alta y tasar","x",false,"Falta la documentación observada"), B("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")]; }
-  else if(et==="a_pagar"){ head=[B("Empezar a preparar","empezar",puede(t,"empezar")&&t.tasa?.pagada,!t.tasa?.pagada?"Falta que pague":"No está a tu cargo","pri"), B("Ver la boleta","verBoleta",true)]; }
-  else if(et==="en_preparacion"){ head=[B("Marcar como listo","listo",puede(t,"listo")&&!!t.producto,!t.producto?`Falta subir: ${T.producto.toLowerCase()}`:"No está a tu cargo","pri"), B("Observar","x",false,"Ya está pago y en curso")]; }
-  else if(et==="listo"){ head=[w.soporte==="papel"?B("Registrar la entrega","entrega",puede(t,"entrega")&&!!t.turno,!t.turno?"Todavía no sacó turno":"No está a tu cargo","go"):B("Registrar la entrega","x",false,"Es digital: se cierra cuando lo descarga"), B(`Ver ${T.producto.toLowerCase()}`,"verProducto",true)]; }
-  else if(et==="entregado"){ head=[B("Reimprimir la constancia","verConstancia",true), B("Observar","x",false,"El trámite está cerrado"), B("Reasignar","x",false,"El trámite está cerrado")]; }
-  else if(et==="no_corresponde"){ head=[B("Ver la resolución","verResol",true), B("Reabrir","reabrir",puede(t,"reabrir"),"Lo decide el escribano"), B("Dar el alta y tasar","x",false,"El trámite está cerrado")]; }
-  const sub = et==="sin_asignar"?`llegó ${hace(t.ingreso)}`: et==="asignado"?`asignado a ${nombreDe(t.responsable)}`: et==="en_revision"?`a cargo de ${nombreDe(t.responsable)}`:
+    head=[Bt("Observar y devolver","observar",puede(t,"observar")&&(nC+nI)>0,soloVer?"No está a tu cargo":"Marcá qué está mal en el control","hot"),
+      Bt(sinTasa?"Dar el alta":"Dar el alta y tasar","alta",puede(t,"alta")&&todo,soloVer?"No está a tu cargo":nI?"Hay un ítem que lo impide":nC?"Hay un ítem a corregir":"Faltan ítems por controlar"),
+      Bt("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")]; }
+  else if(et==="falta_algo") head=[Bt("Reenviar aviso","reenviarAviso",puede(t,"reenviarAviso"),"No está a tu cargo"), Bt("Dar el alta y tasar","x",false,"Falta la documentación observada"), Bt("No corresponde","noCorr",puede(t,"noCorresponde"),"Lo decide el escribano")];
+  else if(et==="a_pagar") head=[Bt("Empezar a preparar","empezar",puede(t,"empezar")&&t.tasa?.pagada,!t.tasa?.pagada?"Falta que pague":"No está a tu cargo","pri"), Bt("Ver la boleta","verBoleta",true)];
+  else if(et==="en_preparacion") head=[Bt("Marcar como listo","listo",puede(t,"listo")&&!!t.producto,!t.responsable?"Primero hay que asignarlo":!t.producto?`Falta subir: ${T.producto.toLowerCase()}`:"No está a tu cargo","pri"), Bt("Observar","x",false,"Ya está pago y en curso")];
+  else if(et==="listo") head=[w.soporte==="papel"?Bt("Registrar la entrega","entrega",puede(t,"entrega")&&!!t.turno,!t.turno?"Todavía no sacó turno":"No está a tu cargo","go"):Bt("Registrar la entrega","x",false,"Es digital: se cierra cuando lo descarga"), Bt(`Ver ${T.producto.toLowerCase()}`,"verProducto",true)];
+  else if(et==="entregado") head=[Bt("Reimprimir la constancia","verConstancia",true), Bt("Observar","x",false,"El trámite está cerrado"), Bt("Reasignar","x",false,"El trámite está cerrado")];
+  else if(et==="no_corresponde") head=[Bt("Ver la resolución","verResol",true), Bt("Reabrir","reabrir",puede(t,"reabrir"),"Lo decide el escribano"), Bt("Dar el alta y tasar","x",false,"El trámite está cerrado")];
+  const sub = t.tipo==="busqueda" ? (et==="buscando"?`pedido ${hace(t.ingreso)}`:et==="encontrada"?"esperando que el requirente siga el trámite":"cerrado")
+    : et==="sin_asignar"?`llegó ${hace(t.ingreso)}`: et==="asignado"?`asignado a ${nombreDe(t.responsable)}`: et==="en_revision"?`a cargo de ${nombreDe(t.responsable)}`:
     et==="falta_algo"?`devuelto ${hace(t.observado||t.actualizado)} · aviso automático a los 10 días`: et==="a_pagar"?(t.tasa?.pagada?"pago acreditado":`alta dada el ${fCorta(t.tasa?.t||t.actualizado)} · esperando el pago`):
-    et==="en_preparacion"?`a cargo de ${nombreDe(t.responsable)} · pago ${T.sinCosto?"no corresponde":"acreditado"}`: et==="listo"?(w.soporte==="papel"?(t.turno?`turno ${t.turno.fecha} ${t.turno.hora}`:"esperando que saque turno"):"esperando que lo descargue"):
+    et==="en_preparacion"?`${t.responsable?"a cargo de "+nombreDe(t.responsable):"sin asignar"} · ${t.carril==="directo"?"carril directo, ":""}${sinTasa?"sin tasa":"pago acreditado"}`: et==="listo"?(w.soporte==="papel"?(t.turno?`turno ${t.turno.fecha} ${t.turno.hora}`:"esperando que saque turno"):"esperando que lo descargue"):
     et==="entregado"?`cerrado el ${fCorta(t.entregado)}`:`cerrado sin emisión el ${fCorta(t.actualizado)}`;
 
-  /* confirmaciones en línea */
   let conf="";
-  if(S.conf==="alta") conf=`<div class="card stack" style="border-color:var(--egg-acc)"><h3 class="t">${T.sinCosto?"Dar el alta":"Dar el alta y tasar"}</h3>
-    ${T.sinCosto?`<p class="hint">Sin costo: pasa directo a preparación.</p>`:`<div class="g2"><div class="field"><label class="f" for="mtasa">Tasa Retributiva ($)</label><input type="text" id="mtasa" data-mask="num" inputmode="numeric" value="${tasaDe(t)}"></div>
-      <p class="hint">${t.tipo==="testimonio"?`Monto fijo por ejemplar (${w.pedido.ejemplares}).`:`${pr.fojas} hojas × ${pesos(TRAMITES.copia.precios[(w.modo==="cert"?"cert":"simple")+"_"+w.soporte])} × ${w.pedido.ejemplares} ejemplar(es).`}</p></div>`}
+  if(S.conf==="alta") conf=`<div class="card stack" style="border-color:var(--egg-acc)"><h3 class="t">${sinTasa?"Dar el alta":"Dar el alta y tasar"}</h3>
+    ${sinTasa?`<p class="hint">${exento?"Exento de tasa (organismo público)":"Sin costo"}: pasa directo a preparación.</p>`:`<div class="g2"><div class="field"><label class="f" for="mtasa">Tasa Retributiva ($)</label><input type="text" id="mtasa" data-mask="num" inputmode="numeric" value="${tasaAlAlta(t)}"></div>
+      <p class="hint">${esc(cotizar(w).lineas.map(l=>l[1]).join(" + "))}.</p></div>`}
     <div class="acts"><button class="btn pri" type="button" data-act="altaOk" data-arg="${t.id}">Confirmar</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`;
   if(S.conf==="noCorr") conf=`<div class="card stack" style="border-color:var(--bad)"><h3 class="t">No corresponde · resolución fundada</h3>
     <div class="field"><label class="f" for="rfund">Fundamentos (los ve el requirente)</label><textarea id="rfund" placeholder="No corresponde darle curso: la declaratoria no incluye a quien firma la solicitud."></textarea></div>
     <div class="field"><label class="f" for="rpq">Por qué, en palabras simples</label><input type="text" id="rpq" placeholder="El segundo testimonio tiene que ser pedido por todos los herederos declarados."></div>
     <div class="acts"><button class="btn hot" type="button" data-act="noCorrOk" data-arg="${t.id}">Emitir resolución y cerrar</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`;
+  if(S.conf==="noEnc") conf=`<div class="card stack" style="border-color:var(--bad)"><h3 class="t">No se encontró la escritura</h3>
+    <div class="field"><label class="f" for="nefund">Qué le decimos al requirente</label><textarea id="nefund" placeholder="Con los datos que cargaste no encontramos ninguna escritura. Si conseguís el año o la matrícula, iniciá un pedido nuevo."></textarea></div>
+    <div class="acts"><button class="btn hot" type="button" data-act="noEncOk" data-arg="${t.id}">Cerrar la búsqueda</button><button class="btn" type="button" data-act="cancel">Cancelar</button></div></div>`;
 
-  /* pestañas */
   let cuerpo="";
-  if(S.tabF==="datos"){
+  if(S.tabF==="datos" && t.tipo==="busqueda"){
+    const b=t.busqueda||{};
+    cuerpo=`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Lo que recuerda el requirente</div><div class="kv">
+        <div><div class="l">Requirente</div><div class="v">${esc(t.solicitanteNombre)}</div><div class="s2">${esc(t.solicitanteDoc)}</div></div>
+        <div><div class="l">Para</div><div class="v">${esc(nombreW(w))}</div></div>
+        ${[["otra","Otra persona"],["acto","Tipo de acto"],["desde","Desde el año"],["hasta","Hasta el año"],["cuenta","Cuenta de Rentas"],["matricula","Matrícula"],["localidad","Localidad"],["otraCosa","Otra cosa"]].filter(([k])=>b[k]&&b[k]!=="No lo sé").map(([k,n])=>`<div><div class="l">${n}</div><div class="v">${esc(b[k])}</div></div>`).join("")}</div></div>
+      ${et==="buscando"?`<div class="card stack"><div class="eyebrow">Escritura identificada en el buscador interno</div><p class="hint" style="margin:0">Cargá los datos de la escritura que encontraste. El requirente sigue el trámite con eso, desde el paso 2.</p>
+        <div class="g4"><div class="field"><label class="f" for="ianio">Año</label><input type="text" id="ianio" data-mask="num4" inputmode="numeric"></div>
+          <div class="field"><label class="f" for="inro">Número</label><input type="text" id="inro" data-mask="num" inputmode="numeric"></div>
+          <div class="field"><label class="f" for="iprot">Protocolo</label><select id="iprot">${PROTOCOLOS.map(p=>`<option>${p}</option>`).join("")}</select></div>
+          <div class="field"><label class="f" for="ifec">Fecha</label><input type="text" id="ifec" data-mask="fecha" inputmode="numeric" placeholder="dd/mm/aaaa"></div></div>
+        <div><button class="btn pri" type="button" data-act="encontrada" data-arg="${t.id}">Confirmar escritura y avisar</button></div></div>`
+      :et==="encontrada"?`<div class="box b-ok">Identificada: N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo)} · ${esc(w.esc.fecha)}. Falta que el requirente siga el trámite.</div>`
+      :`<div class="box b-bad">${esc(t.resolucion||"No se encontró.")}</div>`}`;
+  } else if(S.tabF==="datos"){
     const parte=w.caracter==="parte"||w.caracter==="escribano";
+    const pre=["sin_asignar","asignado"].includes(et);
     const verif=`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Verificaciones automáticas · antes de que nadie lo toque</div><div class="checks" style="grid-template-columns:1fr 1fr">
-      ${ck(w.esc.busqueda?"warn":"ok", w.esc.busqueda?"Hay que ubicar la escritura":"La escritura existe y la fecha coincide", w.esc.busqueda?"El requirente no tenía el número: "+w.esc.busqueda:"")}
-      ${t.tipo==="testimonio"?ck(w.pedido.obligaciones==="si"?"warn":"ok", w.pedido.obligaciones==="si"?"Declaró obligaciones pendientes":"No consta obligación pendiente; coincide con lo declarado", w.pedido.obligaciones==="si"?"Hace falta conformidad del acreedor o autorización judicial":""):""}
-      ${w.caracter==="escribano"?ck("ok","Matrícula vigente", t.solicitanteDoc):ck(parte?"ok":"bad", parte?`${t.solicitanteNombre} figura como parte`:`${t.solicitanteNombre} no figura como parte`, parte?"Va por el carril directo.":`Invoca ser ${CARACTERES[w.caracter].corto.toLowerCase()}. Por eso no fue por el carril directo.`)}
-      ${ck(["sin_asignar","asignado"].includes(et)?"pend":nOk===items.length?"ok":"warn","Control del carácter", ["sin_asignar","asignado"].includes(et)?`${items.length} ítems según la guía. Se completan cuando alguien lo toma.`:`${nOk} de ${items.length} controlados`)}</div></div>`;
-    const control = ["sin_asignar","asignado"].includes(et) ? "" : `<div class="card"><div class="eyebrow" style="margin-bottom:10px">Control del carácter · ${esc(CARACTERES[w.caracter].corto.toLowerCase())} en ${esc(T.n.toLowerCase())}</div>
+      ${ck("ok", w.esc.identificada?"Escritura ubicada por búsqueda asistida":"La escritura existe y la fecha coincide", w.esc.identificada?"El requirente no tenía los datos":"")}
+      ${t.tipo==="testimonio"?ck(w.extra?.obligaciones==="si"?"warn":"ok", w.extra?.obligaciones==="si"?"Declaró obligaciones pendientes":"No consta obligación pendiente; coincide con lo declarado", w.extra?.obligaciones==="si"?"Hace falta conformidad del acreedor o autorización judicial":""):""}
+      ${w.caracter==="escribano"?ck("ok","Matrícula vigente", t.solicitanteDoc):ck(parte?"ok":"bad", parte?`${t.solicitanteNombre} figura como parte`:`${t.solicitanteNombre} no figura como parte`, parte?"Carril directo.":`Invoca ser ${CARACTERES[w.caracter]?.corto.toLowerCase()}. Por eso no fue por el carril directo.`)}
+      ${t.carril==="directo"?"":ck(pre?"pend":nOk===items.length?"ok":"warn","Control del carácter", pre?`${items.length} ítems según la guía. Se completan cuando alguien lo toma.`:`${nOk} de ${items.length} controlados`)}</div></div>`;
+    const control = pre||t.carril==="directo" ? "" : `<div class="card"><div class="eyebrow" style="margin-bottom:10px">Control del carácter · ${esc(CARACTERES[w.caracter]?.corto.toLowerCase()||"")} en ${esc(nombreW(w).toLowerCase())}</div>
       <div class="checks">${items.map(i=>{ const s=st(i.k), n=ctl[i.k]?.nota||"", ed=puede(t,"controlar")&&!soloVer;
-        const arch=(t.adj||{})[i.k];
+        const archs=i.docs.map(k=>(t.adj||{})[k]).filter(Boolean);
+        const txt=n||(i.k==="obligaciones"?(w.extra?.obligaciones==="si"?"Declaró que sí":"No constan y así lo declaró"):i.k==="fundamento"?(w.acred.fundamento||""):archs.map(a=>a.nombre).join(", "));
         return `<div class="ck"><span class="ico ${s==="ok"?"ok":s==="impide"?"bad":s==="corregir"?"warn":"pend"}">${s==="ok"?"✓":s==="impide"?"×":s==="corregir"?"!":""}</span><div style="min-width:0;flex:1">
-          <b>${esc(i.n)}</b><span>${esc(n|| (i.k==="obligaciones"?(w.pedido.obligaciones==="si"?"Declaró que sí":"No constan y así lo declaró"):arch?arch.nombre:""))}</span>
-          ${arch?` <button class="link" type="button" data-ver="${esc(arch.ref)}" data-nom="${esc(arch.nombre)}" style="font-size:12px">Ver</button>`:""}
+          <b>${esc(i.n)}</b><span>${esc(txt)}</span>${archs.map(a=>` <button class="link" type="button" data-ver="${esc(a.ref)}" data-nom="${esc(a.nombre)}" style="font-size:12px">Ver</button>`).join("")}
           ${ed?`<div class="ckctl"><button type="button" class="o" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="ok" aria-pressed="${s==="ok"}">Bien</button><button type="button" class="c" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="corregir" aria-pressed="${s==="corregir"}">A corregir</button><button type="button" class="i" data-act="ck" data-arg="${t.id}" data-k="${i.k}" data-e="impide" aria-pressed="${s==="impide"}">Impide el alta</button></div>
             ${s&&s!=="ok"?`<input type="text" data-cknota="${i.k}" data-arg="${t.id}" placeholder="Qué falta (va a la observación)" value="${esc(n)}">`:""}`:""}</div></div>`; }).join("")}</div>
       <p class="legend">${nOk} bien · ${nC} a corregir · ${nI} que impide${nI===1?"":"n"} dar el alta.${t.controlCerrado?` Control cerrado el ${fCorta(t.controlCerrado.t)} por ${esc(t.controlCerrado.por)}.`:""}</p></div>`;
-    const obsTxt=armarObs(t);
-    const obs = et==="en_revision"&&(nC+nI)>0 ? `<div class="box b-warn"><div class="eyebrow" style="color:var(--warn);margin-bottom:6px">Observación que se va a enviar</div>${esc(obsTxt)}<div class="legend" style="color:var(--warn)">Se arma sola con los ítems marcados y vuelve al requirente.</div></div>`
+    const obs = et==="en_revision"&&(nC+nI)>0 ? `<div class="box b-warn"><div class="eyebrow" style="color:var(--warn);margin-bottom:6px">Observación que se va a enviar</div>${esc(armarObs(t))}<div class="legend" style="color:var(--warn)">Se arma sola con los ítems marcados y vuelve al requirente apuntando al paso.</div></div>`
       : et==="falta_algo" ? `<div class="box b-warn"><div class="eyebrow" style="color:var(--warn);margin-bottom:6px">Observación enviada</div>${esc(t.obs)}</div>` : "";
     const tasa = t.tasa ? `<div class="card"><div class="eyebrow" style="margin-bottom:6px">Tasa</div><span style="font-family:var(--serif);font-size:24px;font-weight:600">${pesos(t.tasa.monto)}</span>
-      <span class="sub"> ${t.tipo==="testimonio"?"monto fijo":"según fojas"} · ${t.tasa.pagada?`<b style="color:var(--ok)">pagado el ${fCorta(t.tasa.pagadaEn)} ${fHora(t.tasa.pagadaEn)}</b>`:`boleta enviada el ${fCorta(t.tasa.t)} · <b style="color:var(--orange)">sin pagar</b>`}</span></div>` : "";
+      <span class="sub"> ${t.tipo==="testimonio"?"monto fijo":"según fojas"} · ${t.tasa.pagada?`<b style="color:var(--ok)">pagado el ${fCorta(t.tasa.pagadaEn)} ${fHora(t.tasa.pagadaEn)}</b>${t.carril==="directo"?" · al enviar (carril directo)":""}`:`boleta enviada el ${fCorta(t.tasa.t)} · <b style="color:var(--orange)">sin pagar</b>`}</span></div>` : exento&&!pre ? `<div class="card"><div class="eyebrow">Tasa</div>Exenta · juez u organismo público</div>` : "";
     const prep = et==="en_preparacion" ? `<div class="card stack"><div class="eyebrow">Preparación</div>
-      ${puede(t,"producto")&&!soloVer?`<div class="field"><label class="f" for="prepTxt">Novedades (las ve el equipo)</label><input type="text" id="prepTxt" data-arg="${t.id}" placeholder="Redactado y firmado el 08/10. Enviado al Registro General para reinscripción." value="${esc(t.prep||"")}"></div>
-        ${filaAdj({k:"producto",n:T.producto,d:"El documento que recibe el requirente"},t.producto,"p")}`:`<p style="margin:0">${esc(t.prep||"Sin novedades cargadas.")}</p>`}</div>`
-      : t.prep&&["listo","entregado"].includes(et) ? "" : "";
+      ${puede(t,"producto")&&!soloVer&&t.responsable?`<div class="field"><label class="f" for="prepTxt">Novedades (las ve el equipo)</label><input type="text" id="prepTxt" data-arg="${t.id}" placeholder="Redactado y firmado el 08/10. Enviado al Registro General para reinscripción." value="${esc(t.prep||"")}"></div>
+        ${filaAdj({k:"producto",n:T.producto,d:"El documento que recibe el requirente"},t.producto,"p")}`:`<p style="margin:0">${esc(t.prep||(t.responsable?"Sin novedades cargadas.":"Hay que asignarlo para empezar a prepararlo."))}</p>`}</div>` : "";
     const fin = et==="listo"?`<div class="box b-ok"><div class="eyebrow" style="color:var(--ok);margin-bottom:6px">Emitido</div>Orden ${ordenDe(t,T.producto)?.n||"—"}: ${esc(T.producto.toLowerCase())}, guardado tal cual salió. ${w.soporte==="papel"?(t.turno?`Turno: ${esc(t.turno.fecha)} a las ${esc(t.turno.hora)}.`:"Esperando que el requirente saque turno y lo retire."):"Esperando que el requirente lo descargue."}</div>`
       : et==="entregado"?`<div class="box b-ok"><div class="eyebrow" style="color:var(--ok);margin-bottom:6px">Entregado</div>${w.soporte==="papel"?"Retirado en mostrador":"Descargado por el requirente"} el ${fCorta(t.entregado)} a las ${fHora(t.entregado)}. Orden ${ordenDe(t,"Constancia de entrega")?.n||"—"}: constancia de entrega. Trámite cerrado.</div>`
       : et==="no_corresponde"?`<div class="box b-bad"><div class="eyebrow" style="color:var(--bad);margin-bottom:6px">Resolución</div>${esc(t.resolucion)} Emitida el ${fCorta(t.actualizado)} como orden ${ordenDe(t,"Resolución")?.n||"—"}.</div>`:"";
     cuerpo=`<div class="card"><div class="eyebrow" style="margin-bottom:10px">Quién lo pide y qué pide</div><div class="kv">
         <div><div class="l">Requirente</div><div class="v">${esc(t.solicitanteNombre)}</div><div class="s2">${esc(t.solicitanteDoc)}${t.origen==="mesa"?" · mesa de entradas":" · CiDi nivel 2"}</div></div>
-        <div><div class="l">Carácter invocado</div><div class="v">${esc(CARACTERES[w.caracter].corto)}</div><div class="s2">${esc(w.acred.autos?w.acred.autos.split("—")[0]:"")}</div></div>
-        <div><div class="l">Trámite</div><div class="v">${esc(T.n.replace("Segundo o ulterior testimonio","Segundo testimonio"))}</div><div class="s2">${w.soporte==="papel"?"papel":"digital"}${w.tipo!=="antecedentes"?` · ${w.pedido.ejemplares} ejemplar${+w.pedido.ejemplares===1?"":"es"}`:""}${w.modo?` · ${w.modo==="cert"?"certificada":"simple"}`:""}</div></div>
-        <div><div class="l">Escritura</div><div class="v">${w.esc.busqueda?"A ubicar":`N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])}`}</div><div class="s2">${esc(w.esc.fecha||"")}</div></div>
+        <div><div class="l">Carácter invocado</div><div class="v">${esc(CARACTERES[w.caracter]?.corto||"—")}</div><div class="s2">${esc(w.acred.autos?w.acred.autos.split("—")[0]:"")}</div></div>
+        <div><div class="l">Trámite</div><div class="v">${esc(nombreW(w))}</div><div class="s2">${w.pedido.ejemplares} ejemplar${+w.pedido.ejemplares===1?"":"es"}</div></div>
+        <div><div class="l">Escritura</div><div class="v">N.º ${esc(w.esc.n)} · ${esc(w.esc.protocolo.split(" —")[0])}</div><div class="s2">${esc(w.esc.fecha||"")}</div></div>
         <div><div class="l">Ingresó</div><div class="v">${fFecha(t.ingreso)} · ${fHora(t.ingreso)}</div><div class="s2">${t.origen==="mesa"?"por mesa de entradas":"por el portal"}</div></div></div>
-        ${w.pedido.motivo||w.pedido.para||w.pedido.objeto?`<p class="legend" style="margin-top:10px">${esc([w.pedido.motivo,w.pedido.para,w.pedido.objeto,w.pedido.destino].filter(Boolean).join(" · "))}</p>`:""}</div>
-      ${["sin_asignar","asignado","en_revision","falta_algo"].includes(et)?`<div class="card" style="background:var(--info-bg)"><div class="eyebrow" style="margin-bottom:10px;color:var(--info)">Lo que dice el protocolo</div><div class="kv">
+        ${[w.pedido.motivo,w.pedido.para,w.pedido.objeto,w.pedido.destino].some(Boolean)?`<p class="legend" style="margin-top:10px">${esc([w.pedido.motivo,w.pedido.para,w.pedido.objeto,w.pedido.destino].filter(Boolean).join(" · "))}</p>`:""}</div>
+      ${["sin_asignar","asignado","en_revision","falta_algo"].includes(et)||t.carril==="directo"&&et==="en_preparacion"?`<div class="card" style="background:var(--info-bg)"><div class="eyebrow" style="margin-bottom:10px;color:var(--info)">Lo que dice el protocolo</div><div class="kv">
         <div><div class="l">Acto</div><div class="v">${esc(pr.acto)}</div><div class="s2">${pr.fojas} fojas</div></div><div><div class="l">Comprador</div><div class="v">${esc(pr.comprador)}</div></div>
         <div><div class="l">Vendedora</div><div class="v">${esc(pr.vendedor)}</div></div><div><div class="l">Objeto</div><div class="v">Matrícula ${esc(pr.matricula)}</div><div class="s2">${esc(pr.domicilio)}</div></div>
         <div><div class="l">Obligaciones pendientes</div><div class="v">${esc(pr.obligaciones)}</div></div></div><p class="legend" style="color:var(--info)">Sale del relevamiento del protocolo (simulado). El requirente no tuvo que cargarlo.</p></div>`:""}
-      ${["sin_asignar","asignado"].includes(et)?verif:""}${control}${obs}${tasa}${prep}${fin}`;
+      ${pre||t.carril==="directo"?verif:""}${control}${obs}${tasa}${prep}${fin}`;
   } else if(S.tabF==="docs"){
     cuerpo=`<div class="card stack" style="padding:0"><div class="spread" style="padding:14px 18px 0"><div class="eyebrow">Hoja de ruta del trámite</div>
       <div class="pills">${[["todos","Todos"],["req","Del requirente"],["egg","De la Escribanía"],["env","Lo que se le envió"]].map(f=>`<button type="button" class="${S.filtroDoc===f[0]?"on":""}" data-act="filtroDoc" data-arg="${f[0]}">${f[1]}</button>`).join("")}</div></div>
@@ -961,45 +1119,41 @@ function vFicha(){
     cuerpo=`<div class="card"><ul class="hist">${(t.historial||[]).map(h=>`<li class="${h.w?"w":""}"><b>${esc(h.accion)}</b><span>${fCorta(h.t)} ${fHora(h.t)} — ${esc(h.nombre)}</span></li>`).join("")}</ul></div>`;
   }
 
-  /* columna derecha */
   const egg=S.usuarios.filter(x=>lado(x)==="egg"&&x.activo!==false);
   const carga=id=>{ const a=activos().filter(x=>x.responsable===id&&!CERRADOS.includes(x.etapa)); return {n:a.length, v:a.filter(x=>dias(x.ingreso)>10).length}; };
   const sel=S.asignarA||t.responsable||egg.find(x=>x.rol==="auxiliar")?.id;
-  const asign = (et==="sin_asignar"&&esEsc()) || S.conf==="reasignar" ? `<div class="asign"><div class="eyebrow" style="color:var(--warn)">¿Quién lo hace?</div>
+  const mostrarAsig=t.tipo!=="busqueda" && ((sinDueno(t)&&esEsc()) || S.conf==="reasignar");
+  const asign = mostrarAsig ? `<div class="asign"><div class="eyebrow" style="color:var(--warn)">¿Quién lo hace?</div>
       ${egg.map(x=>{ const c=carga(x.id); return `<button type="button" class="who-opt" data-act="asigSel" data-arg="${x.id}" aria-pressed="${sel===x.id}"><span><b>${esc(x.nombre)}${x.id===u.id?" · yo":""}</b><span>${esc(ROLES[x.rol].n)} · ${c.n} trámite${c.n===1?"":"s"} · ${c.v} vencido${c.v===1?"":"s"}</span></span></button>`; }).join("")}
       <button class="btn pri" type="button" data-act="asignar" data-arg="${t.id}" ${sel?"":"disabled"}>Asignar a ${esc(nombreDe(sel))}</button>
       <span class="sub">Queda en el historial con tu nombre. Quien lo recibe lo ve en «Míos».</span>${S.conf==="reasignar"?`<button class="link" type="button" data-act="cancel">Cancelar</button>`:""}</div>`
-    : et==="sin_asignar" ? `<div class="box b-warn">Lo asigna el escribano. Vos lo vas a ver en «Míos» cuando te lo asigne.</div>` : "";
+    : sinDueno(t)&&t.tipo!=="busqueda" ? `<div class="box b-warn">Lo asigna el escribano. Vos lo vas a ver en «Míos» cuando te lo asigne.</div>` : "";
   const notas=(t.notas||[]);
   const side=`<aside class="card side">${asign}
     ${S.tabF!=="hist"?`<div><div class="eyebrow" style="margin-bottom:8px">Historial</div><ul class="hist">${(t.historial||[]).map(h=>`<li class="${h.w?"w":""}"><b>${esc(h.accion)}</b><span>${fCorta(h.t)} ${fHora(h.t)} — ${esc(h.nombre)}</span></li>`).join("")}</ul></div><hr>`:""}
-    <div><div class="spread"><div class="eyebrow">A cargo</div>${puede(t,"asignar")&&et!=="sin_asignar"&&S.conf!=="reasignar"?`<button class="link" type="button" data-act="reasignar" style="font-size:12px">Reasignar</button>`:""}</div>
-      ${t.responsable?`<div class="row" style="margin-top:6px"><span class="av" style="background:var(--egg-head)">${esc(iniciales(nombreDe(t.responsable)))}</span><span><b>${esc(nombreDe(t.responsable))}</b><div class="sub">${esc(ROLES[usuario(t.responsable)?.rol]?.n||"")}</div></span></div>`:`<div style="color:var(--bad);font-weight:600;margin-top:6px">Sin asignar</div>`}</div><hr>
+    ${t.tipo!=="busqueda"?`<div><div class="spread"><div class="eyebrow">A cargo</div>${puede(t,"asignar")&&t.responsable&&S.conf!=="reasignar"?`<button class="link" type="button" data-act="reasignar" style="font-size:12px">Reasignar</button>`:""}</div>
+      ${t.responsable?`<div class="row" style="margin-top:6px"><span class="av" style="background:var(--egg-head)">${esc(iniciales(nombreDe(t.responsable)))}</span><span><b>${esc(nombreDe(t.responsable))}</b><div class="sub">${esc(ROLES[usuario(t.responsable)?.rol]?.n||"")}</div></span></div>`:`<div style="color:var(--bad);font-weight:600;margin-top:6px">Sin asignar</div>`}</div><hr>`:""}
     <div class="stack" style="gap:10px"><div class="spread"><div class="eyebrow">Notas internas</div><span class="tag c-mute">Solo la EGG</span></div>
       ${notas.length?`<div class="notes">${notas.map(n=>`<div class="note"><span class="av">${esc(iniciales(n.nombre))}</span><div><div class="t"><b>${esc(n.nombre)}</b> · ${fCorta(n.t)} ${fHora(n.t)}</div><p>${esc(n.texto)}</p></div></div>`).join("")}</div>`:`<span class="sub">Sin notas todavía.</span>`}
       <form id="fnota" class="row" data-arg="${t.id}"><input type="text" id="notaTxt" placeholder="Escribí una nota para el equipo" style="flex:1"><button class="btn sm" type="submit">Agregar</button></form></div></aside>`;
 
   app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">Volver a la bandeja externa</button></div>
-    <div class="spread"><div class="row"><h1 class="t">Trámite ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
-    ${soloVer&&!["sin_asignar"].includes(et)?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
+    <div class="spread"><div class="row"><h1 class="t">${t.tipo==="busqueda"?"Búsqueda":"Trámite"} ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
+    ${soloVer&&t.responsable?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
+    ${t.tipo==="busqueda"&&et==="buscando"?`<div class="box b-info">Definición abierta: quién atiende las búsquedas asistidas. En la prueba, cualquiera de la Escribanía.</div>`:""}
     ${conf}
     <div class="tabsline" role="tablist"><button type="button" role="tab" data-act="tabF" data-arg="datos" aria-selected="${S.tabF==="datos"}">Datos del trámite</button>
       <button type="button" role="tab" data-act="tabF" data-arg="docs" aria-selected="${S.tabF==="docs"}">Documentos<span class="n">${nArchivos(t)}</span></button>
       <button type="button" role="tab" data-act="tabF" data-arg="hist" aria-selected="${S.tabF==="hist"}">Historial</button></div>
     <div class="cols"><div class="stack">${cuerpo}</div>${side}</div></div>`;
 }
-const ck=(e,b,s)=>`<div class="ck"><span class="ico ${e}">${e==="ok"?"✓":e==="bad"?"×":e==="warn"?"!":""}</span><div><b>${esc(b)}</b><span>${esc(s||"")}</span></div></div>`;
-const ordenDe=(t,nombre)=>[...(t.ordenes||[])].reverse().find(o=>o.nombre.startsWith(nombre));
-function armarObs(t){ const items=itemsControl(t), c=t.control||{};
-  const l=items.filter(i=>c[i.k]?.e&&c[i.k].e!=="ok").map(i=>`${i.n}: ${c[i.k].nota||(c[i.k].e==="impide"?"impide dar el alta":"hay que corregirlo")}.`);
-  return l.join(" ") + (l.length?" Devuelto al requirente para corregir.":""); }
 function hojaRuta(t,egg){
   let l=(t.ordenes||[]).filter(o=>egg||o.origen==="req"||o.env);
   if(egg&&S.filtroDoc!=="todos") l=l.filter(o=>S.filtroDoc==="env"?o.env:S.filtroDoc==="egg"?(o.origen==="egg"||o.origen==="auto"):o.origen==="req");
   if(!l.length) return `<div class="empty">Sin documentos en este filtro.</div>`;
   return `<div class="tablewrap" style="border:0;border-radius:0"><table><thead><tr><th>Orden</th><th>Fecha y hora</th><th>Documento</th><th>Formato</th><th>Incorporado por</th><th></th></tr></thead><tbody>
-    ${l.map(o=>`<tr ${o.env&&egg?'style="background:var(--warn-bg)"':""}><td class="nro" style="color:var(--muted)">${pad(o.n)}</td><td class="num">${fCorta(o.t)} ${fHora(o.t)}</td>
-      <td><b>${esc(o.nombre)}</b>${o.archivos&&o.archivos.length>1?`<div class="sub">${o.archivos.map(a=>esc(a.n||a.nombre)).join(" · ")}</div>`:""}</td>
+    ${l.map(o=>`<tr class="${o.emitido?"emit":""}" ${!o.emitido&&o.env&&egg?'style="background:var(--warn-bg)"':""}><td class="nro" style="color:var(--muted)">${pad(o.n)}</td><td class="num">${fCorta(o.t)} ${fHora(o.t)}</td>
+      <td><b>${esc(o.nombre)}</b>${o.emitido?` <span class="tag c-ok">Emitido</span>`:""}${o.reemplaza?`<div class="sub">Reemplaza la orden ${pad(o.reemplaza)}</div>`:""}${o.archivos&&o.archivos.length>1?`<div class="sub">${o.archivos.map(a=>esc(a.n||a.nombre)).join(" · ")}</div>`:""}</td>
       <td class="sub">PDF${o.archivos?` · ${o.archivos.length} archivo${o.archivos.length===1?"":"s"}`:" · 1 f."}</td>
       <td>${esc(o.por)}<div class="sub">${o.origen==="req"?"Requirente":o.origen==="auto"?"Automático":"Escribanía"}</div></td>
       <td class="row" style="flex-wrap:nowrap">${o.archivos?o.archivos.map((a,i)=>`<button class="link" type="button" data-ver="${esc(a.ref)}" data-nom="${esc(a.nombre)}">Ver${o.archivos.length>1?" "+(i+1):""}</button>`).join(" "):`<button class="link" type="button" data-act="verOrden" data-arg="${t.id}" data-n="${o.n}">Ver</button>`}</td></tr>`).join("")}
@@ -1022,7 +1176,7 @@ function vUsuarios(){
     <form class="card stack" id="fnu"><h3 class="t">Sumar una persona</h3><div class="g3">
       <div class="field"><label class="f" for="nuN">Nombre</label><input type="text" id="nuN" placeholder="Ej.: Micucci" required></div>
       <div class="field"><label class="f" for="nuU">Usuario</label><input type="text" id="nuU" placeholder="Ej.: micucci" required></div>
-      <div class="field"><label class="f" for="nuR">Rol</label><select id="nuR"><option value="auxiliar">Auxiliar (EGG)</option><option value="escribano_egg">Escribano/a (EGG)</option><option value="particular">Requirente (externo)</option><option value="escribano_ext">Escribano/a de registro (externo)</option></select></div></div>
+      <div class="field"><label class="f" for="nuR">Rol</label><select id="nuR"><option value="auxiliar">Auxiliar (EGG)</option><option value="escribano_egg">Escribano/a (EGG)</option><option value="particular">Ciudadano/a (externo)</option><option value="escribano_ext">Escribano/a de registro (externo)</option></select></div></div>
       <p class="legend" style="margin:0">Entra con la clave de prueba ${CLAVE}.</p><div><button class="btn pri" type="submit">Crear usuario</button></div></form></div>`;
   $("#fnu").onsubmit=async e=>{ e.preventDefault(); const n=$("#nuN").value.trim(), us=$("#nuU").value.trim().toLowerCase().replace(/\s+/g,""), r=$("#nuR").value;
     if(!n||!us) return; if(S.usuarios.some(x=>(x.usuario||"").toLowerCase()===us)){ toast("Ese usuario ya existe."); return; }
@@ -1031,73 +1185,78 @@ function vUsuarios(){
 }
 
 /* ==================================================================
-   PROBLEMAS — panel lateral y listado (reemplaza al Excel)
+   PROBLEMAS — texto libre + capturas pegadas; la pantalla, el trámite y el estado se toman solos
    ================================================================== */
 function contextoProblema(){
   const u=yo(); let t=null;
   if(["ficha","det"].includes(S.vista)) t=tramite(S.sel);
-  return {pantalla:pantalla(), tramite:t?TRAMITES[t.tipo].n:(S.vista==="armador"&&W?.tipo?TRAMITES[W.tipo].n:""), nro:t?.nro||"",
-    etapa:t?(lado(u)==="egg"?ETAPAS[t.etapa].egg[0]:ETAPAS[t.etapa].req[0]):"", quien:u?.nombre||"Sin ingresar", rol:u?ROLES[u.rol].n:""};
+  return {pantalla:pantalla(), tramite:t?nombreT(t):(["armador","busqueda"].includes(S.vista)&&W?.tipo?nombreW(W):""), nro:t?.nro||"",
+    etapa:t?(lado(u)==="egg"?ETAPAS[t.etapa].egg[0]:ETAPAS[t.etapa].req[0]):"", quien:u?.nombre||"Sin ingresar", rol:u?ROLES[u.rol].n:"", lado:lado(u)||""};
 }
-function abrirProblema(){ P = P||{...contextoProblema(), pasos:"",paso:"",esperado:"",tipo:"",gravedad:"",rodeo:"",comoEvita:"",captura:null}; dibujarP(); }
+function abrirProblema(){ if(!P) P={texto:"",capturas:[]}; P.ctx=contextoProblema(); dibujarP(); setTimeout(()=>$("#pTxt")?.focus(),30); }
 function dibujarP(){
+  const c=P.ctx;
   $("#layer").innerHTML=`<div class="drawer" id="dw" role="dialog" aria-modal="true" aria-label="Anotar problema"><form class="in" id="fp">
     <div class="spread"><div><div class="eyebrow">Relevamiento de SIIGENO</div><h2 class="t" style="margin-top:4px">Anotar problema</h2></div><button class="btn sm" type="button" id="pX">Cerrar</button></div>
-    <div class="ctx"><b>Pantalla</b><span>${esc(P.pantalla)}</span>${P.nro?`<b>Trámite</b><span>${esc(P.nro)} · ${esc(P.tramite)}</span><b>Estado</b><span>${esc(P.etapa)}</span>`:""}<b>Quién</b><span>${esc(P.quien)}${P.rol?" · "+esc(P.rol):""}</span></div>
-    <div class="field"><label class="f" for="pTr">Trámite / funcionalidad</label><input type="text" id="pTr" list="pTrL" value="${esc(P.tramite)}" placeholder="Ej.: Segundo o ulterior testimonio"><datalist id="pTrL">${Object.values(TRAMITES).map(x=>`<option value="${esc(x.n)}">`).join("")}<option value="Ingreso / usuarios"><option value="Bandeja de trámites"><option value="Hoja de ruta"><option value="General"></datalist></div>
-    <div class="field"><label class="f" for="pPasos">Qué hice (pasos)</label><textarea id="pPasos" placeholder="Ej.: Cargué la escritura 402/2011 y toqué Continuar">${esc(P.pasos)}</textarea></div>
-    <div class="field"><label class="f" for="pPaso">Qué pasó</label><textarea id="pPaso" placeholder="Ej.: No me dejó seguir y no dice por qué">${esc(P.paso)}</textarea></div>
-    <div class="field"><label class="f" for="pEsp">Qué debería pasar</label><textarea id="pEsp">${esc(P.esperado)}</textarea></div>
-    <div class="g2"><div class="field"><label class="f" for="pTipo">Tipo</label><select id="pTipo"><option value="">Elegí</option>${TIPOS_PROB.map(x=>`<option ${P.tipo===x?"selected":""}>${x}</option>`).join("")}</select></div>
-      <div class="field"><label class="f" for="pGrav">Gravedad</label><select id="pGrav"><option value="">Elegí</option>${GRAVEDAD.map(x=>`<option ${P.gravedad===x?"selected":""}>${x}</option>`).join("")}</select></div></div>
-    <p class="legend" style="margin-top:-6px">Bloquea: no se puede terminar el trámite. Molesta: se sigue con un rodeo. Menor: detalle o texto.</p>
-    <div class="g2"><div class="field"><label class="f" for="pRod">¿Hay rodeo?</label><select id="pRod"><option value="">Elegí</option><option ${P.rodeo==="Sí"?"selected":""}>Sí</option><option ${P.rodeo==="No"?"selected":""}>No</option></select></div>
-      <div class="field"><label class="f" for="pEv">Cómo se evita</label><input type="text" id="pEv" value="${esc(P.comoEvita)}"></div></div>
-    <div class="field"><label class="f">Captura de pantalla</label><div class="row"><label class="btn sm" for="pCap">${P.captura?"Reemplazar imagen":"Elegir imagen"}</label><input type="file" id="pCap" accept="image/*" hidden>
-      ${P.captura?`<span class="sub" style="color:var(--ok)">✓ ${esc(P.captura.nombre)}</span>`:`<span class="sub">o pegala con Ctrl+V (Win+Shift+S para recortar)</span>`}</div></div>
-    <div class="acts"><button class="btn pri" type="submit">Guardar problema</button><button class="btn" type="button" id="pVer">Ver todos</button><button class="btn" type="button" id="pCtx">Tomar la pantalla actual</button></div></form></div>`;
-  const keep=()=>{ Object.assign(P,{tramite:$("#pTr").value,pasos:$("#pPasos").value,paso:$("#pPaso").value,esperado:$("#pEsp").value,tipo:$("#pTipo").value,gravedad:$("#pGrav").value,rodeo:$("#pRod").value,comoEvita:$("#pEv").value}); };
-  $("#fp").addEventListener("input",keep); $("#fp").addEventListener("change",keep);
-  const cerrar=()=>{ keep(); $("#layer").innerHTML=""; };
+    <div class="ctx"><b>Dónde</b><span>${esc(c.pantalla)}</span>${c.nro?`<b>Trámite</b><span>${esc(c.nro)} · ${esc(c.tramite)}</span><b>Estado</b><span>${esc(c.etapa)}</span>`:c.tramite?`<b>Trámite</b><span>${esc(c.tramite)}</span>`:""}<b>Quién</b><span>${esc(c.quien)}${c.rol?" · "+esc(c.rol):""}</span></div>
+    <p class="legend" style="margin-top:-6px">Esto se guarda solo con el problema.</p>
+    <div class="field"><label class="f" for="pTxt">¿Qué pasó?</label><textarea id="pTxt" rows="6" placeholder="Contalo como te salga: qué hiciste, qué pasó y qué esperabas.">${esc(P.texto)}</textarea></div>
+    <div class="drop" id="pDrop">Pegá una captura con <b>Ctrl+V</b> (recortá con Win+Shift+S), arrastrala acá, o <label class="link" for="pCap" style="cursor:pointer">elegí una imagen</label>.<input type="file" id="pCap" accept="image/*" multiple hidden></div>
+    ${P.capturas.length?`<div class="thumbs">${P.capturas.map((x,i)=>`<figure><img src="${esc(x.url)}" alt="Captura ${i+1}" data-verimg="${i}"><button type="button" data-quitar="${i}" aria-label="Quitar captura ${i+1}">×</button></figure>`).join("")}</div>`:""}
+    <div class="acts"><button class="btn pri" type="submit" ${P.subiendo?"disabled":""}>${P.subiendo?"Subiendo…":"Guardar"}</button><button class="btn" type="button" id="pVer">Ver todos los problemas</button></div></form></div>`;
+  $("#pTxt").addEventListener("input",e=>{ P.texto=e.target.value; });
+  const cerrar=()=>{ $("#layer").innerHTML=""; };
   $("#pX").onclick=cerrar; $("#dw").onclick=e=>{ if(e.target.id==="dw") cerrar(); };
   $("#pVer").onclick=()=>{ cerrar(); ir("problemas"); };
-  $("#pCtx").onclick=()=>{ keep(); Object.assign(P,contextoProblema()); dibujarP(); };
-  $("#pCap").onchange=()=>{ const f=$("#pCap").files[0]; if(f) captura(f); };
-  $("#fp").onsubmit=async e=>{ e.preventDefault(); keep();
-    if(!P.paso.trim()){ toast("Contá qué pasó antes de guardar."); $("#pPaso").focus(); return; }
+  $("#pCap").onchange=()=>{ [...$("#pCap").files].forEach(captura); };
+  const d=$("#pDrop");
+  d.ondragover=e=>{ e.preventDefault(); d.classList.add("on"); }; d.ondragleave=()=>d.classList.remove("on");
+  d.ondrop=e=>{ e.preventDefault(); d.classList.remove("on"); [...(e.dataTransfer?.files||[])].filter(f=>f.type.startsWith("image/")).forEach(captura); };
+  $("#fp").querySelectorAll("[data-quitar]").forEach(b=>b.onclick=()=>{ P.capturas.splice(+b.dataset.quitar,1); dibujarP(); });
+  $("#fp").querySelectorAll("[data-verimg]").forEach(im=>im.onclick=()=>window.open(im.src,"_blank"));
+  $("#fp").onsubmit=async e=>{ e.preventDefault();
+    if(!P.texto.trim()&&!P.capturas.length){ toast("Escribí qué pasó o pegá una captura."); $("#pTxt").focus(); return; }
+    if(P.subiendo) return;
     const num=S.problemas.map(p=>p.num||0).reduce((a,b)=>Math.max(a,b),0)+1, codigo="P-"+String(num).padStart(3,"0");
-    try{ await Store.set("problemas",nuevoId("p"),{...P,num,codigo,uid:S.me,fecha:Date.now(),estado:"Nuevo"}); toast(`Problema ${codigo} guardado`); P=null; $("#layer").innerHTML=""; }
+    const doc={...P.ctx, texto:P.texto.trim(), capturas:P.capturas.map(x=>({ref:x.ref,nombre:x.nombre})), num, codigo, uid:S.me, fecha:Date.now(), estado:"Nuevo"};
+    try{ await Store.set("problemas",nuevoId("p"),doc); toast(`Problema ${codigo} guardado`); P=null; cerrar(); }
     catch(err){ toast("No se pudo guardar: "+(err.message||err.code||"error")); } };
 }
-async function captura(f){ try{ toast("Subiendo captura…"); const nombre=f.name&&f.name!=="image.png"?f.name:`captura-${Date.now()}.png`;
-  P.captura=await Store.subir(new File([f],nombre,{type:f.type||"image/png"})); dibujarP(); toast("Captura adjuntada"); }catch(e){ toast(e.message||"No se pudo subir la captura."); } }
-document.addEventListener("paste",e=>{ if(!P||!$("#dw")) return; const it=[...(e.clipboardData?.items||[])].find(i=>i.type.startsWith("image/")); if(!it) return; e.preventDefault(); captura(it.getAsFile()); });
+async function captura(f){
+  if(!P) return;
+  try{ P.subiendo=true; if($("#dw")) dibujarP();
+    const chica=await achicarImagen(f), nombre=`captura-${Date.now()}.jpg`;
+    const r=await Store.subir(new File([chica],nombre,{type:chica.type||"image/jpeg"}));
+    P.capturas.push({...r, url:URL.createObjectURL(chica)}); }
+  catch(e){ toast(e.message||"No se pudo subir la captura."); }
+  finally{ if(P){ P.subiendo=false; if($("#dw")) dibujarP(); } }
+}
+document.addEventListener("paste",e=>{ const its=[...(e.clipboardData?.items||[])].filter(i=>i.type.startsWith("image/")); if(!its.length) return;
+  if(!$("#dw")) abrirProblema();   // pegar una captura en cualquier pantalla abre el anotador
+  e.preventDefault(); its.forEach(i=>captura(i.getAsFile())); });
 $("#fab").onclick=abrirProblema;
 
 function vProblemas(){
   const l=S.problemas.slice().sort((a,b)=>(b.num||0)-(a.num||0));
-  const g=[["todos","Todos",()=>true],...GRAVEDAD.map(x=>[x,x,p=>p.gravedad===x]),["abiertos","Sin resolver",p=>!["Resuelto","No se arregla"].includes(p.estado)]];
-  if(!g.find(x=>x[0]===S.pf)) S.pf="todos";
+  const g=[["abiertos","Sin resolver",p=>!["Resuelto","No se arregla"].includes(p.estado)],["todos","Todos",()=>true],["req","Lado requirente",p=>p.lado==="req"],["egg","Lado Escribanía",p=>p.lado==="egg"]];
+  if(!g.find(x=>x[0]===S.pf)) S.pf="abiertos";
   const vis=l.filter(g.find(x=>x[0]===S.pf)[2]);
-  const chipG=x=>`<span class="chip ${x==="Bloquea"?"c-bad":x==="Molesta"?"c-warn":x?"c-info":"c-mute"}">${esc(x||"Sin gravedad")}</span>`;
-  $("#app").innerHTML=`<div class="stack"><div class="spread"><div><h1 class="t">Problemas anotados</h1><p class="hint">Todo lo que se anotó con el botón amarillo, desde cualquier pantalla y usuario. Se exporta a un CSV que abre Excel, con las columnas de la planilla de relevamiento.</p></div>
+  $("#app").innerHTML=`<div class="stack"><div class="spread"><div><h1 class="t">Problemas anotados</h1><p class="hint">Todo lo que se anotó con el botón amarillo (o pegando una captura en cualquier pantalla). Cada uno guarda solo dónde pasó. Se exporta a un CSV que abre Excel.</p></div>
       <div class="acts"><button class="btn" type="button" data-act="exportar" ${l.length?"":"disabled"}>Exportar para Excel</button><button class="btn pri" type="button" data-act="anotar">Anotar problema</button></div></div>
     <div class="pills">${g.map(x=>`<button type="button" class="${S.pf===x[0]?"on":""}" data-act="pf" data-arg="${esc(x[0])}">${x[1]} · ${l.filter(x[2]).length}</button>`).join("")}</div>
-    ${vis.length?`<div class="tablewrap"><table><thead><tr><th>ID</th><th>Dónde</th><th>Qué pasó</th><th>Gravedad</th><th>Quién</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${vis.map(p=>`<tr><td class="nro">${esc(p.codigo)}</td><td>${esc(p.tramite||"—")}<div class="sub">${esc(p.pantalla)}${p.etapa?" · "+esc(p.etapa):""}${p.nro?" · "+esc(p.nro):""}</div></td>
-        <td style="min-width:240px">${esc(p.paso)}${p.esperado?`<div class="sub">Debería: ${esc(p.esperado)}</div>`:""}${p.pasos?`<div class="sub">Pasos: ${esc(p.pasos)}</div>`:""}${p.comoEvita?`<div class="sub">Rodeo: ${esc(p.comoEvita)}</div>`:""}</td>
-        <td>${chipG(p.gravedad)}<div class="sub">${esc(p.tipo||"")}</div></td><td>${esc(p.quien)}<div class="sub num">${fFecha(p.fecha)} ${fHora(p.fecha)}</div></td>
+    ${vis.length?`<div class="tablewrap"><table><thead><tr><th>ID</th><th>Dónde</th><th>Qué pasó</th><th>Quién</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${vis.map(p=>`<tr><td class="nro">${esc(p.codigo)}</td><td style="min-width:180px">${esc(p.pantalla)}<div class="sub">${[p.nro&&("Trámite "+p.nro),p.tramite,p.etapa].filter(Boolean).map(esc).join(" · ")}</div></td>
+        <td style="min-width:260px;white-space:pre-wrap">${esc(p.texto||p.paso||"")}${(p.capturas||(p.captura?[p.captura]:[])).length?`<div class="row" style="margin-top:6px">${(p.capturas||[p.captura]).map((c,i)=>`<button class="btn sm" type="button" data-ver="${esc(c.ref)}" data-nom="${esc(c.nombre)}">Captura ${i+1}</button>`).join("")}</div>`:""}</td>
+        <td>${esc(p.quien)}<div class="sub num">${fFecha(p.fecha)} ${fHora(p.fecha)}</div></td>
         <td><select data-est="${esc(p.id)}" aria-label="Estado de ${esc(p.codigo)}">${ESTADOS_PROB.map(x=>`<option ${p.estado===x?"selected":""}>${x}</option>`).join("")}</select></td>
-        <td>${p.captura?`<button class="btn sm" type="button" data-ver="${esc(p.captura.ref)}" data-nom="${esc(p.captura.nombre)}">Captura</button> `:""}
-          ${S.conf==="del:"+p.id?`<span class="row" style="margin-top:6px"><button class="btn sm" type="button" data-act="delP" data-arg="${esc(p.id)}">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
+        <td>${S.conf==="del:"+p.id?`<span class="row"><button class="btn sm" type="button" data-act="delP" data-arg="${esc(p.id)}">Sí, borrar</button><button class="btn sm" type="button" data-act="cancel">No</button></span>`
             :`<button class="btn sm" type="button" data-act="delPask" data-arg="${esc(p.id)}">Borrar</button>`}</td></tr>`).join("")}
       </tbody></table></div>`
-      :`<div class="card empty">${l.length?"No hay problemas en este filtro.":"Todavía no se anotó ningún problema. Usá el botón amarillo <b>Anotar problema</b> en la pantalla donde aparezca: guarda solo la pantalla, el trámite y el estado."}</div>`}</div>`;
+      :`<div class="card empty">${l.length?"No hay problemas en este filtro.":"Todavía no se anotó ningún problema. Usá el botón amarillo <b>Anotar problema</b>, o pegá una captura con Ctrl+V en cualquier pantalla."}</div>`}</div>`;
 }
 async function exportarCSV(){
-  const cols=[["codigo","ID"],["tramite","Trámite / funcionalidad"],["etapa","Circuito / estado"],["pantalla","Pantalla / paso"],["pasos","Qué hice (pasos)"],["paso","Qué pasó"],["esperado","Qué debería pasar"],
-    ["tipo","Tipo"],["gravedad","Gravedad"],["rodeo","¿Hay rodeo?"],["comoEvita","Cómo se evita"],["captura","Captura (archivo)"],["quien","Quién"],["fecha","Fecha"],["estado","Estado"],["nro","Observaciones"]];
-  const val=(p,k)=>k==="fecha"?fFecha(p.fecha):k==="captura"?(p.captura?.nombre||""):k==="nro"?(p.nro?"Trámite "+p.nro:""):(p[k]??"");
+  const cols=[["codigo","ID"],["fecha","Fecha"],["quien","Quién"],["rol","Rol"],["pantalla","Pantalla"],["nro","Trámite N.º"],["tramite","Trámite"],["etapa","Estado del trámite"],["texto","Qué pasó"],["capturas","Capturas"],["estado","Estado del problema"]];
+  const val=(p,k)=>k==="fecha"?`${fFecha(p.fecha)} ${fHora(p.fecha)}`:k==="capturas"?(p.capturas||[]).map(c=>c.nombre).join(", "):k==="texto"?(p.texto||p.paso||""):(p[k]??"");
   const q=s=>'"'+String(s).replace(/"/g,'""').replace(/\r?\n/g," ")+'"';
   const txt="﻿"+[cols.map(c=>q(c[1])).join(";"),...S.problemas.slice().sort((a,b)=>(a.num||0)-(b.num||0)).map(p=>cols.map(c=>q(val(p,c[0]))).join(";"))].join("\r\n");
   await guardarArchivo(new Blob([txt],{type:"text/csv"}), `problemas-siigeno-${fFecha(Date.now()).replace(/\//g,"-")}.csv`);
@@ -1130,26 +1289,30 @@ function verOrden(t,o){
    ACCIONES (un solo manejador para todos los botones)
    ================================================================== */
 document.addEventListener("click", async e=>{
+  if(e.target.closest("#dw")&&!e.target.closest("[data-ver]")) return;
   const v=e.target.closest("[data-ver]"); if(v){ e.preventDefault(); return verRef(v.dataset.ver, v.dataset.nom||"Archivo"); }
   const g=e.target.closest("[data-go]"); if(g){ return ir(g.dataset.go); }
   const b=e.target.closest("[data-act]"); if(!b||b.disabled) return;
   const a=b.dataset.act, arg=b.dataset.arg, t=arg?tramite(arg):tramite(S.sel), u=yo();
   switch(a){
-    case "salir": S.me=null; lsSet("simsig_me",null); S.loginSel=null; W=null; S.tabB="ext"; S.aviso=null; return ir("login");
+    case "salir": S.me=null; lsSet("simsig_me",null); S.loginSel=null; W=null; B=null; S.tabB="ext"; S.aviso=null; return ir("login");
     case "seed": for(const x of USUARIOS_PRUEBA){ const {id,...d}=x; await Store.set("usuarios",id,{...d,activo:true,clave:CLAVE,creado:Date.now()}); } return toast("Usuarios de prueba creados");
     case "loginSel": S.loginSel=arg; S.loginErr=""; vLogin(); $("#lc").focus(); return;
     case "cancel": S.conf=null; return render();
     /* armador */
     case "nuevo": W=nuevoW(); S.aviso=null; return ir("armador");
-    case "seguir": { const x=tramite(arg); W={...clon(x.w),id:x.id,creado:x.creado,enviando:false}; S.aviso=null; return ir("armador"); }
+    case "seguir": { const x=tramite(arg); W={...nuevoW(),...clon(x.w),id:x.id,creado:x.creado,enviando:false,dj:false}; if(x.etapa==="encontrada"&&W.paso<2) W.paso=2; S.aviso=null; return ir("armador"); }
+    case "opcion": { const o=OPCIONES.find(x=>x.k===arg); if(W.opcion===arg) return; const keep={para:W.para,esc:W.esc,id:W.id,creado:W.creado};
+      W={...nuevoW(keep.para),...keep,opcion:o.k,tipo:o.tipo,modo:o.modo||null,soporte:o.soporte||null};
+      if(o.tipo==="antecedentes"){ W.caracter="escribano"; } return vArmador(); }
     case "w": { const k=arg, val=b.dataset.v;
-      if(k==="tipo"&&W.tipo!==val){ const keep=W.para; W=nuevoW(keep); W.tipo=val; if(val==="antecedentes"){ W.caracter="escribano"; W.acred={mat:titular().mat||"",reg:titular().doc||""}; } }
-      else if(k==="caracter"&&W.caracter!==val){ W.caracter=val; W.acred={}; }
+      if(k==="caracter"){ if(W.caracter===val) return; W.caracter=val; W.acred={}; Object.keys(W.adj).forEach(x=>{ if(!["denuncia","conformidad","nota"].includes(x)) delete W.adj[x]; }); }
       else setPath(W,k,val);
       return vArmador(); }
-    case "busqueda": W.esc.modoBusqueda=arg==="1"; if(arg!=="1") W.esc.busqueda=""; return vArmador();
-    case "cont": if(W.paso<5&&!okPaso(W.paso)) return; W.paso++; vArmador(); return window.scrollTo({top:0});
-    case "volverW": W.paso=Math.max(1,W.paso-1); return vArmador();
+    case "irBusqueda": B=B||{otra:"",acto:"No lo sé",desde:"",hasta:"",cuenta:"",matricula:"",localidad:"",otraCosa:""}; return ir("busqueda");
+    case "volverArmador": return ir("armador");
+    case "cont": if(!okPaso(W.paso)) return; W.paso += (W.paso===1&&W.tipo==="antecedentes")?2:1; vArmador(); return window.scrollTo({top:0});
+    case "volverW": W.paso=Math.max(1,W.paso-((W.paso===3&&W.tipo==="antecedentes")?2:1)); return vArmador();
     case "paso": W.paso=+arg; return vArmador();
     case "tabC": W.tabC=arg; return carpeta();
     case "guardarW": return guardarBorrador();
@@ -1163,10 +1326,13 @@ document.addEventListener("click", async e=>{
     case "corregir": S.conf="corregir"; return vDetReq();
     case "reenviar": { const flag=Object.entries(t.control||{}).filter(([k,v])=>v.e&&v.e!=="ok").map(([k])=>k), corr=t.corr||{}, nota=($("#corrNota")?.value||"").trim();
       const control={...t.control}; flag.forEach(k=>delete control[k]);
-      const adj={...t.adj, ...corr}, files=Object.entries(corr).map(([k,f])=>({...f,n:docsDe(t.w).find(d=>d.k===k)?.n||k}));
+      const adj={...t.adj, ...corr};
+      const files=Object.entries(corr).map(([k,f])=>({...f,n:docsDe(t.w).find(d=>d.k===k)?.n||k,k}));
+      const reemp=(t.ordenes||[]).find(o=>o.archivos&&o.archivos.some(a=>files.some(f=>f.k===a.k)))?.n || null;
       S.conf=null;
       return mover(t.id,"Corregido por el requirente","en_revision",{control,adj,corr:{},w:{...t.w,adj}},
-        {orden: files.length?{nombre:`Documentación corregida${files.length>1?` (${files.length} archivos)`:""}`,origen:"req",por:t.solicitanteNombre,archivos:files}:null, toast:false}).then(()=>{ if(nota) return agregarNota(t.id,"Comentario del requirente: "+nota,t.solicitanteNombre); }).then(()=>toast("Reenviado a la Escribanía")); }
+        {orden: files.length?{nombre:`Documentación corregida${files.length>1?` (${files.length} archivos)`:""}`,origen:"req",por:t.solicitanteNombre,archivos:files,reemplaza:reemp}:null, toast:false})
+        .then(()=>{ if(nota) return agregarNota(t.id,"Comentario del requirente: "+nota,t.solicitanteNombre); }).then(()=>toast("Reenviado a la Escribanía")); }
     case "pagar": S.conf="pagar"; return vDetReq();
     case "pagarOk": { S.conf=null; const ahora=Date.now();
       return mover(t.id,"Pago acreditado",null,{tasa:{...t.tasa,pagada:true,pagadaEn:ahora}},{por:"SIIGENO",
@@ -1176,13 +1342,12 @@ document.addEventListener("click", async e=>{
       return mover(t.id,`Sacó turno para el ${f} a las ${h}`,null,{turno:{fecha:f,hora:h}}); }
     case "descargarFinal": { const o=ordenDe(t,TRAMITES[t.tipo].producto); if(o) verOrden(t,o); const ahora=Date.now();
       return mover(t.id,"Descargado por el requirente","entregado",{entregado:ahora},{orden:{nombre:"Constancia de entrega",origen:"auto",env:true,por:"SIIGENO",gen:{titulo:"Constancia de entrega — Trámite "+t.nro,lineas:[`${TRAMITES[t.tipo].producto} descargado por ${t.solicitanteNombre}`,`el ${fFecha(ahora)} a las ${fHora(ahora)}.`]}}}); }
-    case "reiniciar": W={...clon(t.w),id:null,creado:null,paso:1,enviando:false,dj:false}; return ir("armador");
+    case "reiniciar": W={...nuevoW(),...clon(t.w),id:null,creado:null,paso:2,enviando:false,dj:false}; return ir("armador");
     case "verOrden": return verOrden(t,(t.ordenes||[]).find(o=>String(o.n)===b.dataset.n));
     case "verOrdenNom": return verOrden(t,ordenDe(t,b.dataset.n));
     /* escribanía */
     case "tabB": S.tabB=arg; return vBandeja();
     case "abrirFicha": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
-    case "abrirAsignar": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
     case "abrirDocs": e.stopPropagation(); S.vista="ficha"; S.sel=arg; S.tabF="docs"; S.filtroDoc="todos"; return render();
     case "mesa": S.conf="mesa"; return vBandeja();
     case "mesaOk": { const para=$("#mesaReq").value; if(!para) return; W=nuevoW(para); S.conf=null; return ir("armador"); }
@@ -1193,7 +1358,7 @@ document.addEventListener("click", async e=>{
     case "asigSel": S.asignarA=arg; return vFicha();
     case "reasignar": S.conf="reasignar"; S.asignarA=null; return vFicha();
     case "asignar": { const a2=S.asignarA||t.responsable||S.usuarios.find(x=>x.rol==="auxiliar"&&x.activo!==false)?.id; if(!a2) return; const re=!!t.responsable; S.conf=null; S.asignarA=null;
-      if(re && a2===t.responsable){ return vFicha(); }
+      if(re && a2===t.responsable) return vFicha();
       return mover(t.id,(re?"Reasignado a ":"Asignado a ")+nombreDe(a2), t.etapa==="sin_asignar"?"asignado":null, {responsable:a2}); }
     case "tomarYo": await mover(t.id,"Asignado a "+u.nombre,"asignado",{responsable:u.id},{toast:false}); return mover(t.id,"Tomado para revisión","en_revision");
     case "tomar": return mover(t.id,"Tomado para revisión","en_revision");
@@ -1203,20 +1368,27 @@ document.addEventListener("click", async e=>{
       return mover(t.id,"Observado: "+(itemsControl(t).filter(i=>t.control?.[i.k]?.e&&t.control[i.k].e!=="ok").map(i=>i.n.toLowerCase()).join(", ")),"falta_algo",{obs,observado:ahora},{warn:true,
         orden:{nombre:"Cédula de observación",origen:"egg",env:true,por:u.nombre,gen:{titulo:"Cédula de observación — Trámite "+t.nro,lineas:[obs,"",`Observado el ${fFecha(ahora)} por ${u.nombre}.`,"Tiene diez días para corregir desde el portal."]}}}); }
     case "alta": S.conf="alta"; return vFicha();
-    case "altaOk": { const T=TRAMITES[t.tipo], ahora=Date.now(), cerr={t:ahora,por:u.nombre}; S.conf=null;
-      if(T.sinCosto) return mover(t.id,"Alta dada","en_preparacion",{controlCerrado:cerr});
+    case "altaOk": { const ahora=Date.now(), cerr={t:ahora,por:u.nombre}, exento=!!CARACTERES[t.w.caracter]?.exento; S.conf=null;
+      if(TRAMITES[t.tipo].sinCosto||exento) return mover(t.id,exento?"Alta dada · exento de tasa":"Alta dada","en_preparacion",{controlCerrado:cerr});
       const m=parseInt(($("#mtasa").value||"0").replace(/\D/g,""),10)||0;
       return mover(t.id,"Alta y tasación","a_pagar",{controlCerrado:cerr,tasa:{monto:m,t:ahora,pagada:false}},{orden:{nombre:"Boleta de la Tasa Retributiva",origen:"egg",env:true,por:u.nombre,
-        gen:{titulo:"Boleta — Tasa Retributiva de Servicios",lineas:[`Trámite ${t.nro} · ${T.n}`,`Requirente: ${t.solicitanteNombre} (${t.solicitanteDoc})`,`Importe: ${pesos(m)}`,`Emitida el ${fFecha(ahora)}`]}}}); }
+        gen:{titulo:"Boleta — Tasa Retributiva de Servicios",lineas:[`Trámite ${t.nro} · ${nombreW(t.w)}`,`Requirente: ${t.solicitanteNombre} (${t.solicitanteDoc})`,`Importe: ${pesos(m)}`,`Emitida el ${fFecha(ahora)}`]}}}); }
     case "verBoleta": return verOrden(t,ordenDe(t,"Boleta"));
     case "noCorr": S.conf="noCorr"; return vFicha();
     case "noCorrOk": { const f=$("#rfund").value.trim(), pq=$("#rpq").value.trim(); if(!f){ toast("Escribí los fundamentos."); $("#rfund").focus(); return; } S.conf=null; const ahora=Date.now();
       return mover(t.id,"Cerrado: no corresponde","no_corresponde",{resolucion:f,porque:pq},{warn:true,orden:{nombre:"Resolución fundada · no corresponde",origen:"egg",env:true,por:u.nombre,
         gen:{titulo:"Resolución — Trámite "+t.nro,lineas:[f,pq,"",`Emitida el ${fFecha(ahora)} por ${u.nombre}.`]}}}); }
+    case "noEnc": S.conf="noEnc"; return vFicha();
+    case "noEncOk": { const f=$("#nefund").value.trim()||"Con los datos que cargaste no encontramos ninguna escritura."; S.conf=null;
+      return mover(t.id,"Búsqueda cerrada: no se encontró","no_encontrada",{resolucion:f},{warn:true}); }
+    case "encontrada": { const an=$("#ianio").value, n=$("#inro").value, pr=$("#iprot").value, f=$("#ifec").value;
+      if(an.length!==4||!n||!fechaOk(f)){ toast("Cargá año, número y fecha de la escritura."); return; }
+      return mover(t.id,`Escritura identificada: N.º ${n} · ${pr.split(" —")[0]} · ${an}`,"encontrada",{w:{...t.w,esc:{anio:an,n,protocolo:pr,fecha:f,identificada:true},paso:2}},
+        {orden:{nombre:"Escritura identificada",origen:"egg",env:true,por:u.nombre,gen:{titulo:"Búsqueda asistida — resultado",lineas:[`Escritura N.º ${n}, ${pr}, del ${f}.`,"El requirente sigue el trámite desde el paso 2."]}}}); }
     case "reenviarAviso": return mover(t.id,"Reenvió el aviso al requirente",null,{},{warn:true});
     case "empezar": return mover(t.id,"Empezó a preparar","en_preparacion");
     case "listo": { const T=TRAMITES[t.tipo];
-      return mover(t.id,T.reinscribe?"Inscripto y listo":"Listo",'listo',{},{orden:{nombre:T.producto,origen:"egg",env:true,por:u.nombre,archivos:[{...t.producto,n:T.producto}]}}); }
+      return mover(t.id,T.reinscribe?"Inscripto y listo":"Listo",'listo',{},{orden:{nombre:T.producto,origen:"egg",env:true,emitido:true,por:u.nombre,archivos:[{...t.producto,n:T.producto}]}}); }
     case "verProducto": return verOrden(t,ordenDe(t,TRAMITES[t.tipo].producto));
     case "entrega": { const ahora=Date.now();
       return mover(t.id,"Entregado en mostrador","entregado",{entregado:ahora},{orden:{nombre:"Constancia de entrega",origen:"egg",env:true,por:u.nombre,
@@ -1235,16 +1407,18 @@ document.addEventListener("click", async e=>{
 });
 async function agregarNota(id,texto,nombre){ const t=tramite(id); return Store.update("tramites",id,{notas:[...(t.notas||[]),{t:Date.now(),nombre:nombre||yo().nombre,texto}]}); }
 
-/* campos con data-w: se actualiza el dato sin redibujar el formulario (no se pierde el foco) */
+/* campos con data-w / data-b: se actualiza el dato sin redibujar el formulario (no se pierde el foco) */
 document.addEventListener("input", e=>{
   const el=e.target;
   if(el.dataset.mask==="fecha") mascaraFecha(el);
   if(el.dataset.mask==="num"||el.dataset.mask==="num4"){ const v=el.value.replace(/\D/g,"").slice(0,el.dataset.mask==="num4"?4:9); if(v!==el.value) el.value=v; }
   if(el.dataset.w && W){ setPath(W,el.dataset.w,el.value); actualizarArmador(); }
+  if(el.dataset.b && B){ B[el.dataset.b]=el.value; }
 });
 document.addEventListener("change", async e=>{
   const el=e.target;
-  if(el.dataset.w && W && el.tagName==="SELECT"){ setPath(W,el.dataset.w,el.value); if(el.dataset.redraw) vArmador(); else actualizarArmador(); return; }
+  if(el.dataset.w && W && (el.tagName==="SELECT"||el.dataset.redraw)){ setPath(W,el.dataset.w,el.value); if(el.dataset.redraw) vArmador(); else actualizarArmador(); return; }
+  if(el.dataset.b && B){ B[el.dataset.b]=el.value; return; }
   if(el.id==="dj"&&W){ W.dj=el.checked; return vArmador(); }
   if(el.dataset.adj){ const f=el.files[0]; if(f) subirAdj(el.dataset.adj, el.dataset.k, f); return; }
   if(el.id==="subirOrden"){ const f=el.files[0], t=tramite(el.dataset.arg); if(!f) return;
@@ -1257,23 +1431,23 @@ document.addEventListener("change", async e=>{
   if(el.dataset.est){ return Store.update("problemas",el.dataset.est,{estado:el.value}); }
 });
 document.addEventListener("submit", async e=>{
-  if(e.target.id!=="fnota") return; e.preventDefault(); const txt=$("#notaTxt").value.trim(); if(!txt) return;
-  await agregarNota(e.target.dataset.arg,txt); });
-function actualizarArmador(){ carpeta(); const c=document.querySelector('[data-act="cont"]'); if(c&&W.paso<5) c.disabled=!okPaso(W.paso); }
+  if(e.target.id!=="fnota") return; e.preventDefault(); const inp=$("#notaTxt"), txt=inp.value.trim(); if(!txt) return;
+  inp.value=""; inp.blur(); await agregarNota(e.target.dataset.arg,txt); render(); });
+function actualizarArmador(){ carpeta(); const c=document.querySelector('[data-act="cont"]'); if(c&&W.paso<4){ const ok=okPaso(W.paso); c.disabled=!ok; const p=$("#porque"); if(p) p.textContent=ok?"":porqueNo(W.paso); } }
 
 async function subirAdj(ctx,k,file){
   try{ toast("Subiendo "+file.name+"…"); const r=await Store.subir(file);
-    if(ctx==="w"){ W.adj[k]=r; vArmador(); }
-    else if(ctx==="c"){ const t=tramite(S.sel); await Store.update("tramites",t.id,{corr:{...(t.corr||{}),[k]:r}}); }
+    if(ctx==="w"){ W.adj[k]={...r,k}; vArmador(); }
+    else if(ctx==="c"){ const t=tramite(S.sel); await Store.update("tramites",t.id,{corr:{...(t.corr||{}),[k]:{...r,k}}}); }
     else if(ctx==="p"){ const t=tramite(S.sel); await mover(t.id,"Adjuntó "+TRAMITES[t.tipo].producto.toLowerCase(),null,{producto:r}); }
     toast("Adjuntado: "+file.name);
   }catch(e){ toast(e.message||"No se pudo subir el archivo."); }
 }
 function adjuntarEjemplo(ctx,k,n){
   const t=ctx==="w"?null:tramite(S.sel), w=ctx==="w"?W:t.w, u=ctx==="w"?titular():usuario(t.solicitante);
-  const lin = ctx==="p" ? [`${TRAMITES[t.tipo].form}`,`Trámite ${t.nro}`,`Requirente: ${t.solicitanteNombre}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} — ${protocolo(t).acto}`,`Matrícula ${protocolo(t).matricula}`,`Fecha de emisión: ${fFecha(Date.now())}`]
+  const lin = ctx==="p" ? [`${TRAMITES[t.tipo].form}`,`Trámite ${t.nro}`,`Requirente: ${t.solicitanteNombre}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"} — ${protocolo(w).acto}`,`Matrícula ${protocolo(w).matricula}`,`Fecha de emisión: ${fFecha(Date.now())}`]
     : k==="nota" ? [textoNota(w,u),"","Firmado por el/los requirente/s.","Certifico que la/s firma/s que antecede/n fue/ron puesta/s en mi presencia. (Certificación simulada)"]
-    : [`Presentado por: ${u.nombre} (${u.doc||""})`,`Trámite: ${TRAMITES[w.tipo].n}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"}`,`Fecha: ${fFecha(Date.now())}`];
+    : [`Presentado por: ${u.nombre} (${u.doc||""})`,`Trámite: ${nombreW(w)}`,`Escritura N.º ${w.esc.n||"—"} del año ${w.esc.anio||"—"}`,`Fecha: ${fFecha(Date.now())}`];
   subirAdj(ctx,k,pdfFile(n,lin));
 }
 
@@ -1298,7 +1472,7 @@ function adjuntarEjemplo(ctx,k,n){
 })();
 /* Redibuja sin romper lo que se está escribiendo */
 function refrescar(){
-  if(S.vista==="armador"&&W){ renderTop(); return; }
+  if((S.vista==="armador"&&W)||S.vista==="busqueda"){ renderTop(); return; }
   const a=document.activeElement;
   if(a&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&a.type!=="file"&&a.type!=="checkbox"))&&$("#app").contains(a)){ renderTop(); return; }
   render();
