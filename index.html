@@ -418,6 +418,8 @@ function pdfBlob(titulo, lineas){
 }
 const nombreArchivo = t => t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,50)+".pdf";
 const pdfFile = (titulo, lineas) => new File([pdfBlob(titulo,lineas)], nombreArchivo(titulo), {type:"application/pdf"});
+function dataUrlABlob(u){ const [cab,datos]=u.split(","); const tipo=(cab.match(/data:([^;]+)/)||[])[1]||"application/octet-stream";
+  const bin=atob(datos), arr=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i); return new Blob([arr],{type:tipo}); }
 const blobADataUrl = b => new Promise((ok,no)=>{ const r=new FileReader(); r.onload=()=>ok(r.result); r.onerror=no; r.readAsDataURL(b); });
 /* Achica una captura antes de guardarla, para que entre cómoda en la base */
 async function achicarImagen(file, max=1400){
@@ -492,7 +494,7 @@ const Store = {
     const id=ref.slice(2); let d=null;
     if(this.modo==="compartido"){ const s=await this.db.doc("archivos/"+id).get(); d=s.exists?s.data():null; }
     else { try{ d=JSON.parse(lsGet("simsig_f_"+id)||"null"); }catch(e){} }
-    return d ? (await fetch(d.data)).blob() : null;
+    return d ? dataUrlABlob(d.data) : null;
   }
 };
 
@@ -645,7 +647,7 @@ function queSigue(t){
 function vMis(){
   const u=yo(), l=S.tramites.filter(t=>t.solicitante===u.id).sort((a,b)=>(b.actualizado||b.creado)-(a.actualizado||a.creado));
   $("#app").innerHTML=`<div class="stack">
-    <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer vos. Si no tenés que hacer nada, lo dice también.</p></div>
+    <div class="spread"><div><h1 class="t">Mis trámites</h1><p class="hint">Cada estado dice qué tenés que hacer vos. Si no tenés que hacer nada, lo dice también. Acá están solo los trámites que inició ${esc(u.nombre)}.</p></div>
       <button class="btn pri" type="button" data-act="nuevo">Nuevo trámite</button></div>
     ${S.aviso?`<div class="box b-ok">✓ <b>${esc(S.aviso)}</b></div>`:""}
     ${l.length?`<div class="tablewrap"><table><thead><tr><th>Trámite</th><th>Escritura</th><th>Estado</th><th>Qué sigue</th></tr></thead><tbody>
@@ -667,7 +669,7 @@ function okPaso(n){
   if(n===2){ if(w.tipo==="antecedentes") return true;
     if(!w.caracter) return false;
     const C=CARACTERES[w.caracter];
-    if(!(C.campos||[]).every(c=>(w.acred[c[0]]||"").trim() && (c[0]!=="fecha"||fechaOk(w.acred.fecha)))) return false;
+    if(!(C.campos||[]).every(c=>(c[3]?(w.acred[c[0]]||"").trim():true) && (c[0]!=="fecha"||!w.acred.fecha||fechaOk(w.acred.fecha)))) return false;
     if(w.tipo==="testimonio"){ const d=w.extra.denuncia; if(!(fechaOk(d.fecha)&&d.lugar.trim()&&d.nro.trim()&&w.extra.obligaciones)) return false; }
     return docsOk(w,d=>!d.nota); }
   if(n===3) return !!w.soporte && +w.pedido.ejemplares>0;
@@ -763,7 +765,7 @@ function vArmador(){
 }
 function porqueNo(n){ const w=W;
   if(n===1) return !w.tipo?"Elegí qué necesitás.":"Cargá año (cuatro cifras), número y fecha de la escritura, o buscala con lo que tengas.";
-  if(n===2){ if(!w.caracter) return "Elegí el carácter."; if(!okPaso(2)) return "Completá los datos y adjuntá lo que pide el carácter."; }
+  if(n===2){ if(!w.caracter) return "Elegí el carácter."; if(!okPaso(2)) return w.tipo==="testimonio"?"Adjuntá lo que pide el carácter, cargá la denuncia y contestá si hay obligaciones pendientes.":"Adjuntá lo que pide el carácter."; }
   if(n===3) return w.tipo==="testimonio"||w.tipo==="antecedentes"?"Elegí el soporte.":"Indicá la cantidad de ejemplares.";
   return ""; }
 function acordeon(k){
@@ -774,6 +776,7 @@ function acordeon(k){
       ${docs.length?`<div class="eyebrow">${C.unaDe?"Adjuntás una de las dos":"Tenés que adjuntar"}</div>${docs.map(d=>filaAdj(d,w.adj[d.k],"w")).join("")}`:""}
       ${C.campos.length?`<div class="g3">${C.campos.map(c=>`<div class="field" ${c[3]?'style="grid-column:1/-1"':""}><label class="f" for="ac_${c[0]}">${esc(c[1])}</label>
         ${c[3]?`<textarea id="ac_${c[0]}" data-w="acred.${c[0]}" placeholder="${esc(c[2])}">${esc(w.acred[c[0]]||"")}</textarea>`:`<input type="text" id="ac_${c[0]}" data-w="acred.${c[0]}" ${c[0]==="fecha"?'data-mask="fecha" inputmode="numeric"':""} placeholder="${esc(c[2])}" value="${esc(w.acred[c[0]]||"")}">`}</div>`).join("")}</div>`:""}
+      ${C.campos.some(c=>!c[3])?`<p class="legend">Si no sabés alguno de estos datos, dejalo en blanco: la Escribanía lo controla con lo que adjuntes.</p>`:""}
       ${C.aviso?`<p class="legend" style="color:var(--warn)">${esc(C.aviso)}</p>`:""}<p class="legend">${esc(C.guia||"")}</p></div>`:""}</div>`;
 }
 function filaAdj(d,arch,ctx){ return `<div class="docrow ${arch?"":"pend"}"><span class="ico ${arch?"ok":"pend"}" style="${arch?"":"background:transparent;border:2px solid var(--req-acc)"}">${arch?"✓":""}</span>
@@ -1139,6 +1142,7 @@ function vFicha(){
 
   app.innerHTML=`<div class="stack"><div><button class="link" type="button" data-go="bandeja">Volver a la bandeja externa</button></div>
     <div class="spread"><div class="row"><h1 class="t">${t.tipo==="busqueda"?"Búsqueda":"Trámite"} ${esc(t.nro)}</h1>${chipEgg(t)}<span class="sub">${esc(sub)}</span></div><div class="acts">${head.join("")}</div></div>
+    <div class="box b-mute spread" style="align-items:center"><span>Lo pidió <b>${esc(t.solicitanteNombre)}</b> (${esc(ROLES[usuario(t.solicitante)?.rol]?.n||"requirente")}). Del lado del requirente lo ve solo esa persona.</span><button class="btn sm" type="button" data-act="verComoReq" data-arg="${t.id}">Ver lo que ve ${esc(t.solicitanteNombre)}</button></div>
     ${soloVer&&t.responsable?`<div class="box b-info">Este trámite está a cargo de ${esc(nombreDe(t.responsable))}. Lo podés ver, pero no trabajarlo.</div>`:""}
     ${t.tipo==="busqueda"&&et==="buscando"?`<div class="box b-info">Definición abierta: quién atiende las búsquedas asistidas. En la prueba, cualquiera de la Escribanía.</div>`:""}
     ${conf}
@@ -1340,13 +1344,17 @@ document.addEventListener("click", async e=>{
     case "turno": S.conf="turno"; return vDetReq();
     case "turnoOk": { const f=$("#tf").value, h=$("#th").value; if(!fechaOk(f)){ toast("Escribí el día como dd/mm/aaaa."); return; } S.conf=null;
       return mover(t.id,`Sacó turno para el ${f} a las ${h}`,null,{turno:{fecha:f,hora:h}}); }
-    case "descargarFinal": { const o=ordenDe(t,TRAMITES[t.tipo].producto); if(o) verOrden(t,o); const ahora=Date.now();
+    case "descargarFinal": { const o=ordenDe(t,TRAMITES[t.tipo].producto); const ahora=Date.now();
+      if(o){ try{ const a=o.archivos?.[0]; const blob=a?await Store.blobDe(a.ref):pdfBlob(o.gen.titulo,o.gen.lineas);
+        if(!blob){ toast("No se encontró el archivo emitido. Avisá a la Escribanía."); return; }
+        await guardarArchivo(blob, (a?.nombre)||nombreArchivo(TRAMITES[t.tipo].producto)); }catch(err){ toast("No se pudo descargar: "+(err.message||"error")); return; } }
       return mover(t.id,"Descargado por el requirente","entregado",{entregado:ahora},{orden:{nombre:"Constancia de entrega",origen:"auto",env:true,por:"SIIGENO",gen:{titulo:"Constancia de entrega — Trámite "+t.nro,lineas:[`${TRAMITES[t.tipo].producto} descargado por ${t.solicitanteNombre}`,`el ${fFecha(ahora)} a las ${fHora(ahora)}.`]}}}); }
     case "reiniciar": W={...nuevoW(),...clon(t.w),id:null,creado:null,paso:2,enviando:false,dj:false}; return ir("armador");
     case "verOrden": return verOrden(t,(t.ordenes||[]).find(o=>String(o.n)===b.dataset.n));
     case "verOrdenNom": return verOrden(t,ordenDe(t,b.dataset.n));
     /* escribanía */
     case "tabB": S.tabB=arg; return vBandeja();
+    case "verComoReq": { const x=usuario(t.solicitante); if(!x) return; S.me=x.id; lsSet("simsig_me",x.id); S.aviso=null; toast("Ahora estás como "+x.nombre); return ir("det",t.id); }
     case "abrirFicha": S.tabF="datos"; S.asignarA=null; return ir("ficha",arg);
     case "abrirDocs": e.stopPropagation(); S.vista="ficha"; S.sel=arg; S.tabF="docs"; S.filtroDoc="todos"; return render();
     case "mesa": S.conf="mesa"; return vBandeja();
