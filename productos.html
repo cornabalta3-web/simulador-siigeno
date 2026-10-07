@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SIIGENO · Productos nuevos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: cáscara de SIIGENO (barra con las dos caras: Requirentes e Interno, menú lateral con los módulos)
+   y el producto en el centro; a la derecha, el panel «Para desarrollo» con estados, reglas y dependencias.
+   Identidad del design system de SIIGENO: navy, dorado, celeste, hueso, Montserrat. */
+:root{
+  --navy:#1B2F5E; --navy-d:#0F1C3A; --gold:#C9A84C; --cel:#A8C8E8; --cel-s:#E8F0F9; --bone:#EEF2F5;
+  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#F7F9FB; --fg:#1E2634; --muted:#5F6E85; --line:#D8E0EA;
+  --accent:#1B2F5E; --on-accent:#FFFFFF;
+  --ok:#1F6B3C; --ok-bg:#E4F2E9; --warn:#8A6A12; --warn-bg:#FBF3DC; --bad:#A3271F; --bad-bg:#FBEAE8; --info:#2E5C8A; --info-bg:#E8F0F9;
+  --nuevo:#C9A84C; --reest:#7FA6CF;
+  --font:Montserrat,"Segoe UI",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1524; --surface:#162036; --surface-2:#1A2640; --fg:#E4EAF3; --muted:#9AA9C0; --line:#2A3854; --cel-s:#1E2D4B;
+    --accent:#9FBDE6; --on-accent:#0E1524; --ok:#7FCB9C; --ok-bg:#16301F; --warn:#E3C26A; --warn-bg:#33290F; --bad:#F0928A; --bad-bg:#3A1A18; --info:#9FBDE6; --info-bg:#1E2D4B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1524; --surface:#162036; --surface-2:#1A2640; --fg:#E4EAF3; --muted:#9AA9C0; --line:#2A3854; --cel-s:#1E2D4B;
+  --accent:#9FBDE6; --on-accent:#0E1524; --ok:#7FCB9C; --ok-bg:#16301F; --warn:#E3C26A; --warn-bg:#33290F; --bad:#F0928A; --bad-bg:#3A1A18; --info:#9FBDE6; --info-bg:#1E2D4B; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--font);background:var(--bg);color:var(--fg);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;text-wrap:balance}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* barra superior */
+.top{background:var(--navy);color:#fff;border-bottom:3px solid var(--gold)}
+.top .in{display:flex;align-items:center;gap:18px;padding:10px 20px;flex-wrap:wrap}
+.marca{display:flex;align-items:baseline;gap:10px}
+.marca b{letter-spacing:.22em;font-size:17px}
+.marca span{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.caras{display:flex;background:rgba(255,255,255,.08);border-radius:999px;padding:3px}
+.caras button{background:none;border:0;color:#C9D7EA;font-weight:600;font-size:13px;padding:7px 16px;border-radius:999px;cursor:pointer}
+.caras button[aria-pressed=true]{background:#fff;color:var(--navy)}
+.top .der{margin-left:auto;display:flex;align-items:center;gap:12px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:#C9D7EA;cursor:pointer;user-select:none}
+.toggle input{width:16px;height:16px;accent-color:var(--gold)}
+
+/* cuerpo */
+.cuerpo{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:calc(100vh - 56px)}
+.cuerpo.dev{grid-template-columns:250px minmax(0,1fr) 330px}
+@media(max-width:1100px){.cuerpo.dev{grid-template-columns:220px minmax(0,1fr)} .cuerpo.dev aside.dev{grid-column:1/-1}}
+@media(max-width:760px){.cuerpo,.cuerpo.dev{grid-template-columns:1fr}}
+nav.menu{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:3px}
+nav.menu .grp{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:14px 10px 6px}
+nav.menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:9px 10px;cursor:pointer;font-size:13.5px;color:var(--fg)}
+nav.menu button:hover{background:var(--surface-2)}
+nav.menu button[aria-current=true]{background:var(--cel-s);color:var(--accent);font-weight:600}
+nav.menu .num{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:10.5px;font-weight:700;flex:0 0 auto;background:var(--nuevo);color:#1B2F5E}
+nav.menu .num.r{background:var(--reest)}
+nav.menu .num.x{background:var(--line);color:var(--muted)}
+nav.menu .tag{margin-left:auto;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+main{padding:22px 26px 60px;min-width:0}
+aside.dev{background:var(--surface);border-left:1px solid var(--line);padding:18px 18px 40px;min-width:0}
+
+.eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+h1.t{font-size:24px;font-weight:700;color:var(--accent);letter-spacing:-.01em}
+h2.t{font-size:17px;font-weight:700;color:var(--accent)}
+.hint{color:var(--muted);font-size:13.5px;margin:4px 0 0}
+.lead{font-size:15px;max-width:72ch;margin:6px 0 0}
+.stack{display:flex;flex-direction:column;gap:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;gap:12px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13.5px;padding:9px 15px;border-radius:8px;cursor:pointer;text-decoration:none}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#1B2F5E}
+.btn.sm{font-size:12.5px;padding:5px 10px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+label.f{display:block;font-size:12px;font-weight:600;margin-bottom:4px}
+input[type=text],select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.chip{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.c-ok{background:var(--ok-bg);color:var(--ok)} .c-warn{background:var(--warn-bg);color:var(--warn)} .c-bad{background:var(--bad-bg);color:var(--bad)} .c-info{background:var(--info-bg);color:var(--info)} .c-mute{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.box{border-radius:8px;padding:11px 14px;font-size:13.5px}
+.b-ok{background:var(--ok-bg);color:var(--ok)} .b-warn{background:var(--warn-bg);color:var(--warn)} .b-bad{background:var(--bad-bg);color:var(--bad)} .b-info{background:var(--info-bg);color:var(--info)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.sub{font-size:12px;color:var(--muted)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;letter-spacing:.04em}
+.legend{font-size:12px;color:var(--muted);margin:6px 0 0}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* estados como flujo */
+.flujo{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.flujo span{font-size:11.5px;font-weight:600;padding:4px 9px;border-radius:6px;background:var(--surface-2);border:1px solid var(--line)}
+.flujo span.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.flujo i{font-style:normal;color:var(--muted);font-size:11px}
+.dev h3{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.dev h3:first-of-type{margin-top:6px}
+.dev ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.dev .blk{border-left:3px solid var(--bad);padding:6px 10px;background:var(--bad-bg);color:var(--bad);border-radius:0 6px 6px 0;font-size:12.5px;margin-top:6px}
+
+/* mapa del sistema (inicio) */
+.sistema{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.sistema{grid-template-columns:1fr}}
+.cara{border-radius:12px;padding:14px;border:1px solid var(--line);background:var(--surface)}
+.cara > .eyebrow{display:block;margin-bottom:10px}
+.prod{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
+.prod:hover{border-color:var(--accent)}
+.prod b{display:block;font-size:13.5px}
+.prod span.d{font-size:12px;color:var(--muted)}
+.prod .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:0 0 auto;background:var(--nuevo);color:#1B2F5E}
+.prod .n.r{background:var(--reest)}
+.prod .n.x{background:var(--line);color:var(--muted)}
+.ext{display:flex;gap:8px;flex-wrap:wrap}
+.ext span{font-size:12px;font-weight:600;border:1px dashed var(--muted);border-radius:7px;padding:5px 10px;color:var(--muted)}
+.vinc{counter-reset:v;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.vinc li{counter-increment:v;display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:13.5px;align-items:start}
+.vinc li::before{content:counter(v);width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+
+/* turnero */
+.semanas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.dia{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--surface)}
+.dia.off{opacity:.45}
+.dia .dt{font-weight:700;font-size:12.5px;margin-bottom:6px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.slots button{font-size:11.5px;padding:5px 0;border-radius:6px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer}
+.slots button:disabled{text-decoration:line-through;opacity:.4;cursor:not-allowed}
+.slots button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* mapa de cobertura */
+.mapa{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(260px,1fr);gap:16px;align-items:start}
+@media(max-width:900px){.mapa{grid-template-columns:1fr}}
+.mapa svg{width:100%;height:auto;max-height:78vh;display:block}
+.mapa path{stroke:var(--surface);stroke-width:1.2;cursor:pointer;transition:opacity .15s}
+.mapa path:hover{opacity:.8}
+.mapa path.sel{stroke:var(--fg);stroke-width:2.4}
+.esc{display:flex;flex-direction:column;gap:5px}
+.esc button{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:6px 9px;cursor:pointer;font-size:12.5px;text-align:left}
+.esc button[aria-pressed=true]{border-color:var(--fg);font-weight:700}
+.esc i{width:18px;height:14px;border-radius:3px;flex:0 0 auto;border:1px solid rgba(0,0,0,.12)}
+
+/* verificador */
+.verif{max-width:620px}
+.resultado{border-radius:12px;padding:16px 18px;border:2px solid}
+.resultado.ok{border-color:var(--ok);background:var(--ok-bg)}
+.resultado.anu{border-color:var(--warn);background:var(--warn-bg)}
+.resultado.no{border-color:var(--bad);background:var(--bad-bg)}
+.kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px 16px;margin-top:10px}
+.kv .l{font-size:11.5px;color:var(--muted)} .kv .v{font-weight:600;font-size:13.5px;overflow-wrap:anywhere}
+
+.costline{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.costline .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.total{display:flex;justify-content:space-between;align-items:baseline;padding-top:10px}
+.total .v{font-size:26px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:70px;z-index:70;background:var(--navy-d);color:#fff;padding:10px 16px;border-radius:8px;font-size:13.5px;font-weight:600;max-width:calc(100% - 32px)}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="marca"><b>SIIGENO</b><span>Productos nuevos · demo para desarrollo</span></div>
+  <div class="caras" role="group" aria-label="Cara de SIIGENO">
+    <button type="button" data-cara="mapa">Cómo se vincula</button>
+    <button type="button" data-cara="req">SIIGENO Requirentes</button>
+    <button type="button" data-cara="int">SIIGENO interno</button>
+  </div>
+  <div class="der"><label class="toggle"><input type="checkbox" id="devToggle" checked> Para desarrollo</label></div>
+</div></header>
+<div class="cuerpo dev" id="cuerpo">
+  <nav class="menu" id="menu" aria-label="Módulos"></nav>
+  <main id="main"></main>
+  <aside class="dev" id="dev" aria-label="Para desarrollo"></aside>
+</div>
+
+<script>
+"use strict";
+const DEPTOS=[{"n":"Presidente Roque Sáenz Peña","c":"Laboulaye","d":"M413.2,723.2L450.8,732.6L404.8,803.3L334.3,803.3L334.3,826.9L317.5,825.3L317.6,829.8L273.0,828.8L272.6,799.2L227.8,800.2L227.8,784.5L217.1,780.7L215.3,779.7L227.4,772.3L240.6,767.5L240.5,713.7L353.6,713.2L354.6,708.7L413.2,723.2Z","x":307,"y":775},{"n":"Tercero Arriba","c":"Oliva","d":"M371.5,411.4L361.0,429.8L359.3,422.5L348.5,426.8L344.4,424.9L327.9,427.4L322.2,426.8L335.6,445.3L323.5,453.9L316.5,449.9L313.1,463.8L311.6,463.8L308.8,474.9L316.9,477.0L306.8,528.2L310.0,529.1L307.4,540.0L310.2,547.9L287.5,542.2L289.7,531.8L260.3,529.6L249.6,535.5L249.9,533.9L244.0,536.2L252.8,491.8L258.6,488.5L261.7,474.6L250.5,471.5L251.4,466.7L238.8,463.7L214.3,462.5L213.7,470.5L211.6,470.5L211.7,466.6L209.5,466.2L206.2,464.6L206.6,442.2L213.0,439.0L211.6,436.7L211.9,425.4L215.6,411.8L238.7,412.0L238.7,404.7L252.5,404.7L252.5,410.3L259.4,413.2L259.4,410.5L290.5,410.7L290.6,417.6L293.3,417.6L293.4,411.1L295.9,415.0L306.5,407.0L308.5,409.5L326.9,410.1L326.9,409.2L341.0,407.3L341.2,403.2L354.9,400.6L356.6,411.9L360.2,410.6L367.9,402.8L373.3,403.4L371.5,411.4Z","x":288,"y":450},{"n":"Juárez Celman","c":"La Carlota","d":"M310.2,547.9L314.6,549.1L313.0,556.6L328.1,563.0L330.7,552.9L338.8,554.9L331.9,584.5L322.8,582.6L319.7,596.9L343.6,602.1L346.0,592.1L358.5,594.7L355.9,609.2L357.9,609.6L356.6,616.8L375.0,621.8L369.5,645.6L372.0,646.3L364.7,676.5L362.2,676.0L353.6,713.2L240.5,713.7L240.2,684.3L264.2,684.3L263.7,609.9L261.5,609.2L260.7,610.6L255.9,609.2L253.5,610.4L248.6,609.9L248.6,607.9L244.8,606.4L244.1,607.7L241.2,607.5L241.6,594.6L251.3,595.3L253.3,587.4L243.0,584.7L242.9,583.4L238.0,583.5L239.4,577.0L242.1,577.0L249.6,535.5L260.3,529.6L289.7,531.8L287.5,542.2L310.2,547.9Z","x":295,"y":601},{"n":"Sobremonte","c":"San Francisco Del Cha¥Ar","d":"M286.5,25.6L279.9,23.5L278.9,25.5L279.0,32.7L282.1,32.9L277.0,49.1L274.0,48.6L273.3,49.8L273.2,59.9L269.1,59.5L263.3,64.5L261.7,74.6L262.6,75.7L258.6,80.3L256.9,83.6L256.8,96.7L249.1,98.4L224.1,94.8L218.2,79.0L192.0,71.8L192.2,55.5L183.5,53.6L183.4,3.0L200.1,0.0L251.2,9.0L253.8,19.9L266.3,20.3L270.2,13.4L278.2,13.8L277.8,16.7L273.7,18.8L281.1,19.2L286.5,25.6Z","x":255,"y":45},{"n":"Tulumba","c":"Villa Tulumba","d":"M256.8,96.7L268.4,99.9L270.5,104.4L313.5,112.8L312.8,128.3L332.4,128.3L333.1,136.2L338.5,137.4L342.8,117.8L452.5,140.6L449.8,154.6L479.5,160.6L479.2,170.7L462.6,172.3L449.6,171.4L447.2,168.3L448.1,166.6L445.2,166.5L443.7,169.0L440.3,169.1L432.5,166.7L432.3,165.7L434.6,165.0L432.9,164.0L429.3,165.8L425.8,170.1L426.0,171.2L430.4,171.2L430.0,176.6L420.3,179.4L412.4,179.6L410.8,182.4L400.3,185.9L398.2,186.5L400.6,190.6L395.1,189.7L395.1,185.7L393.2,188.9L393.6,191.4L390.4,192.3L384.3,190.4L382.5,194.5L381.1,193.9L380.0,195.2L353.9,188.8L354.4,186.2L332.8,181.1L333.7,177.0L301.7,169.2L300.0,176.1L275.0,175.9L274.9,166.2L270.3,166.2L269.8,150.9L253.6,150.5L247.9,161.0L243.0,161.8L231.4,158.7L221.8,160.4L206.8,159.3L206.8,144.3L195.5,144.3L195.3,138.9L200.1,117.0L208.2,117.7L209.9,102.2L206.5,101.8L206.8,98.2L110.3,83.8L110.0,64.3L116.7,57.1L113.1,15.7L183.4,3.0L183.5,53.6L192.2,55.5L192.0,71.8L218.2,79.0L224.1,94.8L249.1,98.4L256.8,96.7Z","x":323,"y":146},{"n":"Ischilín","c":"Dean Funes","d":"M211.4,159.5L212.1,163.2L210.9,164.4L215.3,169.0L217.1,175.6L220.1,178.2L224.2,186.0L230.8,204.7L233.4,207.1L235.4,212.5L234.7,213.3L227.7,210.9L223.0,213.2L217.4,213.2L207.8,214.0L196.2,210.7L188.4,209.8L186.2,211.5L182.7,209.3L175.1,209.2L174.9,195.6L173.1,195.6L173.1,194.3L148.6,194.2L148.1,186.4L129.1,186.8L120.2,178.4L110.0,164.6L102.1,150.4L110.6,150.2L110.3,83.8L206.8,98.2L206.5,101.8L209.9,102.2L208.2,117.7L200.1,117.0L195.3,138.9L195.5,144.3L206.8,144.3L206.8,159.3L211.4,159.5Z","x":190,"y":173},{"n":"Totoral","c":"Villa Del Totoral","d":"M306.3,170.3L300.7,194.4L294.4,192.9L287.3,220.7L289.0,221.3L284.9,236.6L280.4,235.6L280.1,243.7L270.7,244.1L270.8,252.1L262.5,251.9L262.1,239.1L247.8,232.5L247.8,234.4L241.1,238.5L224.7,242.3L218.7,240.0L213.4,240.2L210.6,236.1L208.2,237.6L189.8,233.7L189.9,228.4L186.2,211.5L187.7,210.0L196.2,210.7L207.8,214.0L223.7,212.9L227.7,210.9L234.7,213.3L235.4,212.5L233.4,207.1L230.8,204.7L224.2,186.0L220.1,178.2L217.1,175.6L215.3,169.0L210.9,164.4L212.1,163.2L211.4,159.5L221.8,160.4L231.4,158.7L243.0,161.8L247.9,161.0L253.6,150.5L269.8,150.9L270.3,166.2L274.9,166.2L275.0,175.9L300.0,176.1L301.7,169.2L306.3,170.3Z","x":244,"y":203},{"n":"Cruz del Eje","c":"Cruz Del Eje","d":"M110.3,83.8L110.6,150.2L102.1,150.4L110.0,164.6L120.2,178.4L129.1,186.8L148.1,186.4L148.6,194.2L161.8,194.2L161.7,204.0L163.3,208.0L154.6,216.3L154.9,229.5L150.1,249.0L158.3,253.1L154.7,258.1L153.9,269.4L148.4,281.1L142.2,305.5L136.9,311.9L137.1,315.2L130.5,314.5L118.4,312.3L117.9,301.9L117.2,293.4L118.5,286.0L116.8,277.8L110.5,263.2L102.4,253.9L99.1,251.7L91.5,251.3L92.4,244.4L87.4,235.9L86.1,225.8L63.7,227.1L59.5,197.6L55.1,195.8L54.6,194.2L25.4,187.4L35.2,161.9L48.8,101.9L85.9,90.0L110.0,64.3L110.3,83.8Z","x":114,"y":218},{"n":"Colón","c":"Jesus Maria","d":"M270.8,252.1L270.9,260.4L268.5,259.5L269.4,262.8L267.4,266.0L265.4,266.0L265.5,291.2L254.3,291.3L254.3,300.2L256.5,300.2L256.6,305.8L254.7,305.0L254.1,319.4L251.4,322.3L240.2,318.2L240.3,297.2L204.8,297.1L204.7,308.8L202.0,306.9L196.0,307.3L193.2,304.1L189.4,305.0L185.3,310.3L187.4,299.0L187.3,280.4L190.3,239.3L189.8,233.7L193.4,233.9L198.9,236.3L208.2,237.6L210.6,236.1L213.4,240.2L218.7,240.0L224.7,242.3L241.1,238.5L247.8,234.4L247.8,232.5L262.1,239.1L262.5,251.9L270.8,252.1Z","x":232,"y":273},{"n":"Punilla","c":"Cosquin","d":"M185.3,310.3L176.6,323.2L171.2,338.5L171.2,351.9L175.0,361.1L171.0,361.2L169.3,363.2L164.4,362.9L162.7,361.3L155.0,360.7L151.2,357.3L145.7,357.5L130.5,314.5L137.1,315.2L136.9,311.9L143.7,302.3L147.7,283.2L153.9,269.4L154.7,258.1L158.3,253.1L150.1,249.0L154.9,229.5L154.6,216.3L163.3,208.0L161.7,204.0L161.8,194.2L173.1,194.3L173.1,195.6L174.9,195.6L175.1,209.2L182.7,209.3L186.9,212.0L189.9,228.4L187.6,295.2L185.3,310.3Z","x":164,"y":282},{"n":"Capital","c":"Cordoba","d":"M240.2,318.2L240.2,332.5L204.7,332.4L204.7,308.8L204.8,297.1L240.3,297.2L240.2,318.2Z","x":225,"y":315},{"n":"General San Martín","c":"Villa Maria","d":"M371.5,411.4L385.3,414.9L385.5,418.8L393.8,418.6L392.9,421.1L408.5,423.8L405.6,438.3L406.6,438.6L398.0,476.8L388.2,474.1L387.8,476.1L384.1,475.3L382.2,483.4L380.0,484.0L378.2,482.4L377.4,485.3L375.0,483.8L367.5,496.3L380.4,499.8L375.3,515.9L378.2,516.7L372.3,545.7L377.7,546.7L378.4,552.9L373.7,551.9L371.2,563.4L368.6,562.8L361.6,595.4L346.0,592.1L343.6,602.1L319.7,596.9L322.8,582.6L331.9,584.5L338.8,554.9L330.7,552.9L328.1,563.0L313.0,556.6L314.6,549.1L310.2,547.9L307.4,540.0L310.0,529.1L306.8,528.2L316.9,477.0L308.8,474.9L311.6,463.8L313.1,463.8L316.5,449.9L323.5,453.9L335.6,445.3L322.2,426.8L327.9,427.4L344.4,424.9L348.5,426.8L359.3,422.5L361.0,429.8L371.5,411.4Z","x":355,"y":495},{"n":"Santa María","c":"Alta Gracia","d":"M255.8,338.6L245.9,346.7L250.4,352.5L244.0,358.8L243.7,373.1L247.7,369.7L253.8,368.6L255.4,369.9L255.6,390.1L259.8,390.1L259.4,413.2L252.5,410.3L252.5,404.7L238.7,404.7L238.7,412.0L215.6,411.8L218.5,398.7L209.2,398.1L209.2,401.8L206.5,402.6L206.5,383.1L204.4,383.1L204.5,378.3L203.3,377.8L196.3,382.7L194.8,385.4L190.8,384.8L189.0,387.9L186.1,384.2L184.5,386.1L183.0,384.7L180.1,385.6L180.3,382.2L178.0,380.9L174.9,383.4L171.1,392.0L166.2,390.9L161.0,393.2L155.7,392.6L150.3,391.0L147.0,392.4L121.7,394.4L124.3,389.7L130.3,385.0L143.6,381.0L141.9,373.3L145.8,365.1L145.7,357.5L151.2,357.3L155.0,360.7L162.7,361.3L164.4,362.9L169.3,363.2L171.0,361.2L175.0,361.1L171.2,351.9L171.9,335.7L176.6,323.2L189.4,305.0L193.2,304.1L196.0,307.3L202.0,306.9L204.7,308.8L204.7,332.4L240.2,332.5L240.2,318.2L251.4,322.3L254.1,319.4L253.6,336.5L255.8,338.6Z","x":199,"y":369},{"n":"Minas","c":"San Carlos Minas","d":"M0.1,287.2L0.0,254.0L25.4,187.4L54.6,194.2L55.1,195.8L59.5,197.6L63.7,227.1L86.1,225.8L87.4,235.9L92.4,244.4L91.5,251.3L97.5,251.7L102.4,253.9L110.5,263.2L116.8,277.8L118.5,288.4L0.1,287.2Z","x":68,"y":243},{"n":"Pocho","c":"Salsacate","d":"M118.5,309.8L97.1,313.7L92.3,316.5L88.3,321.7L86.0,335.5L82.9,340.7L77.3,345.9L69.4,348.3L69.0,352.0L51.8,352.3L51.8,347.2L41.9,347.0L41.8,359.8L39.5,359.8L37.3,371.0L21.0,370.8L21.8,368.5L0.2,368.2L0.1,287.2L118.5,288.4L117.2,293.4L118.5,309.8Z","x":66,"y":337},{"n":"San Alberto","c":"Villa Cura Brochero","d":"M121.7,394.4L118.5,394.3L115.2,392.1L100.3,390.4L97.7,391.5L97.1,394.6L93.7,396.9L84.2,397.2L80.0,399.9L72.1,400.4L70.7,401.8L58.5,396.1L58.3,392.8L30.5,393.5L30.4,391.4L22.9,391.6L22.8,395.9L20.1,394.5L0.3,392.9L0.2,368.2L21.8,368.5L21.0,370.8L37.3,371.0L39.5,359.8L41.8,359.8L41.9,347.0L51.8,347.2L51.8,352.3L69.0,352.0L69.5,348.1L78.4,345.1L86.0,335.5L88.3,321.7L94.8,314.7L117.8,309.8L118.4,312.3L130.5,314.5L142.3,350.5L146.3,358.9L146.1,363.5L144.7,368.8L141.9,373.0L143.6,381.0L130.3,385.0L124.3,389.7L121.7,394.4Z","x":80,"y":371},{"n":"San Javier","c":"Villa Dolores","d":"M107.8,390.8L121.7,394.4L119.2,399.0L118.8,417.9L116.0,440.8L116.2,460.3L111.4,464.0L108.6,462.8L95.9,462.8L78.5,464.7L79.0,461.1L77.4,457.2L78.6,453.2L78.6,449.8L75.5,445.6L76.6,438.7L73.8,426.0L64.8,420.0L64.2,418.0L22.8,395.9L22.9,391.6L30.4,391.4L30.5,393.5L58.3,392.8L58.5,396.1L70.7,401.8L72.1,400.4L80.0,399.9L84.2,397.2L93.7,396.9L97.1,394.6L97.7,391.5L100.3,390.4L107.8,390.8Z","x":82,"y":419},{"n":"Río Segundo","c":"Villa Del Rosario","d":"M371.5,411.4L373.3,403.4L367.9,402.8L360.2,410.6L356.6,411.9L354.9,400.6L341.2,403.2L341.0,407.3L326.9,409.2L326.9,410.1L308.5,409.5L306.5,407.0L295.9,415.0L293.4,411.1L293.3,417.6L290.6,417.6L290.5,410.7L259.4,410.5L259.8,390.1L255.6,390.1L255.4,369.9L253.8,368.6L247.7,369.7L243.7,373.1L244.0,358.8L250.4,352.5L245.9,346.7L255.8,338.6L260.8,339.8L274.8,339.4L274.8,336.8L292.1,335.3L292.3,326.6L293.1,327.4L297.1,324.0L299.7,326.6L309.2,320.7L311.2,314.4L313.3,314.4L313.3,313.3L319.1,313.2L319.5,311.6L330.7,310.0L331.7,308.4L335.3,307.8L335.0,297.2L349.6,301.2L349.9,325.7L356.6,324.8L358.3,326.3L355.5,341.0L358.3,338.9L357.9,341.5L361.3,342.1L360.8,345.0L363.5,346.4L362.6,351.3L364.0,351.4L363.9,352.7L369.3,352.8L369.4,357.7L379.2,357.6L379.3,364.0L381.3,364.0L381.4,369.6L384.5,369.7L385.4,382.1L389.3,382.1L389.4,387.8L391.4,388.4L391.5,392.4L393.5,393.4L393.5,400.6L394.7,400.6L401.0,408.0L401.1,416.4L404.7,416.4L409.2,420.7L408.5,423.8L392.9,421.1L393.8,418.6L385.5,418.8L385.3,414.9L371.5,411.4Z","x":336,"y":369},{"n":"San Justo","c":"San Francisco","d":"M505.4,145.7L509.7,161.1L550.1,204.7L510.3,347.9L494.3,361.7L497.5,368.5L496.8,392.1L501.6,398.4L504.6,409.0L501.7,425.0L481.9,420.4L483.4,413.4L453.2,407.1L451.6,412.9L440.0,410.3L437.7,420.7L410.3,415.1L409.2,420.7L404.7,416.4L401.1,416.4L401.0,408.0L394.7,400.6L393.5,400.6L393.5,393.4L391.5,392.4L391.4,388.4L389.4,387.8L389.3,382.1L385.4,382.1L384.5,369.7L381.4,369.6L381.3,364.0L379.3,364.0L379.2,357.6L369.4,357.7L369.3,352.8L363.9,352.7L364.0,351.4L362.6,351.3L363.5,346.4L360.8,345.0L361.3,342.1L357.9,341.5L358.3,338.9L355.5,341.0L358.3,326.3L356.6,324.8L349.9,325.7L349.6,301.2L351.7,301.8L354.6,291.5L361.2,293.3L366.7,272.6L369.3,273.2L371.2,265.2L382.0,268.0L383.0,261.9L385.8,262.4L386.7,258.6L393.0,260.2L397.7,242.3L411.6,238.3L415.4,223.9L412.3,215.6L405.4,208.2L396.6,204.8L399.0,199.7L389.8,202.5L380.5,200.7L379.5,196.4L381.1,193.9L382.5,194.5L383.9,190.6L390.4,192.3L393.6,191.4L393.2,188.9L395.2,185.7L395.1,189.7L400.6,190.6L398.3,186.0L410.8,182.4L412.4,179.6L420.3,179.4L430.0,176.6L430.4,171.2L426.0,171.2L425.8,170.1L429.3,165.8L432.9,164.0L434.6,165.0L432.3,165.7L432.5,166.7L440.3,169.1L443.7,169.0L445.2,166.5L448.1,166.6L447.2,168.3L449.6,171.4L462.6,172.3L477.6,171.4L479.4,169.3L479.6,139.7L505.4,145.7Z","x":412,"y":279},{"n":"Unión","c":"Bel Ville","d":"M413.2,723.2L354.6,708.7L362.2,676.0L364.7,676.5L372.0,646.3L369.5,645.6L375.0,621.8L356.6,616.8L357.9,609.6L355.9,609.2L358.5,594.7L361.6,595.4L368.6,562.8L371.2,563.4L373.7,551.9L378.4,552.9L377.7,546.7L372.3,545.7L378.2,516.7L375.3,515.9L380.4,499.8L367.5,496.3L375.0,483.8L377.4,485.3L378.2,482.4L380.0,484.0L382.2,483.4L384.1,475.3L387.8,476.1L388.2,474.1L398.0,476.8L406.6,438.6L405.6,438.3L410.3,415.1L437.7,420.7L440.0,410.3L451.6,412.9L453.2,407.1L483.4,413.4L481.9,420.4L487.5,421.8L484.7,435.5L480.6,434.8L475.6,460.0L485.4,462.6L483.0,471.4L482.3,472.6L478.3,471.8L475.6,485.6L470.8,485.0L461.9,524.7L459.8,525.5L458.4,536.2L457.3,536.1L456.8,539.3L458.5,539.8L458.8,538.2L465.3,553.6L454.5,551.0L451.2,568.2L456.0,569.5L453.2,583.8L448.6,586.0L446.3,590.6L438.9,594.3L439.0,596.0L455.6,599.7L448.4,612.3L431.9,624.9L443.8,627.0L437.7,634.3L421.8,706.0L416.8,704.9L413.2,723.2Z","x":420,"y":540},{"n":"Río Primero","c":"Santa Rosa De Rio Primero","d":"M380.0,195.2L380.9,195.5L379.4,197.1L381.1,201.1L389.8,202.5L399.0,199.7L396.6,204.8L405.2,208.0L406.1,209.7L412.3,215.6L415.4,223.9L411.6,238.3L397.7,242.3L393.0,260.2L386.7,258.6L385.8,262.4L383.0,261.9L382.0,268.0L371.2,265.2L369.3,273.2L366.7,272.6L361.2,293.3L354.6,291.5L351.7,301.8L335.0,297.2L335.3,307.8L331.7,308.4L330.7,310.0L319.5,311.6L319.1,313.2L311.2,314.4L309.1,321.2L304.9,324.1L299.7,326.6L297.1,324.0L293.1,327.4L292.3,326.6L292.1,335.3L274.8,336.8L274.8,339.4L260.8,339.8L255.8,338.6L253.6,336.5L254.7,305.0L256.6,305.8L256.5,300.2L254.3,300.2L254.3,291.3L265.5,291.2L265.4,266.0L267.4,266.0L269.4,262.8L268.5,259.5L270.9,260.4L270.7,244.1L280.1,243.7L280.4,235.6L284.9,236.6L289.0,221.3L287.3,220.7L294.4,192.9L300.7,194.4L306.3,170.3L333.7,177.0L332.8,181.1L354.4,186.2L353.9,188.8L380.0,195.2Z","x":326,"y":263},{"n":"Marcos Juárez","c":"Marcos Juarez","d":"M422.5,725.5L413.2,723.2L416.8,704.9L421.8,706.0L437.7,634.3L443.8,627.0L431.9,624.9L448.4,612.3L455.6,599.7L439.0,596.0L438.9,594.3L446.3,590.6L448.6,586.0L453.2,583.8L456.0,569.5L451.2,568.2L454.5,551.0L465.3,553.6L458.8,538.2L458.5,539.8L456.8,539.3L457.3,536.1L458.4,536.2L459.8,525.5L461.9,524.7L470.8,485.0L475.6,485.6L478.3,471.8L482.3,472.6L482.6,471.3L483.9,471.5L485.4,462.6L475.6,460.0L480.6,434.8L484.7,435.5L487.5,421.8L501.7,425.0L500.5,429.9L503.3,437.7L510.1,445.5L522.8,454.5L526.5,468.3L535.7,483.1L540.2,493.0L539.1,494.5L540.2,498.0L537.8,500.7L541.3,502.1L541.8,504.8L538.4,507.1L539.1,508.8L543.2,508.3L543.5,512.1L535.7,518.2L535.5,522.4L540.9,525.7L547.9,525.4L552.1,535.4L554.6,536.2L558.0,542.0L559.1,547.9L557.1,554.8L560.0,559.5L557.3,568.8L557.8,576.7L547.4,587.0L542.4,594.2L539.1,595.5L450.8,732.6L422.5,725.5Z","x":494,"y":541},{"n":"Río Cuarto","c":"Rio Cuarto","d":"M249.6,535.5L242.1,577.0L239.4,577.0L238.0,583.5L242.9,583.4L243.0,584.7L253.3,587.4L251.3,595.3L241.6,594.6L241.4,608.1L244.8,606.4L248.6,607.9L249.0,610.0L263.7,609.9L264.2,684.3L240.2,684.3L240.6,767.5L229.0,771.4L217.3,779.3L215.3,779.7L207.5,775.7L195.2,775.2L193.3,774.0L186.3,776.0L175.3,770.5L171.4,772.0L168.0,770.1L167.4,767.9L158.1,765.8L159.3,764.3L158.3,763.1L152.0,758.9L145.8,758.5L141.6,754.5L137.7,755.5L131.2,749.1L128.4,749.5L111.8,744.5L108.5,746.2L105.3,742.2L100.8,740.2L100.2,735.5L98.1,736.8L91.6,730.9L88.1,607.7L95.7,600.5L100.4,594.7L99.7,592.0L101.3,587.0L108.1,576.1L104.9,571.3L109.2,566.6L109.1,563.7L112.8,553.9L112.2,543.6L115.8,537.4L115.3,530.1L119.8,522.9L118.6,519.1L119.0,511.5L122.7,507.6L156.7,515.0L165.0,513.6L176.2,513.9L181.9,491.1L186.0,491.1L187.8,477.9L202.0,481.8L204.1,474.9L212.0,477.2L211.6,470.5L213.7,470.5L214.3,462.5L238.8,463.7L251.4,466.7L250.5,471.5L261.7,474.6L258.6,488.5L252.8,491.8L244.0,536.2L249.9,533.9L249.6,535.5Z","x":180,"y":618},{"n":"General Roca","c":"Villa Huidobro","d":"M215.3,779.7L227.8,784.5L227.8,800.2L272.6,799.2L273.0,828.8L317.6,829.8L317.5,825.3L334.3,826.9L334.2,904.7L91.6,904.7L91.6,730.9L98.1,736.8L100.2,735.5L100.8,740.2L105.3,742.2L108.5,746.2L111.8,744.5L128.4,749.5L130.8,749.0L135.8,754.2L137.7,755.5L141.6,754.5L145.8,758.5L152.0,758.9L158.3,763.1L159.3,764.3L158.1,765.8L167.4,767.9L168.0,770.1L171.4,772.0L175.3,770.5L186.3,776.0L193.3,774.0L195.2,775.2L207.5,775.7L215.3,779.7Z","x":179,"y":778},{"n":"Calamuchita","c":"San Agustin","d":"M204.4,380.4L204.4,383.1L206.5,383.1L206.5,402.6L209.2,401.8L209.2,398.1L217.6,398.1L218.6,399.3L211.9,425.4L211.6,436.7L213.0,439.0L206.6,442.5L206.2,464.6L211.7,466.6L212.0,477.2L204.1,474.9L202.0,481.8L187.8,477.9L186.0,491.1L181.9,491.1L176.2,513.9L165.0,513.6L156.7,515.0L122.7,507.6L124.4,504.5L122.1,495.4L122.7,491.0L119.3,488.0L117.9,480.0L119.3,477.2L118.2,464.1L116.2,460.3L116.0,440.8L118.8,417.9L119.2,399.0L121.7,394.4L146.5,392.5L150.6,391.0L153.9,392.7L158.8,392.1L161.0,393.2L166.2,390.9L171.1,392.0L174.9,383.4L178.0,380.9L180.3,382.2L180.1,385.6L183.0,384.7L184.5,386.1L186.1,384.2L189.0,387.9L190.8,384.8L194.8,385.4L202.0,377.7L204.5,378.3L204.4,380.4Z","x":174,"y":429},{"n":"Río Seco","c":"Villa De Maria","d":"M286.5,25.6L293.6,27.0L300.4,25.5L322.9,27.0L320.7,37.1L323.7,37.1L323.7,42.2L415.0,51.9L415.2,54.9L411.9,56.3L410.6,60.1L412.4,61.8L413.1,66.4L415.9,67.1L418.0,73.0L417.0,75.4L422.5,76.7L426.6,80.7L435.2,82.1L436.3,83.4L433.5,88.0L436.2,91.3L450.0,92.5L448.5,102.4L444.4,109.4L444.8,124.9L453.1,133.5L455.1,138.4L503.6,139.0L505.4,145.7L479.6,139.7L479.5,160.6L449.8,154.6L452.5,140.6L342.8,117.8L338.5,137.4L333.1,136.2L332.4,128.3L312.8,128.3L313.5,112.8L270.5,104.4L268.4,99.9L262.4,97.8L257.1,97.6L256.9,83.6L262.6,75.7L261.7,74.6L263.3,64.5L269.1,59.5L273.2,59.9L273.3,49.8L274.0,48.6L277.0,49.1L282.1,32.9L279.0,32.7L278.9,25.5L279.9,23.5L286.5,25.6Z","x":360,"y":82}];
+/* ==================================================================
+   DATOS — sacados de «SIIGENO — Productos nuevos para el CFI» (7/10/2026)
+   ================================================================== */
+const SIMULADOR = "https://cornabalta3-web.github.io/simulador-siigeno/";
+const PRODUCTOS = {
+  turnero:   {n:1, nombre:"Turnero de declaraciones juradas", tipo:"nuevo", prioridad:true},
+  admin:     {n:2, nombre:"Administración pública · perfil VIP", tipo:"nuevo"},
+  mapa:      {n:3, nombre:"Mapa de cobertura por departamentos", tipo:"nuevo"},
+  verif:     {n:4, nombre:"Verificador de documentos", tipo:"reest"},
+  armador:   {n:5, nombre:"Armador de solicitudes", tipo:"reest"},
+  buscador:  {n:6, nombre:"Superbuscador y simulador de costos", tipo:"nuevo"}
+};
+/* Dónde vive cada pantalla. x: ya existe en SIIGENO */
+const MENUS = {
+  req:[
+    {grp:"SIIGENO Requirentes"},
+    {k:"req-inicio", t:"Inicio", x:true},
+    {k:"armador", t:"Armador de solicitudes", p:"armador"},
+    {k:"req-mis", t:"Mis trámites", x:true},
+    {grp:"Perfiles y accesos"},
+    {k:"turnero-req", t:"Turno para firmar DDJJ", p:"turnero"},
+    {k:"admin-req", t:"Administración pública (VIP)", p:"admin"},
+    {grp:"Público, sin ingresar"},
+    {k:"verif", t:"Verificador de documentos", p:"verif"}
+  ],
+  int:[
+    {grp:"SIIGENO interno"},
+    {k:"bandeja", t:"Bandeja de entrada (externos)", x:true},
+    {k:"turnero-int", t:"Agenda de actas DDJJ", p:"turnero"},
+    {k:"admin-int", t:"Certificaciones y libros", p:"admin"},
+    {k:"mapa", t:"Mapa de cobertura", p:"mapa"},
+    {k:"buscador", t:"Superbuscador y costos", p:"buscador"},
+    {grp:"Trabajo de esta etapa"},
+    {k:"ddjj", t:"DDJJ patrimoniales (SISCAE)", x:true},
+    {k:"relev", t:"Relevamiento de problemas", x:true},
+    {k:"definir", t:"Lo que falta definir", x:true}
+  ],
+  mapa:[
+    {grp:"Vista general"},
+    {k:"inicio", t:"Cómo se vincula todo", x:true},
+    {k:"definir", t:"Lo que falta definir", x:true},
+    {grp:"Los seis productos"},
+    {k:"turnero-req", t:"1 · Turnero DDJJ", p:"turnero"},
+    {k:"admin-req", t:"2 · Administración pública", p:"admin"},
+    {k:"mapa", t:"3 · Mapa de cobertura", p:"mapa"},
+    {k:"verif", t:"4 · Verificador", p:"verif"},
+    {k:"armador", t:"5 · Armador de solicitudes", p:"armador"},
+    {k:"buscador", t:"6 · Superbuscador y costos", p:"buscador"}
+  ]
+};
+const CARA_DE = {"req-inicio":"req","armador":"req","req-mis":"req","turnero-req":"req","admin-req":"req","verif":"req",
+  "bandeja":"int","turnero-int":"int","admin-int":"int","mapa":"int","buscador":"int","ddjj":"int","relev":"int","definir":"int","inicio":"mapa"};
+
+/* ==================================================================
+   ESTADO COMPARTIDO ENTRE PANTALLAS — lo que se hace en una se ve en otra
+   ================================================================== */
+const hoy = new Date(2026,9,8);
+const S = {
+  cara:"mapa", vista:"inicio", dev:true,
+  ddjjCompleta:true, ddjjFecha:new Date(2026,9,6), turno:null, slotSel:null, extras:[],
+  actas:[
+    {id:1, nombre:"Juan Carlos PEREYRA", cargo:"Ministro de Infraestructura", tipo:"Alta", hora:"08:00", estado:"impresa", escribana:"Escribana Sustituta"},
+    {id:2, nombre:"María Laura FERREYRA", cargo:"Secretaria de Ambiente", tipo:"Modificación", hora:"08:30", estado:"impresa", escribana:"Escribana Sustituta"},
+    {id:3, nombre:"Ricardo D. LUNA", cargo:"Director de Rentas", tipo:"Cese", hora:"09:00", estado:"revisada", escribana:"Escribana Sustituta"},
+    {id:4, nombre:"Silvia N. PERALTA", cargo:"Presidenta de Lotería", tipo:"Alta", hora:"10:00", estado:"armada", escribana:"Escribana General"}
+  ],
+  pedidos:[
+    {id:"AP-0112", org:"Ministerio de Vivienda", firmante:"Arq. Lucía MOYANO · Directora", tipo:"Certificación de copia con firma digital", docs:[{n:"Resolución 412/2026",o:"digital"},{n:"Plano de mensura",o:"digital"}], destino:"Registro General de la Provincia", estado:"enviado"},
+    {id:"AP-0111", org:"Vialidad Provincial", firmante:"Ing. Pablo SOSA · Presidente", tipo:"Certificación de firma", docs:[{n:"Convenio de avenimiento",o:"papel"}], destino:"Expropiado (convenio)", estado:"turno asignado"}
+  ],
+  libro:[{n:"2026-0387", fecha:"02/10/2026", tipo:"Certificación de firma", org:"Seguridad", firmante:"Crio. Gral. A. RÍOS", escribana:"Escribana General"}],
+  registro:[
+    {codigo:"EGG-7K4Q-2M9X", n:"2026-C-0058", fecha:"30/09/2026", escribana:"Escribana Sustituta", org:"ACIF", doc:"Contrato de fideicomiso — copia", destino:"Banco de Córdoba", soporte:"Digital, firma digital", estado:"valido", archivo:"cert-c-0058.pdf"},
+    {codigo:"EGG-3H8P-0W2T", n:"2026-C-0041", fecha:"12/09/2026", escribana:"Escribana General", org:"Ministerio de Vivienda", doc:"Resolución 377/2026 — copia", destino:"Municipalidad de Jesús María", soporte:"Papel", estado:"anulado", motivo:"Error en el destino", reemplazo:"2026-C-0044"}
+  ],
+  verCodigo:"", verRes:null,
+  mapaSel:null, mapaNivel:{}, mapaPincel:null,
+  busq:"", escSel:null, costo:{foja:true, ej:1, urgencia:false, anios:1, firmas:1, exencion:""}
+};
+/* nivel de avance de ejemplo por departamento */
+const NIVELES=[["Sin intervención","#E8ECF2"],["Relevado","#A8C8E8"],["En confección","#C9A84C"],["En firma","#B5762A"],["En el Registro","#3E7D58"],["Entregadas","#1F5A36"]];
+const EJ_NIVEL={"Capital":5,"Colón":4,"Santa María":3,"Punilla":3,"Río Segundo":2,"San Justo":2,"Río Cuarto":4,"General San Martín":1,"Juárez Celman":1,"Tercero Arriba":2,"Cruz del Eje":1,"Calamuchita":1,"Río Primero":3,"Totoral":1,"Unión":2,"Marcos Juárez":1};
+DEPTOS.forEach(d=>{ S.mapaNivel[d.n]=EJ_NIVEL[d.n]??0; });
+const MAPA_DET={}; DEPTOS.forEach((d,i)=>{ const nv=S.mapaNivel[d.n]; MAPA_DET[d.n]={social:nv*7+(i%5), otros:nv*3+(i%3)}; });
+
+/* base de escrituras de ejemplo para el superbuscador (inventadas) */
+const ESCRITURAS=[
+  {n:402,sec:"A",anio:2011,fecha:"09/06/2011",acto:"Compraventa",partes:"GÓMEZ, Roberto · Inmobiliaria del Centro S.A.",cuenta:"1101-2345678/9",nom:"11-01-01-04-12-033-005",matricula:"1.204.558",fojas:14,loc:"Córdoba Capital"},
+  {n:88,sec:"B",anio:2019,fecha:"21/03/2019",acto:"Donación",partes:"LEDESMA, Héctor · LEDESMA, Carlos",cuenta:"1304-1187730/2",nom:"13-04-21-02-03-118-012",matricula:"772.031",fojas:9,loc:"Jesús María"},
+  {n:14,sec:"A",anio:2018,fecha:"12/03/2018",acto:"Adjudicación — Ley 9811",partes:"Provincia de Córdoba · RÍOS, Marta",cuenta:"1101-9988123/4",nom:"11-01-01-31-07-214-019",matricula:"1.533.902",fojas:6,loc:"Córdoba Capital"},
+  {n:231,sec:"A",anio:2016,fecha:"01/02/2016",acto:"Cesión de derechos",partes:"PÉREZ, Juan · VEGA, Hugo",cuenta:"2405-0034512/1",nom:"24-05-52-01-02-044-001",matricula:"401.226",fojas:11,loc:"Río Cuarto"},
+  {n:7,sec:"A",anio:2003,fecha:"14/05/2003",acto:"Expropiación por avenimiento",partes:"Provincia de Córdoba · MIGUEL, A.",cuenta:"1302-4410022/8",nom:"13-02-08-01-01-006-002",matricula:"295.611",fojas:18,loc:"Salsipuedes"},
+  {n:310,sec:"A",anio:2014,fecha:"03/11/2014",acto:"Compraventa",partes:"AGUIRRE, Lucía · BUSTOS, Néstor",cuenta:"2702-7731190/5",nom:"27-02-01-03-09-102-020",matricula:"866.140",fojas:12,loc:"Villa María"},
+  {n:54,sec:"B",anio:2021,fecha:"28/07/2021",acto:"Constitución de usufructo",partes:"CABRERA, Elsa · CABRERA, Omar",cuenta:"2301-5501208/3",nom:"23-01-04-02-05-067-008",matricula:"1.012.774",fojas:5,loc:"Villa Carlos Paz"}
+];
+/* valores DE EJEMPLO: faltan los vigentes de la Ley 11.090 y la Unidad Tributaria */
+const UT=1000;
+const TABLA={fijo:6*UT, foja:2*UT, firma:3*UT, anio:1.5*UT};
+
+/* ==================================================================
+   UTILIDADES
+   ================================================================== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pesos=n=>"$ "+Math.round(n).toLocaleString("es-AR");
+const pad=n=>String(n).padStart(2,"0");
+const fF=d=>`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${d.getFullYear()}`;
+const DIAS=["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+const MESES=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const fLarga=d=>`${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+let tT; function toast(m){ clearTimeout(tT); let e=$("#toast"); if(!e){ e=document.createElement("div"); e.id="toast"; e.className="toast"; e.setAttribute("role","status"); document.body.appendChild(e);} e.textContent=m; e.hidden=false; tT=setTimeout(()=>e.hidden=true,3200); }
+const flujo=(lista,actual)=>`<div class="flujo">${lista.map((x,i)=>`${i?"<i>→</i>":""}<span class="${x===actual?"on":""}">${esc(x)}</span>`).join("")}</div>`;
+function habiles(desde,n){ const d=new Date(desde); let k=0; while(k<n){ d.setDate(d.getDate()+1); if(d.getDay()!==0&&d.getDay()!==6) k++; } return d; }
+function codigoNuevo(){ const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; const r=()=>Array.from({length:4},()=>a[Math.floor(Math.random()*a.length)]).join(""); return `EGG-${r()}-${r()}`; }
+
+/* ==================================================================
+   NAVEGACIÓN
+   ================================================================== */
+function ir(vista){ S.vista=vista; S.cara=CARA_DE[vista]||S.cara; render(); window.scrollTo({top:0}); }
+document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-cara]"); if(c){ S.cara=c.dataset.cara; S.vista=MENUS[S.cara].find(x=>x.k).k; render(); return; }
+  const g=e.target.closest("[data-ir]"); if(g){ ir(g.dataset.ir); return; }
+});
+$("#devToggle").addEventListener("change",e=>{ S.dev=e.target.checked; render(); });
+function render(){
+  document.querySelectorAll("[data-cara]").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cara===S.cara));
+  $("#cuerpo").classList.toggle("dev",S.dev); $("#dev").hidden=!S.dev;
+  $("#menu").innerHTML=MENUS[S.cara].map(m=>m.grp?`<div class="grp">${esc(m.grp)}</div>`:
+    `<button type="button" data-ir="${m.k}" aria-current="${S.vista===m.k}">${m.p?`<span class="num ${PRODUCTOS[m.p].tipo==="reest"?"r":""}">${PRODUCTOS[m.p].n}</span>`:`<span class="num x">·</span>`}<span>${esc(m.t)}</span>${m.x&&m.k!=="inicio"&&m.k!=="definir"&&m.k!=="ddjj"&&m.k!=="relev"?`<span class="tag">ya existe</span>`:""}</button>`).join("")
+    +`<div class="legend" style="padding:16px 10px 0;display:flex;flex-direction:column;gap:5px"><span><span class="num" style="display:inline-grid;width:14px;height:14px;font-size:0;vertical-align:middle;border-radius:50%;background:var(--nuevo)"></span> producto nuevo</span><span><span style="display:inline-block;width:14px;height:14px;vertical-align:middle;border-radius:50%;background:var(--reest)"></span> reestructuración de lo existente</span></div>`;
+  const V=VISTAS[S.vista]||VISTAS.inicio; const r=V();
+  $("#main").innerHTML=r.main; $("#dev").innerHTML=r.dev||"";
+  r.after&&r.after();
+}
+const cab=(p,titulo,lead,donde)=>{ const P=PRODUCTOS[p]; return `<div class="stack" style="gap:6px;margin-bottom:16px">
+  <div class="row"><span class="eyebrow">${P?`Producto ${P.n} · ${P.tipo==="reest"?"reestructuración":"nuevo"}${P.prioridad?" · prioridad principal":""}`:""} · ${esc(donde)}</span></div>
+  <h1 class="t">${esc(titulo)}</h1>${lead?`<p class="lead">${lead}</p>`:""}</div>`; };
+const devPanel=(o)=>`<div class="eyebrow" style="color:var(--gold)">Para desarrollo</div>
+  ${o.estados?`<h3>Estados</h3>${o.estados}`:""}
+  ${o.reglas?`<h3>Reglas de negocio</h3><ul>${o.reglas.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}
+  ${o.depende?`<h3>Depende de / se conecta con</h3><ul>${o.depende.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}
+  ${o.bloq?`<h3>Bloqueante</h3>${o.bloq.map(x=>`<div class="blk">${x}</div>`).join("")}`:""}
+  ${o.abierto?`<h3>Abierto</h3><ul>${o.abierto.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}`;
+
+/* ==================================================================
+   VISTAS
+   ================================================================== */
+const VISTAS = {};
+
+/* ---------- Cómo se vincula todo ---------- */
+VISTAS.inicio = () => {
+  const P=(k,vista,d)=>{ const p=PRODUCTOS[k]; return `<button class="prod" type="button" data-ir="${vista}"><span class="n ${p.tipo==="reest"?"r":""}">${p.n}</span><span><b>${esc(p.nombre)}</b><span class="d">${d}</span></span></button>`; };
+  const X=(t,d,vista)=>`<button class="prod" type="button" ${vista?`data-ir="${vista}"`:"disabled"}><span class="n x">·</span><span><b>${esc(t)}</b><span class="d">${d}</span></span></button>`;
+  return {main:`${cab(null,"SIIGENO con los seis productos, en su lugar","Cada producto vive en una de las dos caras de SIIGENO. Arriba podés cambiar de cara; cada pantalla se recorre con clics y lo que se hace en una aparece en la otra.","vista general")}
+    <div class="sistema">
+      <div class="cara"><span class="eyebrow">SIIGENO Requirentes · ciudadanos, profesionales, organismos</span>
+        ${P("armador","armador","Formulario paso a paso con documentación según el carácter. Ya se puede probar en el simulador.")}
+        ${P("turnero","turnero-req","El obligado saca turno para firmar el acta, solo cuando su DDJJ está completa.")}
+        ${P("admin","admin-req","Perfil VIP verificado por CiDi: pedidos multi-documento, siempre exentos.")}
+        ${P("verif","verif","Público: cualquiera valida un documento con el código o el QR.")}
+        ${X("Mis trámites","Ya existe. Se reordena con estados que dicen qué hacer.","req-mis")}</div>
+      <div class="cara"><span class="eyebrow">SIIGENO interno · Escribanía</span>
+        ${X("Bandeja de entrada","Ya existe. Queda solo para trámites externos (hoy: administración pública).","bandeja")}
+        ${P("turnero","turnero-int","Agenda de martes y viernes con el estado de cada acta.")}
+        ${P("admin","admin-int","Libro de intervenciones digital y registro de certificaciones de copia.")}
+        ${P("mapa","mapa","Avance por departamento, en seis niveles.")}
+        ${P("buscador","buscador","Busca en el protocolo digitalizado y cotiza el trámite.")}</div>
+    </div>
+    <div class="card" style="margin-top:16px"><h2 class="t">Cómo se conectan</h2><p class="hint" style="margin-bottom:10px">Lo que hace que no sean seis piezas sueltas.</p>
+      <ol class="vinc">
+        <li><span><b>SISCAE → Turnero.</b> Cuando el obligado termina su declaración, SISCAE avisa y manda los datos estructurados del formulario A. Recién ahí se habilita el turno, y el acta se arma sola. <button class="link" type="button" data-ir="turnero-req">Ver</button></span></li>
+        <li><span><b>Administración pública → Registro → Verificador.</b> Cada certificación queda asentada con número y código; el verificador responde con lo que se registró al emitir. <button class="link" type="button" data-ir="admin-int">Certificar</button> y después <button class="link" type="button" data-ir="verif">verificar</button>.</span></li>
+        <li><span><b>Armador → Bandeja de entrada.</b> Cada paso del armador produce una orden en la hoja de ruta; la observación devuelve al requirente apuntando al paso. <a class="link" href="${SIMULADOR}" target="_blank" rel="noopener">Abrir el simulador</a></span></li>
+        <li><span><b>Superbuscador → Simulador de costos → Armador.</b> La extensión real de la escritura sale del protocolo digitalizado; con eso se cotiza antes de enviar. <button class="link" type="button" data-ir="buscador">Ver</button></span></li>
+        <li><span><b>Bandeja + trámites → Mapa.</b> El avance de cada departamento sale de las escrituras y trámites en curso (hoy la carga es manual). <button class="link" type="button" data-ir="mapa">Ver</button></span></li>
+        <li><span><b>Relevamiento de problemas → todo.</b> Mientras se prueba, cada problema queda anotado con la pantalla, el trámite y el estado. <button class="link" type="button" data-ir="relev">Ver</button></span></li>
+      </ol></div>
+    <div class="card" style="margin-top:14px"><div class="eyebrow" style="margin-bottom:8px">Sistemas de afuera</div>
+      <div class="ext"><span>CiDi (identidad y nivel)</span><span>SISCAE · DDJJ patrimoniales</span><span>Capital Humano (cargos)</span><span>Expediente digital</span><span>Registro General de la Provincia</span><span>Turnero Digital Provincial</span></div></div>`,
+  dev:devPanel({
+    reglas:["Dos caras: <b>interno</b> (Escribanía) y <b>Requirentes</b> (afuera). Mismos colores y tipografía; lo interno nunca se confunde con lo externo.","Dos productos son reestructuraciones (verificador y armador), no productos nuevos: así se presentan.","Una sola máquina de estados por trámite, con dos vistas: lo que ve la Escribanía y lo que ve el requirente."],
+    depende:["<b>Canal SISCAE → SIIGENO</b> para el turnero (bloqueante).","Registro de certificaciones (producto 2) para el verificador (producto 4).","Protocolo digitalizado + relevamiento para el buscador y la cotización."],
+    abierto:["Expropiador: fuera por ahora.","La bandeja interna queda solo para externos.","Revisión completa de los flujos de SIIGENO: pendiente."]
+  })};
+};
+
+/* ---------- 1 · Turnero (Requirentes) ---------- */
+VISTAS["turnero-req"] = () => {
+  const desde=habiles(S.ddjjFecha,2);
+  const dias=[]; const d=new Date(hoy); for(let i=0;i<28;i++){ d.setDate(d.getDate()+1); if(d.getDay()===2||d.getDay()===5||S.extras.some(x=>x===fF(d))) dias.push(new Date(d)); }
+  const horas=["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30"];
+  const ocupado=(dd,h)=>((dd.getDate()*7+horas.indexOf(h)*3)%5)===0;
+  const main=`${cab("turnero","Turno para firmar el acta de tu declaración jurada","Desde la página de declaraciones juradas se llega directo acá. El turno se habilita cuando la declaración está completa y se ofrecen días a partir de esa fecha más el plazo de armado del acta.","SIIGENO Requirentes · obligado de la Ley 8198")}
+    <div class="card row" style="justify-content:space-between"><div><b>Juan Carlos PEREYRA</b> · Ministro de Infraestructura · CUIL 20-22345678-1 <span class="chip c-info">CiDi nivel 2</span></div>
+      <label class="row" style="gap:7px;font-size:13px;cursor:pointer"><input type="checkbox" id="ddjjOk" ${S.ddjjCompleta?"checked":""}> DDJJ completa en SISCAE (simular)</label></div>
+    ${!S.ddjjCompleta?`<div class="box b-warn" style="margin-top:12px"><b>Todavía no podés sacar turno.</b> Tu declaración jurada no está completa en SISCAE. Cuando la termines, te avisamos y se habilita.</div>`
+    : S.turno?`<div class="card stack" style="margin-top:12px;border-color:var(--ok)"><div class="row"><span class="chip c-ok">Turno confirmado</span><b>${esc(S.turno.fecha)} · ${esc(S.turno.hora)} h</b></div>
+        <p style="margin:0">Escribanía General de Gobierno · Rosario de Santa Fe 650, 1.er piso. Firmás un <b>acta</b> ante la escribana; es presencial. Te enviamos recordatorios.</p>
+        <div class="row"><button class="btn" type="button" id="cancelTurno">Cambiar el turno</button><button class="btn" type="button" id="verInt" data-ir="turnero-int">Ver cómo lo ve la Escribanía →</button></div></div>`
+    : `<div class="box b-ok" style="margin-top:12px">Tu declaración se completó el <b>${fF(S.ddjjFecha)}</b>. El acta tarda unos 2 días hábiles en estar lista: hay turnos desde el <b>${fLarga(desde)}</b>.</div>
+      <div class="legend" style="margin:10px 0">Martes y viernes, de 8 a 13, cada 30 minutos. Se atiende de a uno.</div>
+      <div class="semanas">${dias.map(dd=>{ const antes=dd<desde; return `<div class="dia ${antes?"off":""}"><div class="dt">${fLarga(dd)}${S.extras.includes(fF(dd))?` <span class="chip c-warn">extra</span>`:""}</div><div class="slots">${horas.map(h=>`<button type="button" data-slot="${fF(dd)}|${h}" ${antes||ocupado(dd,h)?"disabled":""} aria-pressed="${S.slotSel===fF(dd)+"|"+h}">${h}</button>`).join("")}</div></div>`; }).join("")}</div>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button class="btn gold" type="button" id="confTurno" ${S.slotSel?"":"disabled"}>${S.slotSel?`Confirmar ${S.slotSel.replace("|"," · ")} h`:"Elegí día y hora"}</button></div>`}`;
+  return {main, dev:devPanel({
+    estados:flujo(["recibida","armada","revisada","impresa","citada","firmada"],"citada")+`<p class="legend">Ramal: <b>anulada</b> (no vino; la anula la escribana).</p>`,
+    reglas:["Se firma un <b>ACTA</b>, no una escritura. Va al <b>Protocolo B</b> (art. 6 Ley 8198), con numeración propia. Nunca «escritura» ni «Sección A».","Turno solo con la DDJJ completa: días desde la fecha de completado + ~2 días hábiles. Nunca hay turno sin acta posible.","Martes y viernes, 8:00 a 13:00, franjas de 30 min, de a uno: 10 turnos por día.","Siempre presencial: firman el obligado y la escribana (no hay certificación remota en Córdoba).","Recordatorios automáticos; la constancia se descarga sola al marcar la firma."],
+    depende:["SISCAE avisa cuando la DDJJ está completa.","Página de DDJJ → enlace directo al turnero.","Agenda interna (misma pantalla, otra cara)."],
+    bloq:["Canal <b>SISCAE → SIIGENO</b> con los datos estructurados del formulario A (no un PDF: si llega PDF hay que retipear y el acta no se arma sola)."],
+    abierto:["¿El turnero es solo de DDJJ o la agenda de todo lo presencial?","¿Dónde se arma el acta automáticamente?"]
+  }), after(){
+    $("#ddjjOk").onchange=e=>{ S.ddjjCompleta=e.target.checked; S.slotSel=null; render(); };
+    document.querySelectorAll("[data-slot]").forEach(b=>b.onclick=()=>{ S.slotSel=b.dataset.slot; render(); });
+    const c=$("#confTurno"); if(c) c.onclick=()=>{ const [f,h]=S.slotSel.split("|"); S.turno={fecha:f,hora:h}; S.slotSel=null;
+      S.actas.push({id:Date.now(), nombre:"Juan Carlos PEREYRA", cargo:"Ministro de Infraestructura", tipo:"Alta", hora:h, fecha:f, estado:"recibida", escribana:"Escribana Sustituta", nuevo:true}); toast("Turno confirmado. Ya aparece en la agenda interna."); render(); };
+    const x=$("#cancelTurno"); if(x) x.onclick=()=>{ S.turno=null; S.actas=S.actas.filter(a=>!a.nuevo); render(); };
+  }};
+};
+
+/* ---------- 1 · Turnero (interno) ---------- */
+const EST_ACTA=["recibida","armada","revisada","impresa","citada","firmada"];
+VISTAS["turnero-int"] = () => {
+  const cap=10*2*52;
+  const main=`${cab("turnero","Agenda de actas de declaraciones juradas","No hace falta una pantalla nueva: a la bandeja existente se le suman dos columnas, Turno y Estado del acta.","SIIGENO interno · Escribanía")}
+    <div class="g3"><div class="card"><div class="eyebrow">Turnos por día</div><div style="font-size:26px;font-weight:700;color:var(--accent)">10</div><div class="sub">martes y viernes, 8 a 13, cada 30 min</div></div>
+      <div class="card"><div class="eyebrow">Capacidad anual</div><div style="font-size:26px;font-weight:700;color:var(--accent)">≈ ${cap.toLocaleString("es-AR")}</div><div class="sub">contra ~700 actas, hasta 1.100 en cambio de cargos</div></div>
+      <div class="card"><div class="eyebrow">Pico</div><div style="font-size:26px;font-weight:700;color:var(--warn)">nov · dic</div><div class="sub">art. 4 (hasta el 31/12) y art. 1 (30 días)</div></div></div>
+    <div class="spread" style="margin:16px 0 8px;align-items:center"><h2 class="t">Próximas citas</h2><button class="btn" type="button" id="extra">Abrir jornada extra</button></div>
+    <div class="tablewrap"><table><thead><tr><th>Hora</th><th>Obligado</th><th>Tipo</th><th>Escribana</th><th>Estado del acta</th><th></th></tr></thead><tbody>
+    ${S.actas.map(a=>`<tr ${a.nuevo?'style="background:var(--warn-bg)"':""}><td class="num">${a.fecha?esc(a.fecha)+" · ":""}${esc(a.hora)}</td><td><b>${esc(a.nombre)}</b><div class="sub">${esc(a.cargo)}</div></td><td>${esc(a.tipo)}</td><td class="sub">${esc(a.escribana)}</td>
+      <td>${a.estado==="anulada"?`<span class="chip c-bad">anulada</span>`:a.estado==="firmada"?`<span class="chip c-ok">firmada</span>`:`<span class="chip c-info">${esc(a.estado)}</span>`}</td>
+      <td class="row" style="flex-wrap:nowrap;justify-content:flex-end">${a.estado!=="firmada"&&a.estado!=="anulada"?`<button class="btn sm" type="button" data-av="${a.id}">${a.estado==="citada"?"Marcar firmada":"Avanzar → "+EST_ACTA[EST_ACTA.indexOf(a.estado)+1]}</button><button class="btn sm" type="button" data-an="${a.id}">No vino</button>`:a.estado==="firmada"?`<span class="sub">constancia descargada</span>`:""}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="legend">El turno que confirmes en la cara Requirentes aparece acá resaltado. Imprimen Patricia y Ariel (rotan) el día anterior a la cita.</p>`;
+  return {main, dev:devPanel({
+    estados:flujo(EST_ACTA,"citada")+`<p class="legend">Ramal: <b>anulada</b>. «No cumplimentó el trámite» para quien no se presenta.</p>`,
+    reglas:["Atiende generalmente la Escribana Sustituta; la Escribana General en casos importantes. Dos escribanas en agenda.","Un equipo revisa el acta antes de imprimir.","Quien no viene: el acta se anula, lo hace la escribana.","Hay que poder bloquear o abrir días (noviembre y diciembre) y cargar turnos a mano."],
+    depende:["Turno sacado por el obligado (cara Requirentes).","SISCAE → datos del formulario A para armar el acta."],
+    abierto:["Fórmula real del recibo de declaración jurada.","¿Se anula sola o la anula la escribana a mano?"]
+  }), after(){
+    document.querySelectorAll("[data-av]").forEach(b=>b.onclick=()=>{ const a=S.actas.find(x=>String(x.id)===b.dataset.av); a.estado=EST_ACTA[EST_ACTA.indexOf(a.estado)+1]; if(a.estado==="firmada") toast("Acta firmada. Constancia descargada y visible para el obligado."); render(); });
+    document.querySelectorAll("[data-an]").forEach(b=>b.onclick=()=>{ const a=S.actas.find(x=>String(x.id)===b.dataset.an); a.estado="anulada"; toast("Acta anulada: no cumplimentó el trámite."); render(); });
+    $("#extra").onclick=()=>{ const d=habiles(hoy,3); S.extras.push(fF(d)); toast(`Jornada extra abierta el ${fLarga(d)}. Ya se ofrece en el turnero.`); };
+  }};
+};
+
+/* ---------- 2 · Administración pública (Requirentes) ---------- */
+VISTAS["admin-req"] = () => {
+  const B=S.borradorAP||(S.borradorAP={tipo:"Certificación de copia",docs:[{n:"",o:"digital"}],destino:"",firmante:"Arq. Lucía MOYANO · Directora"});
+  const main=`${cab("admin","Administración pública","No es un apartado aparte: es un perfil dentro de SIIGENO Requirentes. Ve los trámites de siempre más tres propios, y nunca paga.","SIIGENO Requirentes · perfil VIP")}
+    <div class="card row" style="justify-content:space-between"><div><b>Ministerio de Vivienda</b> · Arq. Lucía MOYANO, Directora General <span class="chip c-info">CiDi</span> <span class="chip c-ok">Perfil VIP</span></div>
+      <div class="sub">Cargo vigente hasta el 10/12/2027 · Resolución 155/2023</div></div>
+    <div class="g3" style="margin-top:12px">${["Certificación de firma","Certificación de copia","Certificación de copia con firma digital"].map(t=>`<button class="prod" type="button" data-tipo="${t}" style="${B.tipo===t?"border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset":""}"><span class="n">+</span><span><b>${t}</b><span class="d">${t==="Certificación de firma"?"Siempre presencial":t.includes("digital")?"Se resuelve a distancia si nació digital":"Hay que ver el original antes de entregar"}</span></span></button>`).join("")}</div>
+    <div class="card stack" style="margin-top:12px"><h2 class="t">Nuevo pedido · ${esc(B.tipo)}</h2><p class="hint" style="margin:0">Varios documentos en un mismo pedido, como adjuntar archivos a un mail.</p>
+      ${B.docs.map((d,i)=>`<div class="g3" style="grid-template-columns:2fr 1fr auto;align-items:end"><div><label class="f" for="dn${i}">Documento ${i+1}</label><input type="text" id="dn${i}" data-doc="${i}" value="${esc(d.n)}" placeholder="Ej.: Resolución 412/2026"></div>
+        <div><label class="f" for="do${i}">Nació</label><select id="do${i}" data-orig="${i}"><option value="digital" ${d.o==="digital"?"selected":""}>Digital</option><option value="papel" ${d.o==="papel"?"selected":""}>En papel</option></select></div>
+        <button class="btn sm" type="button" data-quitar="${i}" ${B.docs.length<2?"disabled":""}>Quitar</button></div>`).join("")}
+      <div><button class="btn sm" type="button" id="masDoc">+ Agregar documento</button></div>
+      <div class="g2"><div><label class="f" for="firm">Quién firma</label><input type="text" id="firm" value="${esc(B.firmante)}"></div><div><label class="f" for="dest">Para quién se expide (destino)</label><input type="text" id="dest" value="${esc(B.destino)}" placeholder="Ej.: Registro General de la Provincia"></div></div>
+      <div class="box b-info">Exento de pago: no hay pantalla de costos. ${B.docs.some(d=>d.o==="papel")||B.tipo==="Certificación de firma"?"Hay documentos en papel o firma presencial: se asigna turno.":"Todo nació digital: se resuelve a distancia."}</div>
+      <div class="row" style="justify-content:flex-end"><button class="btn gold" type="button" id="enviarAP">Enviar a la Escribanía</button></div></div>
+    <h2 class="t" style="margin:18px 0 8px">Mis pedidos</h2>
+    <div class="tablewrap"><table><thead><tr><th>N.º</th><th>Trámite</th><th>Documentos</th><th>Estado</th></tr></thead><tbody>
+      ${S.pedidos.filter(p=>p.org==="Ministerio de Vivienda").map(p=>`<tr><td class="mono">${p.id}</td><td>${esc(p.tipo)}<div class="sub">${esc(p.destino)}</div></td><td class="sub">${p.docs.map(d=>esc(d.n)+" ("+d.o+")").join(" · ")}</td><td><span class="chip ${p.estado==="listo"||p.estado==="entregado"?"c-ok":p.estado==="observado"?"c-warn":"c-info"}">${esc(p.estado)}</span>${p.codigo?`<div class="sub mono">${p.codigo}</div>`:""}</td></tr>`).join("")}
+    </tbody></table></div>`;
+  return {main, dev:devPanel({
+    estados:flujo(["borrador","enviado","en revisión","observado","listo","entregado"],"enviado")+`<p class="legend">+ <b>turno asignado</b> cuando hay papel. <b>Observado</b> es el que más trabajo ahorra: hoy el ida y vuelta es por mail o teléfono.</p>`,
+    reglas:["Verificación por CiDi; vigencia del cargo validada con la resolución de designación, con plazo por funcionario.","Siempre exentos: no hay pantalla de costos.","Multi-documento; por cada uno, si nació digital o está en papel.","Certificación de copia: ver el original antes de entregar. Certificación de firma: siempre presencial.","Se registra para quién se expide (destino), texto libre.","Requisitos: el documento, quién firma, la resolución de designación o carácter, y respaldatoria."],
+    depende:["Bandeja de entrada interna (externos = administración pública).","Libro de intervenciones y registro de certificaciones (cara interna).","Verificador público (producto 4)."],
+    abierto:["¿Cómo se asigna el perfil VIP?","¿Cómo entran los descentralizados sin CiDi institucional (agencias, Bancor, Lotería, Tribunal de Cuentas)?","¿Qué es exactamente «certificación de copia con firma digital»?"]
+  }), after(){
+    document.querySelectorAll("[data-tipo]").forEach(b=>b.onclick=()=>{ B.tipo=b.dataset.tipo; render(); });
+    document.querySelectorAll("[data-doc]").forEach(i=>i.oninput=()=>{ B.docs[+i.dataset.doc].n=i.value; });
+    document.querySelectorAll("[data-orig]").forEach(i=>i.onchange=()=>{ B.docs[+i.dataset.orig].o=i.value; render(); });
+    document.querySelectorAll("[data-quitar]").forEach(b=>b.onclick=()=>{ B.docs.splice(+b.dataset.quitar,1); render(); });
+    $("#masDoc").onclick=()=>{ B.docs.push({n:"",o:"digital"}); render(); };
+    $("#firm").oninput=e=>B.firmante=e.target.value; $("#dest").oninput=e=>B.destino=e.target.value;
+    $("#enviarAP").onclick=()=>{ const docs=B.docs.filter(d=>d.n.trim()); if(!docs.length){ toast("Cargá al menos un documento."); return; }
+      const id="AP-0"+(113+S.pedidos.length-2); S.pedidos.unshift({id,org:"Ministerio de Vivienda",firmante:B.firmante,tipo:B.tipo,docs,destino:B.destino||"—",estado:"enviado"});
+      S.borradorAP=null; toast(`Pedido ${id} enviado. Ya está en la bandeja interna.`); render(); };
+  }};
+};
+
+/* ---------- 2 · Certificaciones y libros (interno) ---------- */
+VISTAS["admin-int"] = () => {
+  const main=`${cab("admin","Certificaciones y libros","Hoy la certificación de copia se emite y no queda asentada en ningún lado. El producto nace con dos registros.","SIIGENO interno · Escribanía")}
+    <h2 class="t" style="margin-bottom:8px">Pedidos de administración pública</h2>
+    <div class="tablewrap"><table><thead><tr><th>N.º</th><th>Organismo</th><th>Trámite</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${S.pedidos.map(p=>`<tr><td class="mono">${p.id}</td><td><b>${esc(p.org)}</b><div class="sub">${esc(p.firmante)}</div></td><td>${esc(p.tipo)}<div class="sub">${p.docs.map(d=>esc(d.n)+" ("+d.o+")").join(" · ")} → ${esc(p.destino)}</div></td>
+        <td><span class="chip ${["listo","entregado"].includes(p.estado)?"c-ok":p.estado==="observado"?"c-warn":"c-info"}">${esc(p.estado)}</span></td>
+        <td class="row" style="flex-wrap:nowrap;justify-content:flex-end">${["listo","entregado"].includes(p.estado)?`<span class="sub mono">${p.codigo||""}</span>`:`<button class="btn sm" type="button" data-obs="${p.id}" ${p.estado==="observado"?"disabled":""}>Observar</button><button class="btn sm pri" type="button" data-cert="${p.id}">Certificar y asentar</button>`}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="g2" style="margin-top:16px">
+      <div><h2 class="t" style="margin-bottom:8px">Libro de intervenciones digital</h2><p class="hint" style="margin:0 0 8px">Espeja el libro físico de las escribanas: numeración correlativa por año.</p>
+        <div class="tablewrap"><table><thead><tr><th>N.º</th><th>Fecha</th><th>Intervención</th></tr></thead><tbody>${S.libro.map(l=>`<tr><td class="mono">${l.n}</td><td class="num">${l.fecha}</td><td>${esc(l.tipo)}<div class="sub">${esc(l.org)} · ${esc(l.firmante)} · ${esc(l.escribana)}</div></td></tr>`).join("")}</tbody></table></div></div>
+      <div><h2 class="t" style="margin-bottom:8px">Registro de certificaciones de copia</h2><p class="hint" style="margin:0 0 8px">Hoy no existe. Número, fecha, escribana, organismo, documento, destino y el archivo firmado.</p>
+        <div class="tablewrap"><table><thead><tr><th>N.º</th><th>Código</th><th>Documento</th></tr></thead><tbody>${S.registro.map(r=>`<tr><td class="mono">${r.n}</td><td class="mono"><button class="link" type="button" data-verif="${r.codigo}">${r.codigo}</button></td><td>${esc(r.doc)}<div class="sub">${esc(r.org)} → ${esc(r.destino)}${r.estado==="anulado"?" · <b>anulado</b>":""}</div></td></tr>`).join("")}</tbody></table></div>
+        <p class="legend">Tocá un código para verificarlo como lo haría cualquiera desde afuera.</p></div></div>`;
+  return {main, dev:devPanel({
+    estados:flujo(["enviado","en revisión","observado","listo","entregado"],"en revisión"),
+    reglas:["Organismos con más volumen: Vivienda, Vialidad, Seguridad, ACIF.","Cada certificación genera un asiento con número, código de verificación y el archivo firmado guardado.","La certificación de firma va al libro de intervenciones; la de copia, al registro nuevo."],
+    depende:["Verificador (producto 4) lee este registro.","Firma digital de la escribana y sello que solo aplica el sistema."],
+    abierto:["¿La certificación de copia lleva numeración? ¿Qué datos van al asiento?","¿Dónde se guarda el archivo certificado: SIIGENO, expediente digital o los dos?","¿Cómo firma digitalmente la escribana?"]
+  }), after(){
+    document.querySelectorAll("[data-obs]").forEach(b=>b.onclick=()=>{ S.pedidos.find(p=>p.id===b.dataset.obs).estado="observado"; toast("Observado: vuelve al organismo con lo que falta."); render(); });
+    document.querySelectorAll("[data-cert]").forEach(b=>b.onclick=()=>{ const p=S.pedidos.find(x=>x.id===b.dataset.cert); const f=fF(hoy);
+      if(p.tipo==="Certificación de firma"){ const n=`2026-0${388+S.libro.length-1}`; S.libro.unshift({n,fecha:f,tipo:p.tipo,org:p.org,firmante:p.firmante,escribana:"Escribana Sustituta"}); p.codigo="Libro "+n; }
+      else { const n=`2026-C-00${59+S.registro.length-2}`, codigo=codigoNuevo(); S.registro.unshift({codigo,n,fecha:f,escribana:"Escribana Sustituta",org:p.org,doc:p.docs.map(d=>d.n).join(" + ")+" — copia",destino:p.destino,soporte:p.tipo.includes("digital")?"Digital, firma digital":"Papel",estado:"valido",archivo:`cert-${n.slice(-6).toLowerCase()}.pdf`}); p.codigo=codigo; }
+      p.estado="listo"; toast(`Asentado. ${p.codigo.startsWith("EGG")?"Código "+p.codigo+": ya se puede verificar.":p.codigo}`); render(); });
+    document.querySelectorAll("[data-verif]").forEach(b=>b.onclick=()=>{ S.verCodigo=b.dataset.verif; S.verRes=verificar(S.verCodigo); ir("verif"); });
+  }};
+};
+
+/* ---------- 3 · Mapa de cobertura ---------- */
+VISTAS.mapa = () => {
+  const sel=S.mapaSel, cuenta=NIVELES.map((_,i)=>DEPTOS.filter(d=>S.mapaNivel[d.n]===i).length);
+  const main=`${cab("mapa","Mapa de cobertura por departamentos","Para cargar y ubicar las escrituras y trámites hechos o en curso. Mide avance, no cumplimiento: un departamento sin trámites no incumple nada.","SIIGENO interno")}
+    <div class="mapa"><div class="card" style="padding:10px"><svg viewBox="0 0 560 905" role="img" aria-label="Departamentos de la Provincia de Córdoba">
+      ${DEPTOS.map(d=>`<path d="${d.d}" fill="${NIVELES[S.mapaNivel[d.n]][1]}" data-dep="${esc(d.n)}" class="${sel===d.n?"sel":""}"><title>${esc(d.n)} — ${NIVELES[S.mapaNivel[d.n]][0]}</title></path>`).join("")}
+      ${DEPTOS.map(d=>`<text x="${d.x}" y="${d.y}" font-size="9" text-anchor="middle" fill="${S.mapaNivel[d.n]>=4?"#fff":"#1E2634"}" style="pointer-events:none;font-family:Montserrat,sans-serif;font-weight:600">${esc(d.n.length>14?d.n.split(" ").map(w=>w[0]).join(""):d.n)}</text>`).join("")}
+    </svg></div>
+    <div class="stack">
+      <div class="card"><div class="eyebrow" style="margin-bottom:8px">Escala de avance · tocá un nivel y después un departamento para cargarlo</div>
+        <div class="esc">${NIVELES.map((n,i)=>`<button type="button" data-niv="${i}" aria-pressed="${S.mapaPincel===i}"><i style="background:${n[1]}"></i>${n[0]}<span class="sub" style="margin-left:auto">${cuenta[i]}</span></button>`).join("")}</div>
+        <p class="legend">Seis niveles que se distinguen por claridad además de por tono: se lee impreso en blanco y negro. Sin rojo: no marca incumplimiento.</p></div>
+      ${sel?`<div class="card"><div class="eyebrow">Departamento</div><h2 class="t">${esc(sel)}</h2><div class="sub">Cabecera: ${esc(DEPTOS.find(d=>d.n===sel).c)}</div>
+        <div class="kv"><div><div class="l">Nivel</div><div class="v">${NIVELES[S.mapaNivel[sel]][0]}</div></div><div><div class="l">Escrituración social</div><div class="v">${MAPA_DET[sel].social}</div></div><div><div class="l">Otros trámites</div><div class="v">${MAPA_DET[sel].otros}</div></div></div></div>`
+      :`<div class="card sub">Tocá un departamento para ver qué hay cargado.</div>`}</div></div>`;
+  return {main, dev:devPanel({
+    reglas:["Geometría real de los 26 departamentos (fuente oficial), simplificada a trazos SVG (~16 KB).","Escala: sin intervención · relevado · en confección · en firma · en el Registro · entregadas.","Mide avance, no cumplimiento."],
+    depende:["Hoy la carga es manual. A futuro, sale de la bandeja y de los trámites con localidad."],
+    abierto:["¿Quién carga el mapa y con qué granularidad (departamento o localidad)?","¿Abarca todos los trámites o solo escrituración social?"]
+  }), after(){
+    document.querySelectorAll("[data-dep]").forEach(p=>p.onclick=()=>{ const n=p.dataset.dep; if(S.mapaPincel!=null){ S.mapaNivel[n]=S.mapaPincel; toast(`${n}: ${NIVELES[S.mapaPincel][0]}`); } S.mapaSel=n; render(); });
+    document.querySelectorAll("[data-niv]").forEach(b=>b.onclick=()=>{ const i=+b.dataset.niv; S.mapaPincel=S.mapaPincel===i?null:i; render(); });
+  }};
+};
+
+/* ---------- 4 · Verificador ---------- */
+function verificar(cod){
+  const c=cod.trim().toUpperCase(); if(!c) return null;
+  const r=S.registro.find(x=>x.codigo===c);
+  if(r) return {tipo:r.estado==="anulado"?"anu":"ok", r};
+  const conO=c.replace(/0/g,"O"), con0=c.replace(/O/g,"0");
+  const casi=S.registro.find(x=>x.codigo===conO||x.codigo===con0);
+  return {tipo:"no", casi};
+}
+VISTAS.verif = () => {
+  const R=S.verRes;
+  const main=`${cab("verif","Verificador de documentos","Reestructuración del verificador que ya existe: se ingresa el código o se escanea el QR al pie y responde con lo que la Escribanía registró al emitir.","Público · sin ingresar")}
+    <div class="verif stack"><div class="card stack"><label class="f" for="cod">Código de verificación</label>
+      <div class="row" style="flex-wrap:nowrap"><input type="text" id="cod" class="mono" value="${esc(S.verCodigo)}" placeholder="EGG-XXXX-XXXX" autocomplete="off"><button class="btn pri" type="button" id="verBtn">Verificar</button></div>
+      <div class="row sub">Probá: ${S.registro.slice(0,3).map(r=>`<button class="link" type="button" data-prueba="${r.codigo}">${r.codigo}</button>`).join(" · ")} · <button class="link" type="button" data-prueba="EGG-3H8P-OW2T">con una O en vez de cero</button></div></div>
+    ${!R?"":R.tipo==="ok"?`<div class="resultado ok"><span class="chip c-ok">Válido</span><h2 class="t" style="margin-top:6px">${esc(R.r.doc)}</h2>${kvReg(R.r)}</div>`
+     :R.tipo==="anu"?`<div class="resultado anu"><span class="chip c-warn">Anulado</span><h2 class="t" style="margin-top:6px">${esc(R.r.doc)}</h2><p style="margin:6px 0 0"><b>Motivo:</b> ${esc(R.r.motivo)}. Lo reemplazó la certificación <b>${esc(R.r.reemplazo)}</b>.</p>${kvReg(R.r)}</div>`
+     :`<div class="resultado no"><span class="chip c-bad">Inexistente</span><p style="margin:6px 0 0">No hay ningún documento emitido con ese código.${R.casi?` ¿Quisiste decir <button class="link" type="button" data-prueba="${R.casi.codigo}">${R.casi.codigo}</button>? Es común confundir el cero con la letra O.`:" Revisá que no hayas confundido el cero con la letra O."}</p></div>`}</div>`;
+  return {main, dev:devPanel({
+    estados:`<div class="flujo"><span class="on">válido</span><span>anulado</span><span>inexistente</span></div>`,
+    reglas:["Devuelve: tipo, número, fecha, escribana, organismo, documento, destino, soporte y asiento.","Anulado: con el motivo y la certificación que lo reemplazó.","Inexistente: con la advertencia del error típico (cero y O)."],
+    depende:["Que los documentos salgan con código y QR.","El registro de certificaciones del producto 2: lo que se asienta allá se verifica acá."],
+    abierto:["Formato del código y del QR.","Qué se muestra de un documento confidencial (art. 3 Ley 8198)."]
+  }), after(){
+    const go=()=>{ S.verCodigo=$("#cod").value; S.verRes=verificar(S.verCodigo); render(); };
+    $("#verBtn").onclick=go; $("#cod").onkeydown=e=>{ if(e.key==="Enter") go(); };
+    document.querySelectorAll("[data-prueba]").forEach(b=>b.onclick=()=>{ S.verCodigo=b.dataset.prueba; S.verRes=verificar(S.verCodigo); render(); });
+  }};
+};
+const kvReg=r=>`<div class="kv"><div><div class="l">Tipo</div><div class="v">Certificación de copia</div></div><div><div class="l">Número</div><div class="v mono">${esc(r.n)}</div></div><div><div class="l">Fecha</div><div class="v">${esc(r.fecha)}</div></div>
+  <div><div class="l">Escribana</div><div class="v">${esc(r.escribana)}</div></div><div><div class="l">Organismo</div><div class="v">${esc(r.org)}</div></div><div><div class="l">Destino</div><div class="v">${esc(r.destino)}</div></div>
+  <div><div class="l">Soporte</div><div class="v">${esc(r.soporte)}</div></div><div><div class="l">Asiento</div><div class="v">Registro de certificaciones de copia</div></div></div>`;
+
+/* ---------- 5 · Armador ---------- */
+VISTAS.armador = () => ({main:`${cab("armador","Armador de solicitudes","Qué permite hacer que hoy no se puede, en una frase: <b>empezar aunque no sepas los datos de tu escritura, y saber cuánto sale antes de enviar.</b>","SIIGENO Requirentes")}
+    <div class="g2"><div class="card stack"><div class="eyebrow">Cuatro pasos</div>
+      ${[["Escritura","Qué necesitás y los datos de la escritura. Nuevo: «No sé los datos» → búsqueda asistida por la Escribanía."],["Carácter","Lo que hay que adjuntar aparece adentro del carácter elegido (siete caracteres según la guía)."],["Costo","Si fuiste parte, cotiza con las fojas reales y pagás al enviar (carril directo). Si no, se tasa al dar el alta."],["Envío","Nota generada por el sistema, declaración jurada y un solo botón para enviar."]].map((p,i)=>`<div class="row" style="align-items:flex-start;flex-wrap:nowrap"><span class="chip c-info" style="min-width:26px;justify-content:center">${i+1}</span><div><b>${p[0]}</b><div class="sub">${p[1]}</div></div></div>`).join("")}
+      <div class="row"><a class="btn gold" href="${SIMULADOR}" target="_blank" rel="noopener">Abrir el simulador en vivo</a><span class="sub">ciudadana: ana · escribanía: suarez · clave 1234</span></div></div>
+    <div class="card stack"><div class="eyebrow">Y del otro lado: la bandeja de entrada</div>
+      <p style="margin:0">Cada paso del armador produce una orden en la <b>hoja de ruta</b>. El control del carácter arma la observación sola y devuelve al requirente apuntando al paso. Estados con una sola máquina y dos vistas.</p>
+      ${flujo(["borrador","en revisión","falta algo","a pagar","en preparación","listo","entregado"],"en revisión")}
+      <p class="legend">Ramal: no corresponde (con resolución fundada). Sub-estados internos (sin asignar, a cargo de) no suben al portal.</p></div></div>`,
+  dev:devPanel({
+    reglas:["El carácter decide todo: qué se adjunta, si hay control humano, cuándo se cotiza.","Parte → carril directo: entra ya pago y en preparación. Los demás → sin asignar y control.","Acreditar antes de cotizar: la extensión de la escritura es información reservada del protocolo.","La nota de solicitud la genera el sistema; se imprime, se firma ante escribano y se sube."],
+    depende:["Protocolo digitalizado + relevamiento (acto, partes, objeto, fojas) para el carril directo y la cotización.","Bandeja de entrada interna.","Superbuscador (producto 6) para la búsqueda asistida."],
+    abierto:["Páginas del PDF vs. hojas autenticadas (frente y vuelto).","Si el relevamiento tiene las partes: define si el carril directo es posible.","Tasa de copia simple en papel; cuál de las fuentes de valores rige.","Qué pide la copia certificada digital (en revisión con el equipo)."]
+  })});
+
+/* ---------- 6 · Superbuscador y costos ---------- */
+VISTAS.buscador = () => {
+  const q=S.busq.trim().toLowerCase().replace(/[.\s-]/g,"");
+  const res=!q?ESCRITURAS:ESCRITURAS.filter(e=>[e.cuenta,e.nom,e.matricula,String(e.n),e.partes,e.acto,e.loc,String(e.anio)].some(v=>String(v).toLowerCase().replace(/[.\s-]/g,"").includes(q)));
+  const e=S.escSel!=null?ESCRITURAS[S.escSel]:null, c=S.costo;
+  let lineas=[], total=0;
+  if(e){ lineas.push(["Derecho fijo","",TABLA.fijo]); if(c.foja) lineas.push(["Por foja",`${e.fojas} fojas × ${pesos(TABLA.foja)}`,e.fojas*TABLA.foja]);
+    lineas.push(["Por firma",`${c.firmas} × ${pesos(TABLA.firma)}`,c.firmas*TABLA.firma]); lineas.push(["Por año de búsqueda",`${c.anios} × ${pesos(TABLA.anio)}`,c.anios*TABLA.anio]);
+    let base=lineas.reduce((a,l)=>a+l[2],0); if(c.ej>1){ lineas.push(["Ejemplares adicionales",`${c.ej-1} al 50 %`,base*0.5*(c.ej-1)]); }
+    let sub=lineas.reduce((a,l)=>a+l[2],0); if(c.urgencia){ lineas.push(["Recargo por urgencia","50 %",sub*0.5]); }
+    total=lineas.reduce((a,l)=>a+l[2],0); if(c.exencion){ lineas.push(["Exención: "+c.exencion,"sin la exención habría salido "+pesos(total),-total]); total=0; } }
+  const main=`${cab("buscador","Superbuscador y simulador de costos","Herramienta local y hermética: busca en el protocolo digitalizado por número de cuenta, nomenclatura catastral u otros datos, y calcula el costo aproximado.","SIIGENO interno")}
+    <div class="g2" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)"><div class="stack">
+      <div class="card"><label class="f" for="bq">Buscar escritura</label><input type="text" id="bq" value="${esc(S.busq)}" placeholder="Cuenta, nomenclatura, matrícula, número, partes…" autocomplete="off">
+        <p class="legend">Probá: 1101-2345678 · 13-04-21 · LEDESMA · 1.204.558</p></div>
+      <div class="tablewrap"><table><thead><tr><th>Escritura</th><th>Acto y partes</th><th>Cuenta / nomenclatura</th></tr></thead><tbody id="res">
+        ${res.map(x=>{ const i=ESCRITURAS.indexOf(x); return `<tr style="cursor:pointer;${S.escSel===i?"background:var(--cel-s)":""}" data-esc="${i}"><td class="num"><b>N.º ${x.n} · ${x.sec} · ${x.anio}</b><div class="sub">${x.fecha} · ${x.fojas} fojas</div></td><td>${esc(x.acto)}<div class="sub">${esc(x.partes)}</div></td><td class="mono" style="font-size:12px">${esc(x.cuenta)}<div class="sub">${esc(x.nom)}</div></td></tr>`; }).join("")||`<tr><td colspan="3" class="sub">Sin resultados.</td></tr>`}
+      </tbody></table></div></div>
+    <div class="card stack"><div class="eyebrow">Simulador de costos</div>
+      ${!e?`<p class="sub" style="margin:0">Elegí una escritura de la lista: la cantidad de fojas sale del protocolo.</p>`:`
+      <div><b>N.º ${e.n} · ${e.sec} · ${e.anio}</b> — ${esc(e.acto)}<div class="sub">Matrícula ${e.matricula} · ${esc(e.loc)}</div></div>
+      <div class="g2"><div><label class="f" for="cEj">Ejemplares</label><select id="cEj">${[1,2,3,4].map(n=>`<option ${c.ej===n?"selected":""}>${n}</option>`).join("")}</select></div>
+        <div><label class="f" for="cAn">Años de búsqueda</label><select id="cAn">${[0,1,2,3,5,10].map(n=>`<option ${c.anios===n?"selected":""}>${n}</option>`).join("")}</select></div>
+        <div><label class="f" for="cFi">Firmas</label><select id="cFi">${[0,1,2,3].map(n=>`<option ${c.firmas===n?"selected":""}>${n}</option>`).join("")}</select></div>
+        <div><label class="f" for="cEx">Exención</label><select id="cEx"><option value="">Ninguna</option>${["Organismo público","Judicial","Beneficiario Ley 9811"].map(x=>`<option ${c.exencion===x?"selected":""}>${x}</option>`).join("")}</select></div></div>
+      <label class="row" style="gap:7px;cursor:pointer"><input type="checkbox" id="cUr" ${c.urgencia?"checked":""}> Urgente</label>
+      <div>${lineas.map(l=>`<div class="costline"><span>${esc(l[0])}${l[1]?`<div class="sub">${esc(l[1])}</div>`:""}</span><span class="v">${l[2]<0?"− "+pesos(-l[2]):pesos(l[2])}</span></div>`).join("")}
+        <div class="total"><span class="eyebrow">Total aproximado</span><span class="v">${pesos(total)}</span></div></div>
+      <div class="box b-warn">Valores <b>de ejemplo</b>. Faltan los vigentes de la Ley Impositiva 11.090 y el valor actual de la Unidad Tributaria.</div>`}</div></div>`;
+  return {main, dev:devPanel({
+    reglas:["Derecho fijo, por foja, por firma, por año de búsqueda.","Ejemplares adicionales al 50 %; recargo por urgencia.","Exenciones con fundamento (organismo público, judicial, Ley 9811) van a cero mostrando cuánto habría salido."],
+    depende:["Protocolo digitalizado (miles de escrituras) y el relevamiento de datos.","El armador (producto 5) usa la misma cotización antes de enviar."],
+    abierto:["¿Es interno o del requirente? ¿Sobre qué base busca?","¿El simulador vive en el armador, en el superbuscador o en los dos?","Valores vigentes de la Ley 11.090 y de la UT."]
+  }), after(){
+    const bq=$("#bq"); bq.oninput=()=>{ S.busq=bq.value; const pos=bq.selectionStart; render(); const n=$("#bq"); n.focus(); try{ n.setSelectionRange(pos,pos); }catch(e){} };
+    document.querySelectorAll("[data-esc]").forEach(r=>r.onclick=()=>{ S.escSel=+r.dataset.esc; render(); });
+    const on=(id,k,f)=>{ const el=$(id); if(el) el.onchange=()=>{ c[k]=f(el); render(); }; };
+    on("#cEj","ej",el=>+el.value); on("#cAn","anios",el=>+el.value); on("#cFi","firmas",el=>+el.value); on("#cEx","exencion",el=>el.value); on("#cUr","urgencia",el=>el.checked);
+  }};
+};
+
+/* ---------- Pantallas que ya existen (contexto) ---------- */
+VISTAS["req-inicio"] = () => ({main:`${cab(null,"Inicio de SIIGENO Requirentes","Lo que hoy ve quien entra con CiDi. Los productos nuevos se suman como cuadros más del inicio, con la misma lógica de navegación.","SIIGENO Requirentes · ya existe")}
+  <div class="g3">${[["Armador de solicitudes","armador","Copias, segundo testimonio, consulta de antecedentes."],["Mis trámites","req-mis","Estados con lo que tenés que hacer."],["Turno para firmar DDJJ","turnero-req","Solo obligados de la Ley 8198."],["Administración pública","admin-req","Solo perfil VIP."],["Verificar un documento","verif","Con el código o el QR."]].map(x=>`<button class="prod" type="button" data-ir="${x[1]}"><span><b>${x[0]}</b><span class="d">${x[2]}</span></span></button>`).join("")}</div>`,
+  dev:devPanel({reglas:["El perfil (ciudadano, profesional, obligado DDJJ, administración pública) decide qué cuadros se ven."],abierto:["Cómo se asigna el perfil VIP."]})});
+VISTAS["req-mis"] = () => ({main:`${cab(null,"Mis trámites","Ya existe («Trámites en proceso / finalizados»). Se reordena: cada estado dice qué tenés que hacer, o que no tenés que hacer nada.","SIIGENO Requirentes · ya existe")}
+  <div class="tablewrap"><table><thead><tr><th>Trámite</th><th>Estado</th><th>Qué sigue</th></tr></thead><tbody>
+  ${[["Copia certificada digital · 14/A/2018","Borrador","c-mute","Seguí completando"],["Segundo testimonio · 402/A/2011","En revisión","c-info","Nada por ahora"],["Copia simple · 88/B/2019","Falta algo","c-warn","Ver qué falta y corregir"],["Copia certificada · 7/A/2003","A pagar","c-warn","Pagar $ 22.540"],["Copia simple digital · 54/B/2021","Listo","c-ok","Descargar"],["Segundo testimonio · 61/A/1998","No corresponde","c-bad","Ver el fundamento"]].map(r=>`<tr><td>${r[0]}</td><td><span class="chip ${r[2]}">${r[1]}</span></td><td>${r[3]}</td></tr>`).join("")}</tbody></table></div>
+  <p class="legend">Renombra los estados actuales: pendiente → borrador, enviado → en revisión, observado → falta algo, pendiente de pago → a pagar, finalizado → listo; suma en preparación y entregado.</p>`,
+  dev:devPanel({estados:flujo(["borrador","en revisión","falta algo","a pagar","en preparación","listo","entregado"],"falta algo"),reglas:["Una acción principal por estado, o decir que no hay nada que hacer."]})});
+VISTAS.bandeja = () => ({main:`${cab(null,"Bandeja de entrada","Ya existe. Queda solo para trámites externos; hoy, externos = administración pública y requirentes del portal. Se probó en el simulador con asignación, control del carácter, hoja de ruta y notas internas.","SIIGENO interno · ya existe")}
+  <div class="row"><a class="btn gold" href="${SIMULADOR}" target="_blank" rel="noopener">Abrir la bandeja en el simulador</a><span class="sub">usuario suarez (escribano) o molina (auxiliar), clave 1234</span></div>`,
+  dev:devPanel({reglas:["El escribano asigna y reasigna; el auxiliar trabaja lo que tiene asignado.","Botones que no corresponden: apagados con el motivo, nunca ocultos.","Lo interno siempre marcado «solo la EGG»."],abierto:["¿Se divide en dos o queda solo para externos?"]})});
+VISTAS.ddjj = () => ({main:`${cab(null,"Declaraciones juradas patrimoniales (SISCAE)","Sistema de carga de las DDJJ de la Ley 8198, lo desarrolla un equipo de Gobierno; la EGG es autoridad de aplicación (art. 6 bis). Todavía no está en producción: los cambios de esquema son baratos ahora.","Se conecta con el turnero")}
+  ${flujo(["Datos personales","Efectivo","Inversiones","Bienes","Deudas e ingresos","Finalizar"],"Finalizar")}
+  <div class="g2" style="margin-top:14px"><div class="card"><div class="eyebrow" style="margin-bottom:8px">Las once propuestas presentadas</div><ol style="margin:0;padding-left:18px;font-size:13px;display:flex;flex-direction:column;gap:4px">
+    ${["Tipo de declaración: alta, modificación o cese","Campo Observaciones en los nueve modales","Billeteras virtuales","Marca del automotor","Identificación catastral","Previsualización de los formularios A y B","Jerarquía visual","Mis declaraciones (cargo, tipo, «falta firma»)","Modales incompletos (ingresos, otros bienes, litigios)","Rótulos de tablas","Paso Bienes colapsable"].map(x=>`<li>${x}</li>`).join("")}</ol></div>
+  <div class="card stack"><div class="eyebrow">El vínculo con SIIGENO</div><p style="margin:0">Cuando el obligado termina, SISCAE tiene que avisar a SIIGENO y mandar el <b>formulario A en datos estructurados</b>. Con eso se habilita el turno y el acta se arma sola.</p>
+    <p style="margin:0">Deseable el camino de vuelta: que el obligado vea que ya firmó sin entrar a dos sistemas.</p><button class="btn" type="button" data-ir="turnero-req">Ver el turnero →</button></div></div>`,
+  dev:devPanel({estados:flujo(["Borrador","Publicado","Publicado firmado"],"Publicado")+`<p class="legend">También: Cancelada.</p>`,bloq:["Canal SISCAE → SIIGENO con datos del formulario A."],abierto:["¿La discriminación del formulario B la hace el sistema o una persona?","¿Qué pasa con el B anterior cuando llega una modificación?","Circuito del rol Escribano (aprobación / rectificación) sin documentar.","¿Ingresos mensuales o anuales?","Dónde van criptoactivos, fideicomisos y posesiones sin título."]})});
+VISTAS.relev = () => ({main:`${cab(null,"Relevamiento de problemas","Mientras se prueban los flujos, cada problema queda anotado donde aparece: pantalla, trámite y estado se guardan solos.","Trabajo de esta etapa")}
+  <div class="g2"><div class="card stack"><b>Anotador en el simulador</b><p style="margin:0" class="sub">Botón «Anotar problema» o pegar una captura con Ctrl+V en cualquier pantalla. Texto libre y capturas. Se exporta a un CSV que abre Excel.</p><a class="btn gold" href="${SIMULADOR}" target="_blank" rel="noopener">Abrir el simulador</a></div>
+  <div class="card stack"><b>Planilla de relevamiento</b><p style="margin:0" class="sub">Excel con la matriz de trámites a probar y el registro de problemas (gravedad, rodeo, captura). Está en el repo SIGEC.</p></div></div>`,
+  dev:devPanel({reglas:["Probar por circuito (pre, escrituraria, post), no por pantalla suelta.","Anotar también lo que falta, no solo lo que falla."],abierto:["Revisión completa de todos los flujos de SIIGENO: pendiente."]})});
+VISTAS.definir = () => ({main:`${cab(null,"Lo que falta definir","Ordenado por cuánto frena.","vista general")}
+  <div class="g3"><div class="card"><span class="chip c-bad">Bloqueante</span><ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px"><li>Canal SISCAE → SIIGENO con datos estructurados del formulario A.</li><li>Si el acta se arma sola y dónde.</li></ul></div>
+  <div class="card"><span class="chip c-warn">Importante</span><ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px"><li>Cómo firma digitalmente la escribana; el sello que solo aplica el sistema.</li><li>Numeración de la certificación de copia y datos del asiento.</li><li>Dónde se guarda el archivo certificado.</li><li>Valores vigentes de la Ley 11.090 y de la UT.</li><li>Fórmula real del recibo de DDJJ.</li></ul></div>
+  <div class="card"><span class="chip c-info">Abierto</span><ul style="margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13px"><li>Superbuscador: ¿interno o del requirente?</li><li>¿Dónde vive el simulador de costos?</li><li>Perfil VIP y descentralizados sin CiDi.</li><li>«Certificación de copia con firma digital».</li><li>Mapa: quién carga y qué abarca.</li><li>Bandeja: ¿en dos o solo externos?</li><li>Turnero: ¿solo DDJJ o todo lo presencial?</li></ul></div></div>
+  <div class="card" style="margin-top:14px"><div class="eyebrow" style="margin-bottom:6px">Cambios de alcance acordados</div><p style="margin:0">Expropiador: fuera por ahora. Bandeja de entrada interna: solo trámites externos.</p></div>`,
+  dev:devPanel({reglas:["Lo bloqueante depende del equipo de Gobierno (SISCAE), no de SIIGENO."]})});
+
+render();
+</script>
+</body>
+</html>
