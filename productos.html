@@ -64,6 +64,8 @@ main{padding:20px 26px 70px;min-width:0}
 
 .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
 h1.t{font-size:22px;font-weight:600;color:var(--navy)}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) h1.t,:root:not([data-theme="light"]) h2.t{color:var(--fg)} }
+:root[data-theme="dark"] h1.t,:root[data-theme="dark"] h2.t{color:var(--fg)}
 h2.t{font-size:16px;font-weight:700;color:var(--navy)}
 .hint{color:var(--muted);font-size:13px}
 .lead{font-size:14.5px;max-width:76ch;color:var(--muted)}
@@ -162,6 +164,56 @@ th[data-orden]{cursor:pointer;user-select:none} th .s{opacity:.45;font-size:9px;
 .pasos div b{display:block;font-size:12.5px;color:var(--fg)}
 .pasos div.on{background:var(--cel-s)} .pasos div.on b{color:var(--azul)}
 .pasos div.ok{color:var(--ok)} .pasos div.ok b{color:var(--ok)}
+.pasos div[data-paso]{cursor:pointer} .pasos div[data-paso]:hover b{text-decoration:underline} .pasos div[data-paso]:focus-visible{outline:2px solid var(--azul);outline-offset:-2px}
+/* Jerarquía por color en los asistentes por pasos (armador y habilitación de organismo).
+   Significados fijos:
+     navy (--arm-paso / --accent) = estructura: el paso en el que estás y la pregunta de ese paso
+     naranja                      = la marca de "acá": base del paso actual y barra del título
+     azul (--arm-sel)             = lo que elegiste y el botón para seguir
+     verde (--ok)                 = lo que ya está hecho
+     ámbar (--warn)               = lo que falta hacer
+   Las notas informativas pasan a gris neutro para no competir con el azul de "elegido". */
+:root{ --arm-paso-bg:#1B2F5E; --arm-paso-fg:#FFFFFF; --arm-paso-sub:#C9D7EA; --arm-sel:#1F6FB2; }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --arm-paso-bg:#24477A; --arm-paso-fg:#FFFFFF; --arm-paso-sub:#D6E2F2; --arm-sel:#7FB2EE; } }
+:root[data-theme="dark"]{ --arm-paso-bg:#24477A; --arm-paso-fg:#FFFFFF; --arm-paso-sub:#D6E2F2; --arm-sel:#7FB2EE; }
+
+/* ---- 1. Dónde estoy: el indicador de pasos ---- */
+.pasos div{color:var(--muted)}
+.pasos div b{color:var(--muted);font-weight:600}
+.pasos div.on{background:var(--arm-paso-bg);color:var(--arm-paso-sub);box-shadow:inset 0 -3px 0 var(--naranja)}
+.pasos div.on b{color:var(--arm-paso-fg);font-weight:700}
+.pasos div.ok{background:var(--ok-bg);color:var(--ok);font-weight:700}
+.pasos div.ok b{color:var(--ok);font-weight:700}
+
+/* ---- 2. La pregunta de este paso: más grande, en navy, con la barra naranja pegada al borde de la tarjeta
+        (el margen negativo compensa el relleno: el texto queda exactamente donde estaba) ---- */
+.pasos + .card.stack > div:first-child{border-left:4px solid var(--naranja);margin-left:-17px;padding-left:13px}
+.pasos + .card.stack > div:first-child > b{font-size:16px;color:var(--accent)}
+
+/* ---- 3. Lo que elegí: borde izquierdo grueso azul (el relleno compensa el borde: el texto no se corre) ---- */
+.pasos + .card.stack .opc[aria-pressed=true]{border-color:var(--arm-sel);border-left-width:5px;padding-left:9.5px;background:var(--cel-s)}
+.pasos + .card.stack .opc[aria-pressed=true] b{color:var(--arm-sel)}
+.pasos + .card.stack .opc[aria-pressed=true] .d{color:var(--fg)}
+
+/* ---- 4. Lo que falta (ámbar) y lo que ya está (verde) ---- */
+.pasos + .card.stack .docs .doc:not(.ok){border-color:var(--warn);background:var(--warn-bg)}
+.pasos + .card.stack .doc.ok{color:var(--ok);font-weight:600}
+.pasos + .card.stack .doc.ok .btn{background:transparent;border-color:transparent;color:var(--ok)}
+.pasos + .card.stack .docs .doc:not(.ok) .btn{color:var(--arm-sel);border-color:var(--arm-sel);background:var(--surface);font-weight:700}
+.pasos + .card.stack label.row:has(> input[type=checkbox]){padding:7px 10px;margin:-7px -10px;border-radius:7px;background:var(--warn-bg)}
+.pasos + .card.stack label.row:has(> input[type=checkbox]:checked){background:var(--ok-bg)}
+.pasos + .card.stack label.row > input[type=checkbox]{accent-color:var(--azul)}
+
+/* ---- 5. Notas informativas: neutras ---- */
+.pasos + .card.stack .box.b-info{background:var(--surface-2);color:var(--fg);box-shadow:inset 3px 0 0 var(--muted);border-radius:2px 8px 8px 2px}
+.pasos + .card.stack .card .box.b-info{background:var(--surface)}
+
+/* ---- 6. El total ---- */
+.pasos + .card.stack .total .v{color:var(--accent)}
+
+/* ---- 7. El botón para seguir: azul con sombra; deshabilitado, gris lleno (se lee como el botón de seguir, apagado) ---- */
+.pasos + .card.stack .acciones .btn.pri{font-weight:700;box-shadow:0 2px 8px rgba(31,111,178,.35)}
+.pasos + .card.stack .acciones .btn.pri:disabled{background:var(--line);border-color:var(--line);color:var(--muted);box-shadow:none;opacity:1}
 .opc{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:11px 13px;cursor:pointer}
 .opc:hover:not(:disabled){border-color:var(--azul)}
 .opc[aria-pressed=true]{border-color:var(--azul);background:var(--cel-s)}
@@ -682,10 +734,18 @@ function cotizarN(N){ const t=TJ[N.tipo]; const L=[]; if(t.exento||t.tipo==="est
   return {L,total,fojas}; }
 const lineasHTML=(L,total,nota)=>`<div>${L.map(l=>`<div class="costline"><span>${esc(l[0])}${l[1]?`<div class="sub">${esc(l[1])}</div>`:""}</span><span class="v">${l[2]<0?"− "+pesos(-l[2]):l[2]===0?"sin cargo":pesos(l[2])}</span></div>`).join("")}<div class="total"><span class="eyebrow">Total</span><span class="v">${pesos(total)}</span></div>${nota?`<div class="sub">${nota}</div>`:""}</div>`;
 
+/* Indicador de pasos: tocás un paso y te lleva ahí. Hacia atrás, siempre; hacia adelante,
+   hasta el primer paso que falte completar (y avisa cuál). */
+const pasosHTML=(pasos,P)=>`<div class="pasos">${pasos.map((p,i)=>`<div class="${P===i+1?"on":P>i+1?"ok":""}" ${P===i+1?'aria-current="step"':`data-paso="${i+1}" role="button" tabindex="0" title="Ir a ${esc(p)}"`}>${P>i+1?"✓":"Paso "+(i+1)}<b>${esc(p)}</b></div>`).join("")}</div>`;
+function pasosClic(N,pasos,valido){ document.querySelectorAll(".pasos [data-paso]").forEach(el=>{ const ir1=()=>{ const j=+el.dataset.paso; let k=N.paso; if(j<k) k=j; else while(k<j&&valido(k)) k++;
+    if(k===N.paso){ toast(`Primero completá «${pasos[k-1]}».`); return; } if(k<j) toast(`Antes de «${pasos[j-1]}» falta completar «${pasos[k-1]}».`); N.paso=k; render(); window.scrollTo(0,0); };
+  el.onclick=ir1; el.onkeydown=e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); ir1(); } }; }); }
+
 VISTAS.armador=()=>{ const N=S.nuevo; if(!N) return VISTAS.nuevos(); const t=TJ[N.tipo]; const esCert=t.tipo==="cert", esEst=t.tipo==="estudio", esTest=t.tipo==="testimonio";
   const pasos=esCert?["Los documentos","Quién firma","Para quién","Enviar"]:["Escritura","Carácter","Costo","Envío"]; const P=N.paso; const car=CAR[N.caracter];
-  const docsOk=car?car.docs.every((d,i)=>N.docs[i]):true;
-  const puede=P===1?(esCert?N.vdocs.some(d=>d.n.trim()):(N.nose||(N.anio&&N.num))):P===2?(esCert?!!N.firmante:(esEst||(N.caracter&&docsOk&&(!car.fundamento||N.fundamento.trim())&&(!esTest||N.motivoT)))):P===3?(esCert?true:true):N.dj||esCert;
+  const valido=p=>{ const c=CAR[N.caracter]; const dOk=c?c.docs.every((d,i)=>N.docs[i]):true;
+    return !!(p===1?(esCert?N.vdocs.some(d=>d.n.trim()):(N.nose||(N.anio&&N.num))):p===2?(esCert?!!N.firmante:(esEst||(N.caracter&&dOk&&(!c.fundamento||N.fundamento.trim())&&(!esTest||N.motivoT)))):p===3?true:N.dj||esCert); };
+  const puede=valido(P);
   const cuerpo=
     P===1&&esCert?`<div><b>Los documentos</b><div class="sub">Agregá todos los que necesites en este mismo pedido. De cada uno decinos si nació digital o está en papel: eso es lo único que define si hay que acercarse.</div></div>
       <div class="docs">${N.vdocs.map((d,i)=>`<div class="card" style="background:var(--surface-2)"><div class="row"><input type="text" data-vd="${i}" value="${esc(d.n)}" placeholder="Ej.: Resolución 512-2026.pdf" style="flex:1"><button class="btn sm" type="button">Subir archivo</button><button class="btn sm" type="button" data-vq="${i}" ${N.vdocs.length<2?"disabled":""}>Quitar</button></div><div class="g2" style="margin-top:8px"><button class="opc" type="button" data-vo="${i}|digital" aria-pressed="${d.o==="digital"}"><span><b>Nació digital</b><span class="d">Tiene firma digital o salió de un sistema. Se resuelve entero por el portal.</span></span></button><button class="opc" type="button" data-vo="${i}|papel" aria-pressed="${d.o==="papel"}"><span><b>Está en papel</b><span class="d">Hay que confrontarlo con el original antes de entregar la certificación.</span></span></button></div></div>`).join("")}</div>
@@ -715,10 +775,10 @@ VISTAS.armador=()=>{ const N=S.nuevo; if(!N) return VISTAS.nuevos(); const t=TJ[
       <div class="kv"><div><div class="l">Trámite</div><div class="v">${esc(t.n)}</div></div><div><div class="l">Escritura</div><div class="v">${N.nose?"La busca la Escribanía":`${esc(N.num)} · ${esc(N.sec.replace("Sección ",""))} · ${esc(N.anio)}`}</div></div><div><div class="l">Carácter</div><div class="v">${esc(car?car.t:(esEst?"Escribano en ejercicio":"—"))}</div></div><div><div class="l">Total</div><div class="v">${N.nose?"se tasa después":pesos(cotizarN(N).total)}</div></div></div>
       <label class="row" style="gap:8px;cursor:pointer;align-items:flex-start"><input type="checkbox" id="aDj" ${N.dj?"checked":""} style="margin-top:3px"> <span>Declaro bajo juramento que los datos y la documentación son auténticos y que el carácter que invoco es verdadero.</span></label>`;
   const main=`${cab("r",t.n,"","Carga de información · armador de cuatro pasos")}
-    <div class="pasos">${pasos.map((p,i)=>`<div class="${P===i+1?"on":P>i+1?"ok":""}">${P>i+1?"✓":"Paso "+(i+1)}<b>${p}</b></div>`).join("")}</div>
+    ${pasosHTML(pasos,P)}
     <div class="card stack" style="margin-top:12px">${cuerpo}
       <div class="acciones">${P>1?`<button class="btn" type="button" id="aAtras">Anterior</button>`:`<button class="btn" type="button" id="aCancel">Cancelar</button>`}<button class="btn sm" type="button" id="aGuardar" title="Queda en Trámites en proceso como Pendiente">Guardar y seguir después</button>${P<4?`<button class="btn pri lg" type="button" id="aSig" ${puede?"":"disabled"}>Continuar</button>`:`<button class="btn pri lg" type="button" id="aEnviar" ${puede?"":"disabled"}>${car&&car.directo&&!N.nose?"Pagar y enviar":"Enviar a la Escribanía"}</button>`}</div></div>`;
-  return {main, after(){ const on=(id,fn)=>{ const el=$(id); if(el) el.oninput=()=>fn(el); }; on("#aAnio",el=>{N.anio=el.value; chk();}); on("#aNum",el=>{N.num=el.value; chk();}); on("#aFecha",el=>N.fecha=el.value); on("#aPista",el=>N.pista=el.value); on("#aFund",el=>{N.fundamento=el.value; chk();}); on("#aMotivo",el=>N.motivo=el.value); on("#aPara",el=>N.para=el.value); on("#aRef",el=>N.ref=el.value);
+  return {main, after(){ pasosClic(N,pasos,valido); const on=(id,fn)=>{ const el=$(id); if(el) el.oninput=()=>fn(el); }; on("#aAnio",el=>{N.anio=el.value; chk();}); on("#aNum",el=>{N.num=el.value; chk();}); on("#aFecha",el=>N.fecha=el.value); on("#aPista",el=>N.pista=el.value); on("#aFund",el=>{N.fundamento=el.value; chk();}); on("#aMotivo",el=>N.motivo=el.value); on("#aPara",el=>N.para=el.value); on("#aRef",el=>N.ref=el.value);
     const sel=(id,fn)=>{ const el=$(id); if(el) el.onchange=()=>{ fn(el); render(); }; }; sel("#aSec",el=>N.sec=el.value); sel("#aMot",el=>N.motivoT=el.value); sel("#aEj",el=>N.ej=+el.value); sel("#aObj",el=>N.objeto=el.value);
     function chk(){ const s=$("#aSig"); if(s) s.disabled=!(N.nose||(N.anio&&N.num)); }
     const ns=$("#aNose"); if(ns) ns.onclick=()=>{ N.nose=!N.nose; render(); };
@@ -761,7 +821,8 @@ const hojaCert=r=>`<div class="hoja"><b>ESCRIBANÍA GENERAL DE GOBIERNO DE LA PR
 const TIPOS_ORG=["Ministerio u organismo central","Ente descentralizado o agencia","Municipalidad o comuna","Poder Judicial o Legislativo","Universidad, empresa del Estado u otro"];
 VISTAS["alta-org"]=()=>{ const N=S.nuevo; if(!N||N.tipo!=="alta_org") return VISTAS.nuevos(); const R=ROLES[S.rol]; const P=N.paso; const pasos=["El organismo","Tu designación","Enviar"];
   const otro=!!N.paraOtro; N.quien=N.quien||""; N.cuil=N.cuil||"";
-  const puede=P===1?!!(N.orgN.trim()&&N.cuit.trim()):P===2?!!(N.cargo.trim()&&(!otro||N.quien.trim())):N.dj;
+  const valido=p=>p===1?!!(N.orgN.trim()&&N.cuit.trim()):p===2?!!(N.cargo.trim()&&(!otro||N.quien.trim())):!!N.dj;
+  const puede=valido(P);
   const ya=N.cuit.trim()?S.organismos.find(o=>norm(o.cuit)===norm(N.cuit)):null;
   const cuerpo=P===1?`<div><b>${otro?"Tu organismo, ya habilitado":"El organismo"}</b><div class="sub">${otro?"Vas a pedir la habilitación de otro funcionario de tu organismo. Los datos del organismo salen de tu legajo.":"El ministerio, ente o municipio por el que vas a pedir certificaciones. Se identifica por CUIT: así la Escribanía lo encuentra aunque cambie de nombre."}</div></div>
       <div class="g3"><div><label class="f" for="oN">Nombre del organismo *</label><input type="text" id="oN" value="${esc(N.orgN)}" placeholder="Ministerio de Educación" ${otro?"readonly":""}></div><div><label class="f" for="oC">CUIT del organismo *</label><input type="text" id="oC" value="${esc(N.cuit)}" placeholder="30-99925380-3" inputmode="numeric" ${otro?"readonly":""}></div><div><label class="f" for="oT">Tipo</label><select id="oT" ${otro?"disabled":""}>${TIPOS_ORG.map(x=>`<option ${N.tipoOrg===x?"selected":""}>${x}</option>`).join("")}</select></div></div>
@@ -777,10 +838,10 @@ VISTAS["alta-org"]=()=>{ const N=S.nuevo; if(!N||N.tipo!=="alta_org") return VIS
       <div class="kv"><div><div class="l">Organismo</div><div class="v">${esc(N.orgN)}</div></div><div><div class="l">CUIT</div><div class="v mono">${esc(N.cuit)}</div></div><div><div class="l">Tipo</div><div class="v">${esc(N.tipoOrg)}</div></div>${otro?`<div><div class="l">Funcionario a habilitar</div><div class="v">${esc(N.quien)}${N.cuil?" · CUIL "+esc(N.cuil):""}</div></div><div><div class="l">Lo pide</div><div class="v">${esc(R.n)} · CUIL ${R.cuil}</div></div>`:`<div><div class="l">Solicitante</div><div class="v">${esc(R.n)} · CUIL ${R.cuil}</div></div>`}<div><div class="l">Cargo</div><div class="v">${esc(N.cargo)}</div></div><div><div class="l">Resolución</div><div class="v">${esc(N.res||"sin resolución")}${N.resOk?" · PDF adjunto":""}</div></div><div><div class="l">Vigencia</div><div class="v">${esc(N.hasta||"la define la Escribanía")}</div></div><div><div class="l">Otros funcionarios</div><div class="v">${N.otros.filter(o=>o.n.trim()).map(o=>esc(o.n)).join(", ")||"—"}</div></div><div><div class="l">Costo</div><div class="v">Exento</div></div></div>
       <label class="row" style="gap:8px;cursor:pointer;align-items:flex-start"><input type="checkbox" id="oDj" ${N.dj?"checked":""} style="margin-top:3px"> <span>Declaro bajo juramento que ocupo el cargo que indico y que los datos del organismo son verdaderos.</span></label>`;
   const main=`${cab("n","Habilitación de organismo","","Para funcionarios · tres pasos")}
-    <div class="pasos">${pasos.map((p,i)=>`<div class="${P===i+1?"on":P>i+1?"ok":""}">${P>i+1?"✓":"Paso "+(i+1)}<b>${p}</b></div>`).join("")}</div>
+    ${pasosHTML(pasos,P)}
     <div class="card stack" style="margin-top:12px">${cuerpo}
       <div class="acciones">${P>1?`<button class="btn" type="button" id="oAtras">Anterior</button>`:`<button class="btn" type="button" id="oCancel">Cancelar</button>`}<button class="btn sm" type="button" id="oGuardar" title="Queda en Trámites en proceso como Pendiente">Guardar y seguir después</button>${P<3?`<button class="btn pri lg" type="button" id="oSig" ${puede?"":"disabled"}>Continuar</button>`:`<button class="btn pri lg" type="button" id="oEnviar" ${puede?"":"disabled"}>Enviar a la Escribanía</button>`}</div></div>`;
-  return {main, after(){ const on=(id,fn)=>{ const el=$(id); if(el) el.oninput=()=>{ fn(el); chk(); }; }; on("#oN",el=>N.orgN=el.value); on("#oC",el=>N.cuit=el.value); on("#oCargo",el=>N.cargo=el.value); on("#oRes",el=>N.res=el.value); on("#oHasta",el=>N.hasta=el.value); on("#oQuien",el=>N.quien=el.value); on("#oCuil",el=>N.cuil=el.value);
+  return {main, after(){ pasosClic(N,pasos,valido); const on=(id,fn)=>{ const el=$(id); if(el) el.oninput=()=>{ fn(el); chk(); }; }; on("#oN",el=>N.orgN=el.value); on("#oC",el=>N.cuit=el.value); on("#oCargo",el=>N.cargo=el.value); on("#oRes",el=>N.res=el.value); on("#oHasta",el=>N.hasta=el.value); on("#oQuien",el=>N.quien=el.value); on("#oCuil",el=>N.cuil=el.value);
     const oT=$("#oT"); if(oT) oT.onchange=()=>N.tipoOrg=oT.value; function chk(){ const s=$("#oSig"); if(s) s.disabled=P===1?!(N.orgN.trim()&&N.cuit.trim()):!(N.cargo.trim()&&(!otro||N.quien.trim())); }
     const su=$("#oSubir"); if(su) su.onclick=()=>{ N.resOk=!N.resOk; render(); }; const om=$("#oMas"); if(om) om.onclick=()=>{ N.otros.push({n:"",cargo:"",cuil:""}); render(); };
     document.querySelectorAll("[data-on]").forEach(i=>i.oninput=()=>N.otros[+i.dataset.on].n=i.value); document.querySelectorAll("[data-oc]").forEach(i=>i.oninput=()=>N.otros[+i.dataset.oc].cargo=i.value); document.querySelectorAll("[data-ou]").forEach(i=>i.oninput=()=>N.otros[+i.dataset.ou].cuil=i.value); document.querySelectorAll("[data-oq]").forEach(b=>b.onclick=()=>{ N.otros.splice(+b.dataset.oq,1); render(); });
